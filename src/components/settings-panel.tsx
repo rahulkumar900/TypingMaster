@@ -1,7 +1,8 @@
 'use client';
 
 import React from 'react';
-import { X, Settings, Keyboard, MousePointer, Type, Sliders, FileText, Sparkles } from 'lucide-react';
+import { X, Settings, Keyboard, MousePointer, Type, Sliders, FileText, Sparkles, Globe } from 'lucide-react';
+import { LANGUAGES } from '@/lib/languages';
 
 interface SettingsPanelProps {
   isOpen: boolean;
@@ -26,12 +27,16 @@ interface SettingsPanelProps {
   onNumbersChange: (val: boolean) => void;
   showSpeedometer: boolean;
   onShowSpeedometerChange: (val: boolean) => void;
-  accentTheme: string;
-  onAccentThemeChange: (theme: string) => void;
+  currentTheme: string;
+  onThemeChange: (theme: string) => void;
   suddenDeath: boolean;
   onSuddenDeathChange: (val: boolean) => void;
   ghostWpm: number;
   onGhostWpmChange: (wpm: number) => void;
+  languageId: string;
+  onLanguageChange: (langId: string) => void;
+  fontId: string;
+  onFontIdChange: (fontId: string) => void;
 }
 
 export const SettingsPanel: React.FC<SettingsPanelProps> = ({
@@ -57,12 +62,16 @@ export const SettingsPanel: React.FC<SettingsPanelProps> = ({
   onNumbersChange,
   showSpeedometer,
   onShowSpeedometerChange,
-  accentTheme,
-  onAccentThemeChange,
+  currentTheme,
+  onThemeChange,
   suddenDeath,
   onSuddenDeathChange,
   ghostWpm,
-  onGhostWpmChange
+  onGhostWpmChange,
+  languageId,
+  onLanguageChange,
+  fontId,
+  onFontIdChange
 }) => {
   if (!isOpen) return null;
 
@@ -73,20 +82,20 @@ export const SettingsPanel: React.FC<SettingsPanelProps> = ({
     >
       {/* Settings Panel Sliding Drawer Container */}
       <aside 
-        className="w-full max-w-[400px] h-full bg-[#0c0d12] border-l border-white/10 p-6 md:p-8 flex flex-col justify-between shadow-2xl overflow-y-auto animate-slideIn"
+        className="w-full max-w-[400px] h-full bg-[#0c0d12] border-l border-[var(--border-active)] p-6 md:p-8 flex flex-col justify-between shadow-2xl overflow-y-auto animate-slideIn"
         onClick={(e) => e.stopPropagation()}
         aria-label="Typing settings"
       >
         {/* Title Header */}
         <div className="flex flex-col gap-6">
-          <header className="flex justify-between items-center border-b border-white/5 pb-4">
+          <header className="flex justify-between items-center border-b border-[var(--border-subtle)] pb-4">
             <div className="flex items-center gap-2">
               <Settings className="w-5 h-5 text-[var(--accent-color)]" />
               <h2 className="text-xl font-bold text-white font-sans">Settings</h2>
             </div>
             <button 
               onClick={onClose}
-              className="w-8 h-8 flex items-center justify-center rounded-full hover:bg-white/5 border border-white/5 text-slate-400 hover:text-white transition-all cursor-pointer"
+              className="w-8 h-8 flex items-center justify-center rounded-full hover:bg-[var(--bg-panel)] border border-[var(--border-subtle)] text-[var(--text-muted-alt)] hover:text-white transition-all cursor-pointer"
             >
               <X className="w-4 h-4" />
             </button>
@@ -94,11 +103,11 @@ export const SettingsPanel: React.FC<SettingsPanelProps> = ({
 
           {/* Test Modes Selectors */}
           <div className="flex flex-col gap-3">
-            <h3 className="text-[12px] font-semibold text-slate-500 uppercase tracking-wider flex items-center gap-1">
+            <h3 className="text-[12px] font-semibold text-[var(--text-muted-alt)] uppercase tracking-wider flex items-center gap-1">
               <Type className="w-3.5 h-3.5" />
               Test Mode
             </h3>
-            <div className="grid grid-cols-2 gap-2 bg-white/[0.02] p-1 rounded-xl border border-white/5 w-full">
+            <div className="grid grid-cols-2 gap-2 bg-[var(--bg-panel)] p-1 rounded-xl border border-[var(--border-subtle)] w-full">
               {(['time', 'words', 'quotes', 'custom', 'zen', 'weak-keys', 'govt-exam'] as const).map((mode) => (
                 <button
                   key={mode}
@@ -106,7 +115,7 @@ export const SettingsPanel: React.FC<SettingsPanelProps> = ({
                   className={`py-2 px-1 rounded-lg text-[11px] font-semibold transition-all cursor-pointer uppercase ${
                     testMode === mode
                       ? 'bg-[var(--accent-color)] text-black font-bold shadow-[0_4px_12px_rgba(var(--accent-rgb),0.2)]'
-                      : 'text-slate-500 hover:text-slate-50'
+                      : 'text-[var(--text-muted-alt)] hover:text-slate-50'
                   }`}
                 >
                   {mode === 'weak-keys' ? 'weak keys' : mode === 'govt-exam' ? 'govt exam' : mode}
@@ -118,11 +127,11 @@ export const SettingsPanel: React.FC<SettingsPanelProps> = ({
           {/* Dynamic mode suboptions */}
           {testMode === 'time' && (
             <div className="flex flex-col gap-3 animate-fadeIn">
-              <h3 className="text-[12px] font-semibold text-slate-500 uppercase tracking-wider flex items-center gap-1">
+              <h3 className="text-[12px] font-semibold text-[var(--text-muted-alt)] uppercase tracking-wider flex items-center gap-1">
                 <Sliders className="w-3.5 h-3.5" />
                 Duration <span className="text-[10px] lowercase opacity-70 ml-0.5">(seconds)</span>
               </h3>
-              <div className="flex bg-white/[0.02] p-1 rounded-xl border border-white/5 w-full">
+              <div className="flex bg-[var(--bg-panel)] p-1 rounded-xl border border-[var(--border-subtle)] w-full">
                 {([15, 30, 60, 120] as const).map((time) => (
                   <button
                     key={time}
@@ -130,7 +139,7 @@ export const SettingsPanel: React.FC<SettingsPanelProps> = ({
                     className={`flex-1 py-2 rounded-lg text-[13px] font-semibold transition-all cursor-pointer ${
                       testTimeLimit === time
                         ? 'bg-[var(--accent-color)] text-black font-bold'
-                        : 'text-slate-500 hover:text-slate-50'
+                        : 'text-[var(--text-muted-alt)] hover:text-slate-50'
                     }`}
                   >
                     {time}
@@ -142,11 +151,11 @@ export const SettingsPanel: React.FC<SettingsPanelProps> = ({
 
           {testMode === 'words' && (
             <div className="flex flex-col gap-3 animate-fadeIn">
-              <h3 className="text-[12px] font-semibold text-slate-500 uppercase tracking-wider flex items-center gap-1">
+              <h3 className="text-[12px] font-semibold text-[var(--text-muted-alt)] uppercase tracking-wider flex items-center gap-1">
                 <Sliders className="w-3.5 h-3.5" />
                 Word Count
               </h3>
-              <div className="flex bg-white/[0.02] p-1 rounded-xl border border-white/5 w-full">
+              <div className="flex bg-[var(--bg-panel)] p-1 rounded-xl border border-[var(--border-subtle)] w-full">
                 {([10, 25, 50, 100] as const).map((limit) => (
                   <button
                     key={limit}
@@ -154,7 +163,7 @@ export const SettingsPanel: React.FC<SettingsPanelProps> = ({
                     className={`flex-1 py-2 rounded-lg text-[13px] font-semibold transition-all cursor-pointer ${
                       wordLimit === limit
                         ? 'bg-[var(--accent-color)] text-black font-bold'
-                        : 'text-slate-500 hover:text-slate-50'
+                        : 'text-[var(--text-muted-alt)] hover:text-slate-50'
                     }`}
                   >
                     {limit}
@@ -166,7 +175,7 @@ export const SettingsPanel: React.FC<SettingsPanelProps> = ({
 
           {testMode === 'custom' && (
             <div className="flex flex-col gap-3 animate-fadeIn">
-              <h3 className="text-[12px] font-semibold text-slate-500 uppercase tracking-wider flex items-center gap-1">
+              <h3 className="text-[12px] font-semibold text-[var(--text-muted-alt)] uppercase tracking-wider flex items-center gap-1">
                 <FileText className="w-3.5 h-3.5" />
                 Custom Text
               </h3>
@@ -174,34 +183,34 @@ export const SettingsPanel: React.FC<SettingsPanelProps> = ({
                 value={customText}
                 onChange={(e) => onCustomTextChange(e.target.value)}
                 placeholder="Paste your custom text here to practice typing..."
-                className="w-full h-32 bg-black border border-white/5 rounded-xl p-3 text-[13px] font-mono text-white placeholder-slate-600 resize-none focus:border-[var(--accent-color)] transition-colors focus:outline-none"
+                className="w-full h-32 bg-black border border-[var(--border-subtle)] rounded-xl p-3 text-[13px] font-mono text-white placeholder-slate-600 resize-none focus:border-[var(--accent-color)] transition-colors focus:outline-none"
               />
             </div>
           )}
           {/* Practice Modifiers (Punctuation / Numbers) */}
           {(testMode === 'time' || testMode === 'words') && (
             <div className="flex flex-col gap-3 animate-fadeIn">
-              <h3 className="text-[12px] font-semibold text-slate-500 uppercase tracking-wider flex items-center gap-1">
+              <h3 className="text-[12px] font-semibold text-[var(--text-muted-alt)] uppercase tracking-wider flex items-center gap-1">
                 <Sliders className="w-3.5 h-3.5" />
                 Practice Modifiers
               </h3>
               <div className="flex flex-col gap-2">
-                <label className="flex items-center justify-between p-3 rounded-xl bg-white/[0.02] border border-white/5 cursor-pointer hover:bg-white/[0.04] transition-colors">
-                  <span className="text-[13px] font-semibold text-slate-300">Punctuation</span>
+                <label className="flex items-center justify-between p-3 rounded-xl bg-[var(--bg-panel)] border border-[var(--border-subtle)] cursor-pointer hover:bg-[var(--bg-panel)] transition-colors">
+                  <span className="text-[13px] font-semibold text-[var(--text-main)]">Punctuation</span>
                   <input
                     type="checkbox"
                     checked={includePunctuation}
                     onChange={(e) => onPunctuationChange(e.target.checked)}
-                    className="w-4 h-4 rounded border-white/10 bg-black text-[var(--accent-color)] focus:ring-0 cursor-pointer"
+                    className="w-4 h-4 rounded border-[var(--border-active)] bg-black text-[var(--accent-color)] focus:ring-0 cursor-pointer"
                   />
                 </label>
-                <label className="flex items-center justify-between p-3 rounded-xl bg-white/[0.02] border border-white/5 cursor-pointer hover:bg-white/[0.04] transition-colors">
-                  <span className="text-[13px] font-semibold text-slate-300">Numbers</span>
+                <label className="flex items-center justify-between p-3 rounded-xl bg-[var(--bg-panel)] border border-[var(--border-subtle)] cursor-pointer hover:bg-[var(--bg-panel)] transition-colors">
+                  <span className="text-[13px] font-semibold text-[var(--text-main)]">Numbers</span>
                   <input
                     type="checkbox"
                     checked={includeNumbers}
                     onChange={(e) => onNumbersChange(e.target.checked)}
-                    className="w-4 h-4 rounded border-white/10 bg-black text-[var(--accent-color)] focus:ring-0 cursor-pointer"
+                    className="w-4 h-4 rounded border-[var(--border-active)] bg-black text-[var(--accent-color)] focus:ring-0 cursor-pointer"
                   />
                 </label>
               </div>
@@ -210,11 +219,11 @@ export const SettingsPanel: React.FC<SettingsPanelProps> = ({
 
           {/* Sound Switch Profiles selector */}
           <div className="flex flex-col gap-3">
-            <h3 className="text-[12px] font-semibold text-slate-500 uppercase tracking-wider flex items-center gap-1">
+            <h3 className="text-[12px] font-semibold text-[var(--text-muted-alt)] uppercase tracking-wider flex items-center gap-1">
               <Keyboard className="w-3.5 h-3.5" />
               Keyboard Switch Sounds
             </h3>
-            <div className="grid grid-cols-3 gap-1 bg-white/[0.02] p-1 rounded-xl border border-white/5 w-full">
+            <div className="grid grid-cols-3 gap-1 bg-[var(--bg-panel)] p-1 rounded-xl border border-[var(--border-subtle)] w-full">
               {(['blue', 'brown', 'red'] as const).map((profile) => (
                 <button
                   key={profile}
@@ -222,7 +231,7 @@ export const SettingsPanel: React.FC<SettingsPanelProps> = ({
                   className={`py-2 rounded-lg text-[12px] font-semibold transition-all cursor-pointer uppercase ${
                     switchProfile === profile
                       ? 'bg-[var(--accent-color)] text-black font-bold'
-                      : 'text-slate-500 hover:text-slate-50'
+                      : 'text-[var(--text-muted-alt)] hover:text-slate-50'
                   }`}
                   title={`${profile.toUpperCase()} Mechanical Switch profile`}
                 >
@@ -234,11 +243,11 @@ export const SettingsPanel: React.FC<SettingsPanelProps> = ({
 
           {/* Cursor Style selectors */}
           <div className="flex flex-col gap-3">
-            <h3 className="text-[12px] font-semibold text-slate-500 uppercase tracking-wider flex items-center gap-1">
+            <h3 className="text-[12px] font-semibold text-[var(--text-muted-alt)] uppercase tracking-wider flex items-center gap-1">
               <MousePointer className="w-3.5 h-3.5" />
               Cursor representation
             </h3>
-            <div className="flex bg-white/[0.02] p-1 rounded-xl border border-white/5 w-full">
+            <div className="flex bg-[var(--bg-panel)] p-1 rounded-xl border border-[var(--border-subtle)] w-full">
               {(['pipe', 'block', 'outline', 'underline'] as const).map((cursor) => (
                 <button
                   key={cursor}
@@ -246,7 +255,7 @@ export const SettingsPanel: React.FC<SettingsPanelProps> = ({
                   className={`flex-1 py-2 rounded-lg text-[13px] font-bold transition-all cursor-pointer font-mono ${
                     cursorStyle === cursor
                       ? 'bg-[var(--accent-color)] text-black shadow-[0_4px_12px_rgba(var(--accent-rgb),0.2)]'
-                      : 'text-slate-500 hover:text-slate-50'
+                      : 'text-[var(--text-muted-alt)] hover:text-slate-50'
                   }`}
                   title={`${cursor.charAt(0).toUpperCase() + cursor.slice(1)} Cursor`}
                 >
@@ -256,25 +265,95 @@ export const SettingsPanel: React.FC<SettingsPanelProps> = ({
             </div>
           </div>
 
-          {/* Theme selectors */}
+          {/* Language & Exam Font Section */}
           <div className="flex flex-col gap-3">
-            <h3 className="text-[12px] font-semibold text-slate-500 uppercase tracking-wider flex items-center gap-1">
-              <Sparkles className="w-3.5 h-3.5" />
-              Accent Theme
+            <h3 className="text-[12px] font-semibold text-[var(--text-muted-alt)] uppercase tracking-wider flex items-center gap-1">
+              <Globe className="w-3.5 h-3.5" />
+              Language & Exam Font
             </h3>
-            <div className="grid grid-cols-5 gap-1 bg-white/[0.02] p-1 rounded-xl border border-white/5 w-full">
-              {(['blue', 'pink', 'green', 'grey', 'white'] as const).map((theme) => (
+            
+            {/* Language Selection */}
+            <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
+              {LANGUAGES.map((lang) => (
                 <button
-                  key={theme}
-                  onClick={() => onAccentThemeChange(theme)}
-                  className={`py-2 flex items-center justify-center rounded-lg text-[10px] font-bold transition-all cursor-pointer uppercase ${
-                    accentTheme === theme
-                      ? 'bg-[var(--accent-color)] text-black shadow-[0_4px_12px_rgba(var(--accent-rgb),0.2)]'
-                      : 'text-slate-500 hover:text-slate-50'
+                  key={lang.id}
+                  onClick={() => {
+                    onLanguageChange(lang.id);
+                    onFontIdChange(lang.fonts[0].id); // Auto-select first font
+                  }}
+                  className={`flex items-center justify-center p-2 rounded-lg border transition-all cursor-pointer text-[12px] font-bold ${
+                    languageId === lang.id
+                      ? 'bg-[var(--accent-color)] text-black border-[var(--accent-color)] shadow-[0_4px_12px_rgba(var(--accent-rgb),0.2)]'
+                      : 'border-[var(--border-subtle)] hover:border-[var(--border-active)] bg-[var(--bg-panel)] text-[var(--text-muted-alt)]'
                   }`}
-                  title={`${theme.charAt(0).toUpperCase() + theme.slice(1)} Theme`}
                 >
-                  {theme === 'blue' ? 'Neo' : theme === 'pink' ? 'Cyber' : theme === 'green' ? 'Matcha' : theme === 'grey' ? 'Carbon' : 'Arctic'}
+                  {lang.name}
+                </button>
+              ))}
+            </div>
+
+            {/* Font / Layout Selection based on active language */}
+            <div className="bg-[var(--bg-panel)] border border-[var(--border-subtle)] rounded-xl p-3 mt-1 flex flex-col gap-2">
+              <span className="text-[11px] text-[var(--text-muted-alt)] font-semibold uppercase tracking-wider">Specific Exam Layout (Font)</span>
+              <div className="flex flex-col gap-2">
+                {LANGUAGES.find(l => l.id === languageId)?.fonts.map(font => (
+                  <button
+                    key={font.id}
+                    onClick={() => onFontIdChange(font.id)}
+                    className={`flex items-center justify-between p-2.5 rounded-lg border transition-all cursor-pointer text-left ${
+                      fontId === font.id
+                        ? 'border-[var(--accent-color)] bg-[var(--bg-panel)]'
+                        : 'border-[var(--border-subtle)] hover:border-[var(--border-active)] bg-[var(--bg-panel)]'
+                    }`}
+                  >
+                    <span className={`text-[13px] font-semibold ${fontId === font.id ? 'text-[var(--accent-color)]' : 'text-[var(--text-main)]'}`}>
+                      {font.name}
+                    </span>
+                    <span className={`text-[10px] px-2 py-0.5 rounded font-mono ${font.type === 'legacy' ? 'bg-red-500/20 text-red-400' : 'bg-green-500/20 text-green-400'}`}>
+                      {font.type.toUpperCase()}
+                    </span>
+                  </button>
+                ))}
+              </div>
+            </div>
+          </div>
+
+          {/* Theme Gallery */}
+          <div className="flex flex-col gap-3">
+            <h3 className="text-[12px] font-semibold text-[var(--text-muted-alt)] uppercase tracking-wider flex items-center gap-1">
+              <Sparkles className="w-3.5 h-3.5" />
+              Theme Gallery
+            </h3>
+            <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
+              {[
+                { id: 'carbon', name: 'Carbon', bg: '#282a2d', main: '#d1d0c5', accent: '#e2b714' },
+                { id: 'midnight', name: 'Midnight', bg: '#0b0f19', main: '#f8fafc', accent: '#6366f1' },
+                { id: 'dracula', name: 'Dracula', bg: '#282a36', main: '#f8f8f2', accent: '#ff79c6' },
+                { id: 'matrix', name: 'Matrix', bg: '#000000', main: '#00ff00', accent: '#00ff00' },
+                { id: '8008', name: '8008', bg: '#333a45', main: '#e9ecf0', accent: '#f44c7f' },
+                { id: 'cyberpunk', name: 'Cyberpunk', bg: '#120917', main: '#fbcfe8', accent: '#ec4899' },
+                { id: 'paper', name: 'Paper', bg: '#f3f4f6', main: '#111827', accent: '#3b82f6' },
+              ].map((theme) => (
+                <button
+                  key={theme.id}
+                  onClick={() => onThemeChange(theme.id)}
+                  className={`flex flex-col gap-2 p-3 rounded-xl border transition-all cursor-pointer ${
+                    currentTheme === theme.id
+                      ? 'border-[var(--accent-color)] shadow-[0_4px_15px_rgba(var(--accent-rgb),0.15)] bg-[var(--bg-panel)]'
+                      : 'border-[var(--border-subtle)] hover:border-[var(--border-active)] bg-[var(--bg-panel)]'
+                  }`}
+                >
+                  <div className="flex w-full items-center justify-between">
+                    <span className={`text-[12px] font-bold ${currentTheme === theme.id ? 'text-[var(--accent-color)]' : 'text-[var(--text-muted-alt)]'}`}>
+                      {theme.name}
+                    </span>
+                    {/* Mini Color Palette Preview */}
+                    <div className="flex -space-x-1">
+                      <div className="w-3.5 h-3.5 rounded-full border border-black/50 z-10" style={{ backgroundColor: theme.bg }} />
+                      <div className="w-3.5 h-3.5 rounded-full border border-black/50 z-20" style={{ backgroundColor: theme.main }} />
+                      <div className="w-3.5 h-3.5 rounded-full border border-black/50 z-30" style={{ backgroundColor: theme.accent }} />
+                    </div>
+                  </div>
                 </button>
               ))}
             </div>
@@ -282,23 +361,23 @@ export const SettingsPanel: React.FC<SettingsPanelProps> = ({
 
           {/* Interface Toggles */}
           <div className="flex flex-col gap-3 animate-fadeIn">
-            <h3 className="text-[12px] font-semibold text-slate-500 uppercase tracking-wider flex items-center gap-1">
+            <h3 className="text-[12px] font-semibold text-[var(--text-muted-alt)] uppercase tracking-wider flex items-center gap-1">
               <Sliders className="w-3.5 h-3.5" />
               Interface Settings
             </h3>
-            <label className="flex items-center justify-between p-3 rounded-xl bg-white/[0.02] border border-white/5 cursor-pointer hover:bg-white/[0.04] transition-colors">
-              <span className="text-[13px] font-semibold text-slate-300">Live Speedometer</span>
+            <label className="flex items-center justify-between p-3 rounded-xl bg-[var(--bg-panel)] border border-[var(--border-subtle)] cursor-pointer hover:bg-[var(--bg-panel)] transition-colors">
+              <span className="text-[13px] font-semibold text-[var(--text-main)]">Live Speedometer</span>
               <input
                 type="checkbox"
                 checked={showSpeedometer}
                 onChange={(e) => onShowSpeedometerChange(e.target.checked)}
-                className="w-4 h-4 rounded border-white/10 bg-black text-[var(--accent-color)] focus:ring-0 cursor-pointer"
+                className="w-4 h-4 rounded border-[var(--border-active)] bg-black text-[var(--accent-color)] focus:ring-0 cursor-pointer"
               />
             </label>
-            <label className="flex items-center justify-between p-3 rounded-xl bg-white/[0.02] border border-red-500/10 cursor-pointer hover:bg-white/[0.04] hover:border-red-500/30 transition-colors group">
+            <label className="flex items-center justify-between p-3 rounded-xl bg-[var(--bg-panel)] border border-red-500/10 cursor-pointer hover:bg-[var(--bg-panel)] hover:border-red-500/30 transition-colors group">
               <div className="flex flex-col">
                 <span className="text-[13px] font-bold text-red-400 group-hover:text-red-300 transition-colors">Sudden Death Mode</span>
-                <span className="text-[10px] text-slate-500">Test fails instantly on first typo</span>
+                <span className="text-[10px] text-[var(--text-muted-alt)]">Test fails instantly on first typo</span>
               </div>
               <input
                 type="checkbox"
@@ -312,7 +391,7 @@ export const SettingsPanel: React.FC<SettingsPanelProps> = ({
           {/* Font size selectors */}
           <div className="flex flex-col gap-3">
             <div className="flex justify-between items-baseline">
-              <h3 className="text-[12px] font-semibold text-slate-500 uppercase tracking-wider">Font size</h3>
+              <h3 className="text-[12px] font-semibold text-[var(--text-muted-alt)] uppercase tracking-wider">Font size</h3>
               <span className="text-[12px] font-bold text-[var(--accent-color)] font-mono">{fontSize}px</span>
             </div>
             <div className="w-full">
@@ -332,7 +411,7 @@ export const SettingsPanel: React.FC<SettingsPanelProps> = ({
           {/* Ghost Pacer WPM slider */}
           <div className="flex flex-col gap-3">
             <div className="flex justify-between items-baseline">
-              <h3 className="text-[12px] font-semibold text-slate-500 uppercase tracking-wider flex items-center gap-1">
+              <h3 className="text-[12px] font-semibold text-[var(--text-muted-alt)] uppercase tracking-wider flex items-center gap-1">
                 Ghost Pacer
               </h3>
               <span className="text-[12px] font-bold text-[var(--accent-color)] font-mono">
@@ -351,15 +430,15 @@ export const SettingsPanel: React.FC<SettingsPanelProps> = ({
                 aria-label="Adjust Ghost Pacer WPM"
               />
             </div>
-            {ghostWpm > 0 && <span className="text-[10px] text-slate-500">Ghost caret will travel at {ghostWpm} WPM</span>}
+            {ghostWpm > 0 && <span className="text-[10px] text-[var(--text-muted-alt)]">Ghost caret will travel at {ghostWpm} WPM</span>}
           </div>
         </div>
 
         {/* Close Button Footer */}
-        <footer className="mt-8 pt-4 border-t border-white/5 flex justify-end">
+        <footer className="mt-8 pt-4 border-t border-[var(--border-subtle)] flex justify-end">
           <button 
             onClick={onClose}
-            className="w-full py-3 rounded-full border border-white/10 bg-white/5 hover:bg-white hover:text-black font-semibold text-[13.5px] transition-all cursor-pointer active:scale-95 text-center"
+            className="w-full py-3 rounded-full border border-[var(--border-active)] bg-[var(--bg-panel)] hover:bg-white hover:text-black font-semibold text-[13.5px] transition-all cursor-pointer active:scale-95 text-center"
           >
             Apply Config
           </button>

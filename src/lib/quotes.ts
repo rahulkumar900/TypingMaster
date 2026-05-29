@@ -87,3 +87,23 @@ export const INDIAN_EXAM_PASSAGES: ExamPassage[] = [
     text: "Agriculture remains the backbone of the Indian economy, providing livelihood and food security to more than half of the country's population. The sector has undergone significant evolution from traditional subsistence farming to technology-driven modern agriculture. Introducing high-yielding seed varieties, modern irrigation systems, and soil health cards has helped farmers optimize crop yield and preserve soil fertility. Additionally, digital market platforms like e-NAM have enabled direct sales, saving farmers from middleman exploitation and securing fair market pricing for their harvest. To support the rural economy, the government has prioritized micro-irrigation systems, cold storage facilities, and agricultural credit schemes. Diversifying into horticulture, organic farming, dairy cooperatives, and poultry has further enhanced rural incomes. Strengthening rural infrastructure, rural roads, and local agro-processing units will reduce migration to urban centers, building self-sufficient rural communities across India."
   }
 ];
+export const HINDI_QUOTES: Quote[] = [
+  { text: "कर्मण्येवाधिकारस्ते मा फलेषु कदाचन। मा कर्मफलहेतुर्भूर्मा ते सङ्गोऽस्त्वकर्मणि॥", author: "Bhagavad Gita", title: "Chapter 2, Verse 47" },
+  { text: "उठो, जागो और तब तक नहीं रुको जब तक लक्ष्य ना प्राप्त हो जाये।", author: "Swami Vivekananda", title: "Inspirational" },
+  { text: "जिंदगी तो अपने दम पर ही जी जाती है, दूसरों के कंधों पर तो सिर्फ जनाजे उठाए जाते हैं।", author: "Bhagat Singh", title: "Revolutionary" },
+  { text: "मंजिलें उन्हीं को मिलती हैं, जिनके सपनों में जान होती है, पंखों से कुछ नहीं होता, हौसलों से उड़ान होती है।", author: "Unknown", title: "Motivation" },
+  { text: "वक्त से लड़कर जो नसीब बदल दे, इंसान वही जो अपनी तकदीर बदल दे।", author: "Unknown", title: "Inspirational" }
+];
+
+export const HINDI_WORDS: string[] = [
+  "में", "है", "और", "से", "के", "को", "का", "कि", "यह", "एक", "पर", "नहीं", "लिए", "हैं", "भी", "ही", "जो", "कर", "तो", "ने", "किया", "साथ", "हो", "अपनी", "था", "अपने", "क्या", "करना", "कुछ", "होता", "बाद", "उनके", "हुआ", "दिया", "उन", "करते", "गया", "तक", "कोई", "जाने", "वाले", "होने", "जाता", "बात", "आप", "उसे", "सभी", "तरह", "काम", "समय",
+  "देश", "लोग", "समाज", "जीवन", "विकास", "शिक्षा", "सरकार", "भारत", "ज्ञान", "मनुष्य", "विचार", "स्वतंत्रता", "अधिकार", "समस्या", "विश्व", "शांति", "सफलता", "मेहनत", "विश्वास", "सत्य"
+];
+
+export const HINDI_EXAM_PASSAGES = [
+  {
+    title: "Govt Typist Exam Mock (Hindi)",
+    source: "SSC / State Board Syllabus",
+    text: "भारत एक विशाल देश है, जहाँ अनेक धर्मों और संस्कृतियों के लोग एक साथ मिलकर रहते हैं। हमारी विविधता ही हमारी सबसे बड़ी शक्ति है। स्वतंत्रता के बाद से, हमने कृषि, उद्योग और प्रौद्योगिकी के क्षेत्र में भारी प्रगति की है। एक मजबूत लोकतंत्र के रूप में, भारत विश्व पटल पर एक महत्वपूर्ण भूमिका निभा रहा है। विकास की इस यात्रा में, शिक्षा और स्वास्थ्य सेवाओं में सुधार हमारी प्रमुख प्राथमिकता होनी चाहिए।"
+  }
+];

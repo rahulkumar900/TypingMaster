@@ -7,7 +7,7 @@ interface WpmChartProps {
   rawWpmHistory: number[];
   timeHistory: number[];
   testTimeLimit: number;
-  accentTheme: string;
+  currentTheme: string;
 }
 
 export const WpmChart: React.FC<WpmChartProps> = ({
@@ -15,7 +15,7 @@ export const WpmChart: React.FC<WpmChartProps> = ({
   rawWpmHistory,
   timeHistory,
   testTimeLimit,
-  accentTheme
+  currentTheme
 }) => {
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
 
@@ -238,7 +238,7 @@ export const WpmChart: React.FC<WpmChartProps> = ({
     return () => {
       observer.disconnect();
     };
-  }, [wpmHistory, rawWpmHistory, timeHistory, testTimeLimit, accentTheme]);
+  }, [wpmHistory, rawWpmHistory, timeHistory, testTimeLimit, currentTheme]);
 
   return <canvas ref={canvasRef} className="block w-full h-full" />;
 };

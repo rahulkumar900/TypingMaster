@@ -22,16 +22,16 @@ export const StatsWidget: React.FC<StatsWidgetProps> = ({
 }) => {
   return (
     <section 
-      className="flex items-center justify-between h-[72px] bg-black border border-white/5 hover:border-white/15 rounded-[20px] px-6 py-3 shadow-[0_20px_40px_-15px_rgba(0,0,0,0.5)] transition-all duration-300"
+      className="flex items-center justify-between h-[72px] bg-black border border-[var(--border-subtle)] hover:border-[var(--border-active)] rounded-[20px] px-6 py-3 shadow-[0_20px_40px_-15px_rgba(0,0,0,0.5)] transition-all duration-300"
       aria-label="Live typing statistics"
     >
       {/* WPM Stat */}
       <div className="flex flex-col">
         <div className="text-2xl font-bold text-slate-50 flex items-baseline leading-none">
           <span>{wpm}</span>
-          <span className="text-[12px] text-slate-500 ml-1.5 font-medium uppercase tracking-wider">WPM</span>
+          <span className="text-[12px] text-[var(--text-muted-alt)] ml-1.5 font-medium uppercase tracking-wider">WPM</span>
         </div>
-        <div className="text-[11px] text-slate-500 font-mono mt-0.5">
+        <div className="text-[11px] text-[var(--text-muted-alt)] font-mono mt-0.5">
           raw: <span>{rawWpm}</span>
         </div>
       </div>
@@ -40,9 +40,9 @@ export const StatsWidget: React.FC<StatsWidgetProps> = ({
       <div className="flex flex-col">
         <div className="text-2xl font-bold text-slate-50 flex items-baseline leading-none">
           <span>{accuracy}</span>
-          <span className="text-[16px] text-slate-500 ml-0.5">%</span>
+          <span className="text-[16px] text-[var(--text-muted-alt)] ml-0.5">%</span>
         </div>
-        <div className="text-[11px] text-slate-500 font-mono mt-0.5">
+        <div className="text-[11px] text-[var(--text-muted-alt)] font-mono mt-0.5">
           acc: <span>{rawAccuracy}</span>%
         </div>
       </div>
@@ -52,7 +52,7 @@ export const StatsWidget: React.FC<StatsWidgetProps> = ({
         {/* Reset Button */}
         <button
           onClick={onReset}
-          className="w-10 h-10 flex items-center justify-center rounded-full text-slate-500 hover:text-[var(--accent-color)] hover:bg-white/5 active:scale-95 transition-all duration-300"
+          className="w-10 h-10 flex items-center justify-center rounded-full text-[var(--text-muted-alt)] hover:text-[var(--accent-color)] hover:bg-[var(--bg-panel)] active:scale-95 transition-all duration-300"
           title="Restart Test (Esc)"
           aria-label="Reset Typing Test"
         >
@@ -62,7 +62,7 @@ export const StatsWidget: React.FC<StatsWidgetProps> = ({
         {/* Clear History Button */}
         <button
           onClick={onClearHistory}
-          className="w-10 h-10 flex items-center justify-center rounded-full text-slate-500 hover:text-[var(--accent-color)] hover:bg-white/5 active:scale-95 transition-all duration-300"
+          className="w-10 h-10 flex items-center justify-center rounded-full text-[var(--text-muted-alt)] hover:text-[var(--accent-color)] hover:bg-[var(--bg-panel)] active:scale-95 transition-all duration-300"
           title="Clear History Graph"
           aria-label="Clear stats history"
         >

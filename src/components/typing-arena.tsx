@@ -1,6 +1,7 @@
 'use client';
 
 import React, { useRef, useEffect, useState } from 'react';
+import { Keyboard } from 'lucide-react';
 import { TypingAudioSynthesizer } from '@/lib/synth';
 
 interface TypingArenaProps {
@@ -8,6 +9,7 @@ interface TypingArenaProps {
   author?: string;
   title?: string;
   fontSize: number;
+  fontFamily?: string;
   cursorStyle: 'pipe' | 'block' | 'outline' | 'underline';
   synth: TypingAudioSynthesizer;
   gameState: 'idle' | 'running' | 'completed';
@@ -29,6 +31,7 @@ export const TypingArena: React.FC<TypingArenaProps> = ({
   author,
   title,
   fontSize,
+  fontFamily,
   cursorStyle,
   synth,
   gameState,
@@ -45,6 +48,7 @@ export const TypingArena: React.FC<TypingArenaProps> = ({
   ghostWpm = 0
 }) => {
   const [typedVal, setTypedVal] = useState('');
+  const [isFocused, setIsFocused] = useState(true);
   const containerRef = useRef<HTMLDivElement | null>(null);
   const wordsDisplayRef = useRef<HTMLDivElement | null>(null);
   const textareaRef = useRef<HTMLTextAreaElement | null>(null);
@@ -360,17 +364,17 @@ export const TypingArena: React.FC<TypingArenaProps> = ({
       <section 
         ref={containerRef}
         onClick={focusInput}
-        className="widget flex-1 flex flex-col gap-6 p-2 min-h-[320px] h-full cursor-text relative bg-transparent border-none shadow-none transition-all duration-300 w-full"
+        className={`widget flex-1 flex flex-col gap-6 p-2 min-h-[320px] h-full relative bg-transparent border-none shadow-none transition-all duration-300 w-full ${isFocused ? 'cursor-text' : 'cursor-pointer'}`}
         id="widget-typing-arena-govt"
       >
         {/* Reference Passage Block */}
         <div className="flex flex-col gap-2 w-full text-left flex-1 min-h-0">
-          <div className="text-[11px] font-bold text-slate-500 uppercase tracking-widest font-mono">
+          <div className="text-[11px] font-bold text-[var(--text-muted)] uppercase tracking-widest font-mono">
             Reference Passage (Read and Type Below)
           </div>
           <div 
-            className="w-full select-text overflow-y-auto flex-1 bg-black/35 border border-white/5 rounded-xl p-5 text-slate-300 font-mono leading-relaxed transition-all duration-300 shadow-inner scrollbar-thin"
-            style={{ fontSize: `${fontSize - 2}px` }}
+            className="w-full select-text overflow-y-auto flex-1 bg-black/35 border border-[var(--border-subtle)] rounded-xl p-5 text-[var(--text-main)] font-mono leading-relaxed transition-all duration-300 shadow-inner scrollbar-thin"
+            style={{ fontSize: `${fontSize - 2}px`, fontFamily: fontFamily || 'inherit' }}
           >
             {targetText}
           </div>
@@ -378,9 +382,9 @@ export const TypingArena: React.FC<TypingArenaProps> = ({
 
         {/* Candidate Typing Box */}
         <div className="flex flex-col gap-2 w-full text-left flex-1 min-h-0">
-          <div className="flex justify-between items-center text-[11px] font-bold text-slate-500 uppercase tracking-widest font-mono">
+          <div className="flex justify-between items-center text-[11px] font-bold text-[var(--text-muted)] uppercase tracking-widest font-mono">
             <span>Candidate Typing Area</span>
-            <span className="text-[10px] text-slate-400 font-semibold normal-case flex items-center gap-3">
+            <span className="text-[10px] text-[var(--text-muted)] font-semibold normal-case flex items-center gap-3">
               {(timeLeft !== undefined && liveWpm !== undefined) && (
                 <>
                   <span>Time: <span className="text-white">{timeLeft}s</span></span>
@@ -397,24 +401,33 @@ export const TypingArena: React.FC<TypingArenaProps> = ({
             value={typedVal}
             onChange={handleChange}
             onKeyDown={handleKeyDown}
-            className="w-full flex-1 p-4 rounded-xl border border-white/10 bg-black/40 text-slate-100 font-mono resize-none focus:outline-none focus:border-[var(--accent-color)] focus:ring-1 focus:ring-[var(--accent-color)]/30 transition-all duration-200"
-            style={{ fontSize: `${fontSize - 2}px` }}
+            className="w-full flex-1 p-4 rounded-xl border border-[var(--border-active)] bg-[var(--bg-panel)] text-slate-100 font-mono resize-none focus:outline-none focus:border-[var(--accent-color)] focus:ring-1 focus:ring-[var(--accent-color)]/30 transition-all duration-200"
+            style={{ fontSize: `${fontSize - 2}px`, fontFamily: fontFamily || 'inherit' }}
             placeholder="Start typing the passage here..."
             spellCheck="false"
             autoComplete="off"
             autoCapitalize="off"
             disabled={gameState === 'completed'}
+            onFocus={() => setIsFocused(true)}
+            onBlur={() => setIsFocused(false)}
             aria-label="Type the government exam text here"
           />
+          {!isFocused && gameState !== 'completed' && (
+            <div className="absolute inset-0 z-20 flex items-center justify-center backdrop-blur-[2px] bg-[var(--bg-panel)]/50 rounded-xl transition-all pointer-events-none">
+              <span className="flex items-center gap-2 bg-[var(--text-main)] text-[var(--bg-panel)] px-4 py-2 rounded-full text-sm font-semibold shadow-lg">
+                <Keyboard className="w-4 h-4" /> Click to focus and start typing
+              </span>
+            </div>
+          )}
         </div>
 
         {/* Passage Info Footer */}
         {author && title && (
           <footer 
-            className="flex items-center text-[12px] text-slate-500 font-sans mt-1"
+            className="flex items-center text-[12px] text-[var(--text-muted)] font-sans mt-1"
             id="typing-meta-container"
           >
-            <span className="font-semibold text-slate-400">{title}</span>
+            <span className="font-semibold text-[var(--text-muted)]">{title}</span>
             <span className="mx-2 opacity-50">&bull;</span>
             <span className="italic opacity-80">{author}</span>
           </footer>
@@ -427,7 +440,7 @@ export const TypingArena: React.FC<TypingArenaProps> = ({
     <section 
       ref={containerRef}
       onClick={focusInput}
-      className="widget flex-1 flex flex-col justify-between p-4 md:p-9 min-h-[280px] cursor-text relative bg-transparent border-none shadow-none transition-all duration-300 w-full"
+      className={`widget flex-1 flex flex-col justify-between p-4 md:p-9 min-h-[280px] relative bg-transparent border-none shadow-none transition-all duration-300 w-full ${isFocused ? 'cursor-text' : 'cursor-pointer'}`}
       id="widget-typing-arena"
     >
       <div className="relative w-full overflow-hidden flex-1">
@@ -442,8 +455,18 @@ export const TypingArena: React.FC<TypingArenaProps> = ({
           autoComplete="off"
           autoCapitalize="off"
           disabled={gameState === 'completed'}
+          onFocus={() => setIsFocused(true)}
+          onBlur={() => setIsFocused(false)}
           aria-label="Type the text here"
         />
+
+        {!isFocused && gameState !== 'completed' && (
+          <div className="absolute inset-0 z-20 flex items-center justify-center backdrop-blur-[2px] bg-[var(--bg-panel)]/50 rounded-xl transition-all pointer-events-none">
+            <span className="flex items-center gap-2 bg-[var(--text-main)] text-[var(--bg-panel)] px-4 py-2 rounded-full text-sm font-semibold shadow-lg">
+              <Keyboard className="w-4 h-4" /> Click to focus and start typing
+            </span>
+          </div>
+        )}
 
         {/* Display Container */}
         <div 
@@ -454,9 +477,9 @@ export const TypingArena: React.FC<TypingArenaProps> = ({
           {/* Caret */}
           <div 
             ref={caretRef}
-            className={`caret absolute bg-[var(--accent-color)] pointer-events-none z-10 transition-[left] duration-100 ease-out ${
+            className={`caret absolute bg-[var(--accent-color)] pointer-events-none z-10 transition-all duration-100 ease-out ${
               cursorStyle === 'pipe' ? 'pipe-cursor' : cursorStyle === 'block' ? 'block-cursor' : cursorStyle === 'outline' ? 'outline-cursor' : 'underline-cursor'
-            }`}
+            } ${!isFocused && gameState !== 'completed' ? 'opacity-0 scale-95' : 'opacity-100 scale-100'}`}
             id="typing-caret"
           />
 
@@ -490,7 +513,7 @@ export const TypingArena: React.FC<TypingArenaProps> = ({
       {/* Quote Metadata Footer */}
       {author && title && (
         <footer 
-          className="flex items-center mt-6 text-[13px] text-slate-500 font-sans"
+          className="flex items-center mt-6 text-[13px] text-[var(--text-muted)] font-sans"
           id="typing-meta-container"
         >
           <span className="font-medium">{author}</span>
