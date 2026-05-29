@@ -2,7 +2,6 @@
 
 import React, { useRef, useEffect, useState } from 'react';
 import { Keyboard } from 'lucide-react';
-import { TypingAudioSynthesizer } from '@/lib/synth';
 
 interface TypingArenaProps {
   targetText: string;
@@ -11,7 +10,6 @@ interface TypingArenaProps {
   fontSize: number;
   fontFamily?: string;
   cursorStyle: 'pipe' | 'block' | 'outline' | 'underline';
-  synth: TypingAudioSynthesizer | null;
   gameState: 'idle' | 'running' | 'completed';
   onStart: () => void;
   onComplete: () => void;
@@ -33,7 +31,6 @@ export const TypingArena: React.FC<TypingArenaProps> = ({
   fontSize,
   fontFamily,
   cursorStyle,
-  synth,
   gameState,
   onStart,
   onComplete,
@@ -221,17 +218,14 @@ export const TypingArena: React.FC<TypingArenaProps> = ({
     }
 
     if (e.key === ' ') {
-      synth?.playClick('space');
+      // Space logic goes here
     } else if (e.key === 'Backspace') {
       if (disableBackspace) {
         e.preventDefault();
-        synth?.playClick('error');
         return;
       }
-      synth?.playClick('backspace');
     } else if (e.key.length === 1 && !e.ctrlKey && !e.metaKey && !e.altKey) {
       onKeystroke(false); // Keystroke registered
-      synth?.playClick('char');
     }
   };
 
@@ -278,7 +272,6 @@ export const TypingArena: React.FC<TypingArenaProps> = ({
       }
 
       if (newTypingError) {
-        synth?.playClick('error');
         const lastCharIndex = value.length - 1;
         let missedChar: string | undefined = undefined;
         if (lastCharIndex >= 0 && lastCharIndex < targetText.length) {
@@ -330,7 +323,6 @@ export const TypingArena: React.FC<TypingArenaProps> = ({
 
     // Trigger error sound and report typo stats
     if (newTypingError) {
-      synth?.playClick('error');
       const lastCharIndex = value.length - 1;
       let missedChar: string | undefined = undefined;
       if (value.length > typedVal.length && lastCharIndex >= 0) {

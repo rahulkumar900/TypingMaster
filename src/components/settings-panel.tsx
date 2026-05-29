@@ -17,8 +17,6 @@ interface SettingsPanelProps {
   onFontSizeChange: (size: number) => void;
   testMode: 'time' | 'words' | 'quotes' | 'custom' | 'zen' | 'weak-keys' | 'govt-exam';
   onModeChange: (mode: 'time' | 'words' | 'quotes' | 'custom' | 'zen' | 'weak-keys' | 'govt-exam') => void;
-  switchProfile: 'blue' | 'brown' | 'red';
-  onSwitchChange: (profile: 'blue' | 'brown' | 'red') => void;
   customText: string;
   onCustomTextChange: (text: string) => void;
   includePunctuation: boolean;
@@ -52,8 +50,6 @@ export const SettingsPanel: React.FC<SettingsPanelProps> = ({
   onFontSizeChange,
   testMode,
   onModeChange,
-  switchProfile,
-  onSwitchChange,
   customText,
   onCustomTextChange,
   includePunctuation,
@@ -217,29 +213,6 @@ export const SettingsPanel: React.FC<SettingsPanelProps> = ({
             </div>
           )}
 
-          {/* Sound Switch Profiles selector */}
-          <div className="flex flex-col gap-3">
-            <h3 className="text-[12px] font-semibold text-[var(--text-muted-alt)] uppercase tracking-wider flex items-center gap-1">
-              <Keyboard className="w-3.5 h-3.5" />
-              Keyboard Switch Sounds
-            </h3>
-            <div className="grid grid-cols-3 gap-1 bg-[var(--bg-panel)] p-1 rounded-xl border border-[var(--border-subtle)] w-full">
-              {(['blue', 'brown', 'red'] as const).map((profile) => (
-                <button
-                  key={profile}
-                  onClick={() => onSwitchChange(profile)}
-                  className={`py-2 rounded-lg text-[12px] font-semibold transition-all cursor-pointer uppercase ${
-                    switchProfile === profile
-                      ? 'bg-[var(--accent-color)] text-black font-bold'
-                      : 'text-[var(--text-muted-alt)] hover:text-slate-50'
-                  }`}
-                  title={`${profile.toUpperCase()} Mechanical Switch profile`}
-                >
-                  {profile === 'blue' ? 'Blue' : profile === 'brown' ? 'Brown' : 'Red'}
-                </button>
-              ))}
-            </div>
-          </div>
 
           {/* Cursor Style selectors */}
           <div className="flex flex-col gap-3">

@@ -1,14 +1,14 @@
 'use client';
 
 import React, { useState, useEffect, useRef, useCallback } from 'react';
-import { List, Moon, RefreshCw, Volume2, VolumeX, LayoutGrid, AlertTriangle, TrendingUp, Sparkles, Settings, Trophy, Clock, BookOpen, Check, FileText, Keyboard, Info, Sliders, Palette, Globe } from 'lucide-react';
+import { List, Moon, RefreshCw, LayoutGrid, AlertTriangle, TrendingUp, Sparkles, Settings, Trophy, Clock, BookOpen, Check, FileText, Keyboard, Info, Sliders, Palette, Globe } from 'lucide-react';
 import { StatsWidget } from '@/components/stats-widget';
 import { SettingsPanel } from '@/components/settings-panel';
 import { StatsDashboard, TestRecord } from '@/components/stats-dashboard';
 import { TypingArena } from '@/components/typing-arena';
 import { WpmChart } from '@/components/wpm-chart';
 import { LANGUAGES } from '@/lib/languages';
-import { TypingAudioSynthesizer } from '@/lib/synth';
+
 import { useTypingConfig } from '@/hooks/use-typing-config';
 import { useTypingEngine } from '@/hooks/use-typing-engine';
 
@@ -26,8 +26,6 @@ export function TypingApp({ seoTitle, seoDescription }: TypingAppProps) {
     dimMode, setDimMode,
     cursorStyle, setCursorStyle,
     fontSize, setFontSize,
-    isSoundOn, setIsSoundOn,
-    switchProfile, setSwitchProfile,
     testMode, setTestMode,
     testTimeLimit, setTestTimeLimit,
     wordLimit, setWordLimit,
@@ -39,7 +37,6 @@ export function TypingApp({ seoTitle, seoDescription }: TypingAppProps) {
     includePunctuation, setIncludePunctuation,
     includeNumbers, setIncludeNumbers,
     showSpeedometer, setShowSpeedometer,
-    synth,
     saveConfig
   } = config;
 
@@ -60,14 +57,6 @@ export function TypingApp({ seoTitle, seoDescription }: TypingAppProps) {
   const [isSettingsOpen, setIsSettingsOpen] = useState<boolean>(false);
   const [isDashboardOpen, setIsDashboardOpen] = useState<boolean>(false);
   const [mobileConfigOpen, setMobileConfigOpen] = useState<boolean>(false);
-
-  // Handle sound status updates
-  const toggleSound = () => {
-    const nextState = !isSoundOn;
-    setIsSoundOn(nextState);
-    if (synth) synth.enabled = nextState;
-    saveConfig({ soundEnabled: nextState });
-  };
 
   // Handle dimmer theme switch updates
   const toggleDimMode = () => {
@@ -139,15 +128,7 @@ export function TypingApp({ seoTitle, seoDescription }: TypingAppProps) {
               </div>
 
               <div className="flex items-center gap-3">
-                <button 
-                  onClick={toggleSound}
-                  className={`nav-btn cursor-pointer ${isSoundOn ? 'sound-active' : ''}`} 
-                  title="Toggle mechanical key clicks"
-                >
-                  {isSoundOn ? <Volume2 className="w-5 h-5" /> : <VolumeX className="w-5 h-5" />}
-                  <span className="sound-status-dot"></span>
-                </button>
-                
+
                 <button 
                   onClick={toggleDimMode}
                   className="nav-btn cursor-pointer" 
@@ -1075,7 +1056,7 @@ export function TypingApp({ seoTitle, seoDescription }: TypingAppProps) {
                 fontSize={fontSize}
                 fontFamily={LANGUAGES.find(l => l.id === languageId)?.fonts.find(f => f.id === fontId)?.fontFamily || 'monospace'}
                 cursorStyle={cursorStyle}
-                synth={synth}
+
                 gameState={gameState}
                 onStart={startTest}
                 onComplete={completeTest}
@@ -1237,11 +1218,7 @@ export function TypingApp({ seoTitle, seoDescription }: TypingAppProps) {
           setTestMode(mode);
           saveConfig({ testMode: mode });
         }}
-        switchProfile={switchProfile}
-        onSwitchChange={(profile) => {
-          setSwitchProfile(profile);
-          saveConfig({ switchProfile: profile });
-        }}
+
         customText={customText}
         onCustomTextChange={(text) => {
           setCustomText(text);
