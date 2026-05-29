@@ -1,0 +1,503 @@
+'use client';
+
+import React, { useRef, useEffect, useState } from 'react';
+import { TypingAudioSynthesizer } from '@/lib/synth';
+
+interface TypingArenaProps {
+  targetText: string;
+  author?: string;
+  title?: string;
+  fontSize: number;
+  cursorStyle: 'pipe' | 'block' | 'outline' | 'underline';
+  synth: TypingAudioSynthesizer;
+  gameState: 'idle' | 'running' | 'completed';
+  onStart: () => void;
+  onComplete: () => void;
+  onKeystroke: (isError: boolean, missedChar?: string) => void;
+  onProgress: (correctCount: number, typedLength: number, typedValue?: string) => void;
+  resetCounter: number; // Increment triggers a reset of typing state
+  testMode?: string;
+  onLoadMoreWords?: () => void;
+  disableBackspace?: boolean;
+  timeLeft?: number;
+  liveWpm?: number;
+  ghostWpm?: number;
+}
+
+export const TypingArena: React.FC<TypingArenaProps> = ({
+  targetText,
+  author,
+  title,
+  fontSize,
+  cursorStyle,
+  synth,
+  gameState,
+  onStart,
+  onComplete,
+  onKeystroke,
+  onProgress,
+  resetCounter,
+  testMode,
+  onLoadMoreWords,
+  disableBackspace = false,
+  timeLeft,
+  liveWpm,
+  ghostWpm = 0
+}) => {
+  const [typedVal, setTypedVal] = useState('');
+  const containerRef = useRef<HTMLDivElement | null>(null);
+  const wordsDisplayRef = useRef<HTMLDivElement | null>(null);
+  const textareaRef = useRef<HTMLTextAreaElement | null>(null);
+  const caretRef = useRef<HTMLDivElement | null>(null);
+  const ghostCaretRef = useRef<HTMLDivElement | null>(null);
+  const startTimeRef = useRef<number | null>(null);
+
+  // Focus textarea
+  const focusInput = () => {
+    if (gameState !== 'completed' && textareaRef.current) {
+      textareaRef.current.focus();
+    }
+  };
+
+  // Reset typing state when resetCounter changes
+  useEffect(() => {
+    setTypedVal('');
+    startTimeRef.current = null;
+    if (textareaRef.current) {
+      textareaRef.current.value = '';
+    }
+    if (wordsDisplayRef.current) {
+      wordsDisplayRef.current.scrollTop = 0;
+      // Manually clear correct/incorrect classes without destroying DOM nodes
+      const spans = wordsDisplayRef.current.querySelectorAll('.char');
+      spans.forEach(span => {
+        span.classList.remove('correct', 'incorrect');
+      });
+      const allWords = wordsDisplayRef.current.querySelectorAll('.word');
+      allWords.forEach(w => w.classList.remove('active-word'));
+    }
+    // Re-focus
+    setTimeout(focusInput, 50);
+  }, [resetCounter]);
+
+  // Position caret whenever typed value or font size changes
+  useEffect(() => {
+    const wordsDisplay = wordsDisplayRef.current;
+    const caret = caretRef.current;
+    if (!wordsDisplay || !caret) return;
+
+    const allSpans = wordsDisplay.querySelectorAll('.char');
+    if (allSpans.length === 0) return;
+
+    if (gameState === 'completed') {
+      caret.style.display = 'none';
+      if (ghostCaretRef.current) ghostCaretRef.current.style.display = 'none';
+      return;
+    }
+
+    if (gameState === 'idle') {
+      if (ghostCaretRef.current) ghostCaretRef.current.style.display = 'none';
+      // Do not return here, we want the actual caret to be displayed and positioned!
+    }
+
+    caret.style.display = 'block';
+    const typedLen = typedVal.length;
+
+    let targetSpan = null;
+    let isAtEnd = false;
+
+    if (typedLen < allSpans.length) {
+      targetSpan = allSpans[typedLen] as HTMLElement;
+    } else {
+      targetSpan = allSpans[allSpans.length - 1] as HTMLElement;
+      isAtEnd = true;
+    }
+
+    if (targetSpan) {
+      const offsetLeft = targetSpan.offsetLeft;
+      const offsetTop = targetSpan.offsetTop;
+      const offsetWidth = targetSpan.offsetWidth;
+      const offsetHeight = targetSpan.offsetHeight;
+
+      caret.style.height = `${offsetHeight}px`;
+
+      if (cursorStyle === 'pipe') {
+        caret.style.left = `${isAtEnd ? offsetLeft + offsetWidth : offsetLeft}px`;
+        caret.style.width = '2px';
+      } else {
+        caret.style.left = `${isAtEnd ? offsetLeft + offsetWidth : offsetLeft}px`;
+        caret.style.width = `${isAtEnd ? 10 : offsetWidth}px`;
+      }
+      caret.style.top = `${offsetTop}px`;
+
+      // Auto scroll container to center the active character line vertically
+      const containerHeight = wordsDisplay.clientHeight;
+      const targetScroll = offsetTop - (containerHeight / 2) + (offsetHeight / 2);
+
+      wordsDisplay.scrollTo({
+        top: Math.max(0, targetScroll),
+        behavior: 'smooth'
+      });
+
+      // Highlight active word
+      const allWords = wordsDisplay.querySelectorAll('.word');
+      const activeWord = targetSpan.closest('.word');
+      allWords.forEach(w => w.classList.remove('active-word'));
+      if (activeWord) {
+        activeWord.classList.add('active-word');
+      }
+    }
+  }, [typedVal, fontSize, cursorStyle, gameState, resetCounter]);
+
+  // Ghost Caret positioning loop
+  useEffect(() => {
+    if (ghostWpm <= 0 || gameState !== 'running' || testMode === 'govt-exam') return;
+    
+    let animationFrameId: number;
+    
+    const updateGhost = () => {
+      if (gameState !== 'running') return;
+      const wordsDisplay = wordsDisplayRef.current;
+      const ghost = ghostCaretRef.current;
+      if (!wordsDisplay || !ghost || !startTimeRef.current) return;
+      
+      const elapsedSeconds = (Date.now() - startTimeRef.current) / 1000;
+      const charsPerSecond = (ghostWpm * 5) / 60;
+      const expectedCharIndex = Math.floor(elapsedSeconds * charsPerSecond);
+      
+      const allSpans = wordsDisplay.querySelectorAll('.char');
+      if (allSpans.length === 0) return;
+      
+      let targetSpan: HTMLElement | null = null;
+      let isAtEnd = false;
+      
+      if (expectedCharIndex < allSpans.length) {
+        targetSpan = allSpans[expectedCharIndex] as HTMLElement;
+      } else {
+        targetSpan = allSpans[allSpans.length - 1] as HTMLElement;
+        isAtEnd = true;
+      }
+      
+      if (targetSpan) {
+        const offsetLeft = targetSpan.offsetLeft;
+        const offsetTop = targetSpan.offsetTop;
+        const offsetWidth = targetSpan.offsetWidth;
+        const offsetHeight = targetSpan.offsetHeight;
+        
+        ghost.style.display = 'block';
+        ghost.style.height = `${offsetHeight}px`;
+        if (cursorStyle === 'pipe') {
+          ghost.style.left = `${isAtEnd ? offsetLeft + offsetWidth : offsetLeft}px`;
+          ghost.style.width = '2px';
+        } else {
+          ghost.style.left = `${isAtEnd ? offsetLeft + offsetWidth : offsetLeft}px`;
+          ghost.style.width = `${isAtEnd ? 10 : offsetWidth}px`;
+        }
+        ghost.style.top = `${offsetTop}px`;
+      }
+      
+      animationFrameId = requestAnimationFrame(updateGhost);
+    };
+    
+    animationFrameId = requestAnimationFrame(updateGhost);
+    
+    return () => {
+      cancelAnimationFrame(animationFrameId);
+    };
+  }, [gameState, ghostWpm, cursorStyle, testMode]);
+
+  // Key Down audio & count trigger
+  const handleKeyDown = (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
+    if (gameState === 'completed') return;
+
+    if (e.key === 'Enter' && e.ctrlKey && (testMode === 'zen' || testMode === 'govt-exam')) {
+      e.preventDefault();
+      onComplete();
+      return;
+    }
+
+    if (e.key === ' ') {
+      synth.playClick('space');
+    } else if (e.key === 'Backspace') {
+      if (disableBackspace) {
+        e.preventDefault();
+        synth.playClick('error');
+        return;
+      }
+      synth.playClick('backspace');
+    } else if (e.key.length === 1 && !e.ctrlKey && !e.metaKey && !e.altKey) {
+      onKeystroke(false); // Keystroke registered
+      synth.playClick('char');
+    }
+  };
+
+  // Change input text handler
+  const handleChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
+    if (gameState === 'completed') return;
+
+    const value = e.target.value;
+    
+    // Only accept up to targetText length for modes other than govt-exam
+    if (testMode !== 'govt-exam' && value.length > targetText.length) return;
+
+    if (gameState === 'idle' && value.length > 0) {
+      startTimeRef.current = Date.now();
+      onStart();
+    }
+
+    setTypedVal(value);
+
+    // If Zen mode, and value.length is near the end, load more words
+    if (testMode === 'zen' && onLoadMoreWords && targetText.length - value.length < 50) {
+      onLoadMoreWords();
+    }
+
+    if (testMode === 'govt-exam') {
+      // Government exam mode live progress calculations
+      let correctCount = 0;
+      let newTypingError = false;
+      const len = Math.min(value.length, targetText.length);
+
+      for (let i = 0; i < len; i++) {
+        if (value[i] === targetText[i]) {
+          correctCount++;
+        } else {
+          // Flag error on the latest character to avoid buzzing repeatedly on already incorrect text
+          if (i === value.length - 1 && value.length > typedVal.length) {
+            newTypingError = true;
+          }
+        }
+      }
+
+      if (value.length > targetText.length && value.length > typedVal.length) {
+        newTypingError = true;
+      }
+
+      if (newTypingError) {
+        synth.playClick('error');
+        const lastCharIndex = value.length - 1;
+        let missedChar: string | undefined = undefined;
+        if (lastCharIndex >= 0 && lastCharIndex < targetText.length) {
+          missedChar = targetText[lastCharIndex];
+        }
+        onKeystroke(true, missedChar);
+      }
+
+      // Send metrics upwards
+      onProgress(correctCount, value.length, value);
+      
+      // Do NOT trigger onComplete() automatically. Candidates submit manually.
+      return;
+    }
+
+    // Calculate correctness progress
+    const wordsDisplay = wordsDisplayRef.current;
+    if (!wordsDisplay) return;
+
+    const allSpans = wordsDisplay.querySelectorAll('.char');
+    let correctCount = 0;
+    let newTypingError = false;
+
+    // Check correct inputs
+    for (let i = 0; i < allSpans.length; i++) {
+      const span = allSpans[i] as HTMLElement;
+      
+      if (i < value.length) {
+        const spanText = span.textContent === '\u00a0' ? ' ' : span.textContent;
+        const typedChar = value[i];
+        
+        if (typedChar === spanText) {
+          if (!span.classList.contains('correct')) {
+            span.classList.remove('incorrect');
+            span.classList.add('correct');
+          }
+          correctCount++;
+        } else {
+          if (!span.classList.contains('incorrect')) {
+            span.classList.remove('correct');
+            span.classList.add('incorrect');
+            newTypingError = true;
+          }
+        }
+      } else {
+        span.classList.remove('correct', 'incorrect');
+      }
+    }
+
+    // Trigger error sound and report typo stats
+    if (newTypingError) {
+      synth.playClick('error');
+      const lastCharIndex = value.length - 1;
+      let missedChar: string | undefined = undefined;
+      if (value.length > typedVal.length && lastCharIndex >= 0) {
+        const typedChar = value[lastCharIndex];
+        const span = allSpans[lastCharIndex] as HTMLElement;
+        const targetChar = span?.classList.contains('space-char') ? ' ' : span?.textContent || '';
+        if (typedChar !== targetChar) {
+          missedChar = targetChar;
+        }
+      }
+      onKeystroke(true, missedChar); // error keystroke
+    }
+
+    // Send metrics upwards
+    onProgress(correctCount, value.length, value);
+
+    // Complete condition
+    if (value.length >= targetText.length) {
+      onComplete();
+    }
+  };
+
+  // Split targetText into words
+  const words = targetText.split(' ');
+
+  if (testMode === 'govt-exam') {
+    const typedWordCount = typedVal.trim().split(/\s+/).filter(Boolean).length;
+    const targetWordCount = targetText.trim().split(/\s+/).filter(Boolean).length;
+
+    return (
+      <section 
+        ref={containerRef}
+        onClick={focusInput}
+        className="widget flex-1 flex flex-col gap-6 p-2 min-h-[320px] h-full cursor-text relative bg-transparent border-none shadow-none transition-all duration-300 w-full"
+        id="widget-typing-arena-govt"
+      >
+        {/* Reference Passage Block */}
+        <div className="flex flex-col gap-2 w-full text-left flex-1 min-h-0">
+          <div className="text-[11px] font-bold text-slate-500 uppercase tracking-widest font-mono">
+            Reference Passage (Read and Type Below)
+          </div>
+          <div 
+            className="w-full select-text overflow-y-auto flex-1 bg-black/35 border border-white/5 rounded-xl p-5 text-slate-300 font-mono leading-relaxed transition-all duration-300 shadow-inner scrollbar-thin"
+            style={{ fontSize: `${fontSize - 2}px` }}
+          >
+            {targetText}
+          </div>
+        </div>
+
+        {/* Candidate Typing Box */}
+        <div className="flex flex-col gap-2 w-full text-left flex-1 min-h-0">
+          <div className="flex justify-between items-center text-[11px] font-bold text-slate-500 uppercase tracking-widest font-mono">
+            <span>Candidate Typing Area</span>
+            <span className="text-[10px] text-slate-400 font-semibold normal-case flex items-center gap-3">
+              {(timeLeft !== undefined && liveWpm !== undefined) && (
+                <>
+                  <span>Time: <span className="text-white">{timeLeft}s</span></span>
+                  <span>WPM: <span className="text-white">{liveWpm}</span></span>
+                  <span className="text-white/20">|</span>
+                </>
+              )}
+              <span>Keystrokes: <span className="text-[var(--accent-color)]">{typedVal.length}</span> / {targetText.length}</span>
+              <span>Words: <span className="text-[var(--accent-color)]">{typedWordCount}</span> / {targetWordCount}</span>
+            </span>
+          </div>
+          <textarea
+            ref={textareaRef}
+            value={typedVal}
+            onChange={handleChange}
+            onKeyDown={handleKeyDown}
+            className="w-full flex-1 p-4 rounded-xl border border-white/10 bg-black/40 text-slate-100 font-mono resize-none focus:outline-none focus:border-[var(--accent-color)] focus:ring-1 focus:ring-[var(--accent-color)]/30 transition-all duration-200"
+            style={{ fontSize: `${fontSize - 2}px` }}
+            placeholder="Start typing the passage here..."
+            spellCheck="false"
+            autoComplete="off"
+            autoCapitalize="off"
+            disabled={gameState === 'completed'}
+            aria-label="Type the government exam text here"
+          />
+        </div>
+
+        {/* Passage Info Footer */}
+        {author && title && (
+          <footer 
+            className="flex items-center text-[12px] text-slate-500 font-sans mt-1"
+            id="typing-meta-container"
+          >
+            <span className="font-semibold text-slate-400">{title}</span>
+            <span className="mx-2 opacity-50">&bull;</span>
+            <span className="italic opacity-80">{author}</span>
+          </footer>
+        )}
+      </section>
+    );
+  }
+
+  return (
+    <section 
+      ref={containerRef}
+      onClick={focusInput}
+      className="widget flex-1 flex flex-col justify-between p-4 md:p-9 min-h-[280px] cursor-text relative bg-transparent border-none shadow-none transition-all duration-300 w-full"
+      id="widget-typing-arena"
+    >
+      <div className="relative w-full overflow-hidden flex-1">
+        {/* Focusable textarea */}
+        <textarea
+          ref={textareaRef}
+          value={typedVal}
+          onChange={handleChange}
+          onKeyDown={handleKeyDown}
+          className="absolute opacity-0 z-[-10] pointer-events-none"
+          spellCheck="false"
+          autoComplete="off"
+          autoCapitalize="off"
+          disabled={gameState === 'completed'}
+          aria-label="Type the text here"
+        />
+
+        {/* Display Container */}
+        <div 
+          ref={wordsDisplayRef}
+          className="words-container relative flex flex-wrap align-start text-[var(--text-muted)] font-mono select-none overflow-hidden leading-[1.8] tracking-[0.02em] max-h-[170px]"
+          style={{ fontSize: `${fontSize}px` }}
+        >
+          {/* Caret */}
+          <div 
+            ref={caretRef}
+            className={`caret absolute bg-[var(--accent-color)] pointer-events-none z-10 transition-[left] duration-100 ease-out ${
+              cursorStyle === 'pipe' ? 'pipe-cursor' : cursorStyle === 'block' ? 'block-cursor' : cursorStyle === 'outline' ? 'outline-cursor' : 'underline-cursor'
+            }`}
+            id="typing-caret"
+          />
+
+          {/* Ghost Caret */}
+          {ghostWpm > 0 && testMode !== 'govt-exam' && (
+            <div 
+              ref={ghostCaretRef}
+              className={`caret absolute bg-slate-400 opacity-30 pointer-events-none z-5 transition-[left,top] duration-200 ease-linear ${
+                cursorStyle === 'pipe' ? 'pipe-cursor' : cursorStyle === 'block' ? 'block-cursor' : cursorStyle === 'outline' ? 'outline-cursor' : 'underline-cursor'
+              }`}
+              id="ghost-typing-caret"
+            />
+          )}
+
+          {words.map((wordText, wordIdx) => (
+            <span key={wordIdx} className="word inline-block mb-2" id={`word-${wordIdx}`}>
+              {wordText.split('').map((char, charIdx) => (
+                <span key={charIdx} className="char transition-colors duration-100">
+                  {char}
+                </span>
+              ))}
+              {/* Space span at end of word */}
+              {wordIdx < words.length - 1 && (
+                <span className="char space-char">&nbsp;</span>
+              )}
+            </span>
+          ))}
+        </div>
+      </div>
+
+      {/* Quote Metadata Footer */}
+      {author && title && (
+        <footer 
+          className="flex items-center mt-6 text-[13px] text-slate-500 font-sans"
+          id="typing-meta-container"
+        >
+          <span className="font-medium">{author}</span>
+          <span className="mx-2 opacity-50">&bull;</span>
+          <span className="italic opacity-80">{title}</span>
+        </footer>
+      )}
+    </section>
+  );
+};

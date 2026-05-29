@@ -1,26 +1,286 @@
 @import "tailwindcss";
-
-:root {
-  --background: #ffffff;
-  --foreground: #171717;
-}
+@import "tw-animate-css";
+@import "shadcn/tailwind.css";
 
 @theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
+  --font-sans: var(--font-outfit), sans-serif;
+  --font-mono: var(--font-space-mono), monospace;
+  
+  /* Core layout defaults */
+  --color-background: var(--bg-body);
+  --color-foreground: #f8fafc;
 }
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
-  }
+:root {
+  /* Color Tokens - Default Obsidian Midnight Theme */
+  --accent-color: #6366f1; /* Electric Indigo */
+  --accent-rgb: 99, 102, 241;
+  
+  --bg-body-default: #0b0f19; /* Obsidian midnight */
+  --bg-body-dim: #05070c;     /* Pitch black */
+  --bg-body: var(--bg-body-default);
+
+  --bg-widget: rgba(255, 255, 255, 0.03); /* Glassmorphic panel background */
+  --border-widget: rgba(255, 255, 255, 0.06);
+  --border-widget-hover: rgba(255, 255, 255, 0.12);
+  
+  /* Text Colors */
+  --text-main: #f8fafc;       /* Crisp white */
+  --text-muted: #475569;      /* Slate grey */
+  
+  /* Caret */
+  --caret-width: 2.5px;
+
+  /* Adaptive Outer Text Colors */
+  --text-body-main: rgba(248, 250, 252, 0.9);
+  --text-body-muted: rgba(71, 85, 105, 0.85);
+  --text-timer: rgba(99, 102, 241, 0.9);
+}
+
+/* ================= Curated High-End Dark Themes ================= */
+.theme-blue {
+  /* Default: Obsidian Midnight + Electric Indigo */
+  --accent-color: #6366f1;
+  --accent-rgb: 99, 102, 241;
+  --bg-body-default: #0f111a;
+  --bg-widget: rgba(255, 255, 255, 0.02);
+  --text-main: #e2e8f0;
+  --text-muted: #475569;
+}
+
+.theme-pink {
+  /* Cyber Cyberpunk - Magenta/Pink on Deep Plum */
+  --accent-color: #ec4899;
+  --accent-rgb: 236, 72, 153;
+  --bg-body-default: #120917;
+  --bg-widget: rgba(236, 72, 153, 0.02);
+  --text-main: #fbcfe8;
+  --text-muted: #64748b;
+}
+
+.theme-green {
+  /* Midnight Emerald - Neon Mint on Forest Obsidian */
+  --accent-color: #10b981;
+  --accent-rgb: 16, 185, 129;
+  --bg-body-default: #08120e;
+  --bg-widget: rgba(16, 185, 129, 0.02);
+  --text-main: #d1fae5;
+  --text-muted: #64748b;
+}
+
+.theme-grey {
+  /* Vintage Carbon - The classic Monkeytype Charcoal / Yellow */
+  --accent-color: #e2b714;
+  --accent-rgb: 226, 183, 20;
+  --bg-body-default: #282a2d;
+  --bg-widget: #242629;
+  --text-main: #d1d0c5;
+  --text-muted: #646669;
+}
+
+.theme-white {
+  /* Dark Minimalist - Pure White on Obsidian Black */
+  --accent-color: #f8fafc;
+  --accent-rgb: 248, 250, 252;
+  --bg-body-default: #0c0c0c;
+  --bg-widget: rgba(255, 255, 255, 0.04);
+  --text-main: #e2e8f0;
+  --text-muted: #525252;
+}
+
+/* Dim Mode Override */
+body.dim-mode {
+  --bg-body: var(--bg-body-dim) !important;
+  background-image: radial-gradient(circle at 50% 50%, rgba(var(--accent-rgb), 0.04) 0%, transparent 60%);
 }
 
 body {
-  background: var(--background);
-  color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+  background-color: var(--bg-body) !important;
+}
+
+/* ================= 3D Floating Keycaps ================= */
+.floating-keycap {
+  position: absolute;
+  width: 60px;
+  height: 60px;
+  background: linear-gradient(135deg, #1e2030 0%, #0d0e15 100%);
+  border-radius: 12px;
+  border: 1px solid rgba(255, 255, 255, 0.05);
+  box-shadow: 
+      0 4px 0 #07080a, 
+      0 10px 20px rgba(0, 0, 0, 0.4),
+      inset 0 1px 0 rgba(255, 255, 255, 0.1);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  font-family: var(--font-space-mono), monospace;
+  font-weight: bold;
+  font-size: 20px;
+  color: var(--accent-color);
+  text-shadow: 0 0 10px rgba(var(--accent-rgb), 0.5);
+  user-select: none;
+  z-index: 1;
+  pointer-events: none;
+  transition: color 0.5s ease, text-shadow 0.5s ease, border-color 0.5s ease;
+}
+
+/* Keycap Specific Positioning & Animations */
+.cap-r {
+  top: 60%;
+  left: 8%;
+  transform: rotate(-15deg) skew(-5deg);
+  animation: bob 6s ease-in-out infinite alternate;
+}
+
+.cap-u {
+  top: 20%;
+  right: 8%;
+  transform: rotate(20deg) skew(5deg);
+  animation: bob 8s ease-in-out infinite alternate-reverse;
+}
+
+.cap-x {
+  bottom: 8%;
+  right: 20%;
+  transform: rotate(-10deg) skew(-2deg);
+  animation: bob 7s ease-in-out infinite alternate;
+}
+
+.cap-esc {
+  bottom: 12%;
+  left: 22%;
+  width: 75px;
+  height: 50px;
+  font-size: 14px;
+  transform: rotate(12deg) skew(8deg);
+  animation: bob 9s ease-in-out infinite alternate-reverse;
+}
+
+@keyframes bob {
+  0% {
+      transform: translateY(0) rotate(-10deg);
+  }
+  100% {
+      transform: translateY(-20px) rotate(10deg);
+  }
+}
+
+/* ================= Caret styling ================= */
+.caret {
+  position: absolute;
+  pointer-events: none;
+  z-index: 5;
+}
+
+.caret.pipe-cursor {
+  background-color: var(--accent-color) !important;
+  width: 2px !important;
+  animation: caretBlink 1s infinite alternate;
+}
+
+.caret.block-cursor {
+  background-color: var(--accent-color) !important;
+  opacity: 0.25;
+  animation: caretBlink 1s infinite alternate;
+}
+
+.caret.outline-cursor {
+  background-color: transparent !important;
+  border: 1.5px solid var(--accent-color);
+  opacity: 0.6;
+}
+
+.caret.underline-cursor {
+  height: 3px !important;
+  margin-top: 1.1em;
+  background-color: var(--accent-color) !important;
+  animation: caretBlink 1s infinite alternate;
+}
+
+@keyframes caretBlink {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0; }
+}
+
+/* Character formatting */
+.char {
+  color: var(--text-muted) !important;
+  transition: color 0.1s ease, opacity 0.1s ease;
+  opacity: 0.4;
+}
+
+.char.correct {
+  color: var(--text-main) !important;
+  opacity: 0.8;
+}
+
+.active-word .char {
+  opacity: 1;
+}
+
+.char.incorrect {
+  color: var(--text-muted) !important;
+  opacity: 0.8;
+  border-bottom: 2px solid rgba(202, 71, 84, 0.7);
+}
+
+.char.active {
+  opacity: 1;
+}
+
+/* Hide background elements on tablet/mobile */
+@media (max-width: 1024px) {
+  .floating-keycap {
+      display: none !important;
+  }
+}
+
+/* ================= Custom Transitions ================= */
+@keyframes fadeIn {
+  from { opacity: 0; transform: scale(0.985); }
+  to { opacity: 1; transform: scale(1); }
+}
+
+.animate-fadeIn {
+  animation: fadeIn 0.35s cubic-bezier(0.4, 0, 0.2, 1) forwards;
+}
+
+/* ================= Scrollbar Hiding ================= */
+.words-container {
+  -ms-overflow-style: none;  /* IE and Edge */
+  scrollbar-width: none;  /* Firefox */
+}
+.words-container::-webkit-scrollbar {
+  display: none; /* Chrome, Safari, Opera */
+}
+
+/* ================= App Card Container ================= */
+.app-card-container {
+  background-color: transparent !important;
+  border: none !important;
+  box-shadow: none !important;
+  transition: background-color 0.5s ease;
+}
+
+body.dim-mode .app-card-container {
+  background-color: transparent !important;
+  border: none !important;
+  box-shadow: none !important;
+}
+
+/* ================= Borderless Widget Class overrides ================= */
+.widget {
+  background-color: transparent !important;
+  border: none !important;
+  box-shadow: none !important;
+}
+
+/* ================= Slide In Drawer ================= */
+@keyframes slideIn {
+  from { transform: translateX(100%); }
+  to { transform: translateX(0); }
+}
+
+.animate-slideIn {
+  animation: slideIn 0.3s cubic-bezier(0.16, 1, 0.3, 1) forwards;
 }
