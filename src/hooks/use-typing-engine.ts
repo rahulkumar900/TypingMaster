@@ -110,7 +110,7 @@ export function useTypingEngine(config: any) {
         sourceWords = filtered.length > 10 ? filtered : baseWords;
       }
 
-      const generated = [];
+      const generated: string[] = [];
       for (let i = 0; i < limit; i++) {
         if (config.includeNumbers && Math.random() < 0.15) {
           const types = ['year', 'small', 'decimal', 'large', 'percent', 'range'];
@@ -404,7 +404,7 @@ export function useTypingEngine(config: any) {
   };
 
   const loadMoreZenWords = useCallback(() => {
-    const generated = [];
+    const generated: string[] = [];
     const activeLang = LANGUAGES.find(l => l.id === config.languageId) || LANGUAGES[0];
     const baseWords = activeLang.words && activeLang.words.length > 0 ? activeLang.words : LANGUAGES[0].words;
     for (let i = 0; i < 50; i++) {
