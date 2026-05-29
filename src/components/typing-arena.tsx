@@ -11,7 +11,7 @@ interface TypingArenaProps {
   fontSize: number;
   fontFamily?: string;
   cursorStyle: 'pipe' | 'block' | 'outline' | 'underline';
-  synth: TypingAudioSynthesizer;
+  synth: TypingAudioSynthesizer | null;
   gameState: 'idle' | 'running' | 'completed';
   onStart: () => void;
   onComplete: () => void;
@@ -221,17 +221,17 @@ export const TypingArena: React.FC<TypingArenaProps> = ({
     }
 
     if (e.key === ' ') {
-      synth.playClick('space');
+      synth?.playClick('space');
     } else if (e.key === 'Backspace') {
       if (disableBackspace) {
         e.preventDefault();
-        synth.playClick('error');
+        synth?.playClick('error');
         return;
       }
-      synth.playClick('backspace');
+      synth?.playClick('backspace');
     } else if (e.key.length === 1 && !e.ctrlKey && !e.metaKey && !e.altKey) {
       onKeystroke(false); // Keystroke registered
-      synth.playClick('char');
+      synth?.playClick('char');
     }
   };
 
@@ -278,7 +278,7 @@ export const TypingArena: React.FC<TypingArenaProps> = ({
       }
 
       if (newTypingError) {
-        synth.playClick('error');
+        synth?.playClick('error');
         const lastCharIndex = value.length - 1;
         let missedChar: string | undefined = undefined;
         if (lastCharIndex >= 0 && lastCharIndex < targetText.length) {
@@ -330,7 +330,7 @@ export const TypingArena: React.FC<TypingArenaProps> = ({
 
     // Trigger error sound and report typo stats
     if (newTypingError) {
-      synth.playClick('error');
+      synth?.playClick('error');
       const lastCharIndex = value.length - 1;
       let missedChar: string | undefined = undefined;
       if (value.length > typedVal.length && lastCharIndex >= 0) {

@@ -65,7 +65,7 @@ export function TypingApp({ seoTitle, seoDescription }: TypingAppProps) {
   const toggleSound = () => {
     const nextState = !isSoundOn;
     setIsSoundOn(nextState);
-    synth.enabled = nextState;
+    if (synth) synth.enabled = nextState;
     saveConfig({ soundEnabled: nextState });
   };
 
