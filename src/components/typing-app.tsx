@@ -767,7 +767,9 @@ export function TypingApp({ seoTitle, seoDescription }: TypingAppProps) {
             {/* Header control row (fades out when typing) */}
             <header 
               className={`flex items-center justify-between w-full transition-opacity duration-500 mb-6 md:mb-10 ${
-                gameState === 'running' ? 'opacity-0 pointer-events-none' : 'opacity-100'
+                gameState === 'running' 
+                  ? (testMode === 'govt-exam' ? 'hidden' : 'opacity-0 pointer-events-none') 
+                  : 'opacity-100'
               }`} 
               id="focused-header"
             >
@@ -861,7 +863,9 @@ export function TypingApp({ seoTitle, seoDescription }: TypingAppProps) {
             {/* Horizontal Monkeytype-style Config Bar centered above the typing box */}
             <div 
               className={`flex flex-col items-center justify-center w-full transition-opacity duration-500 mb-6 md:mb-8 ${
-                gameState === 'running' ? 'opacity-0 pointer-events-none' : 'opacity-100'
+                gameState === 'running' 
+                  ? (testMode === 'govt-exam' ? 'hidden' : 'opacity-0 pointer-events-none') 
+                  : 'opacity-100'
               }`} 
               id="monkeytype-config-bar"
             >
@@ -1134,7 +1138,9 @@ export function TypingApp({ seoTitle, seoDescription }: TypingAppProps) {
         {/* Footer matching Monkeytype style */}
         <footer 
           className={`flex items-center justify-between mt-8 pt-5 text-[11.5px] text-[var(--text-muted)] font-mono select-none w-full transition-opacity duration-500 ${
-            gameState === 'running' ? 'opacity-0 pointer-events-none' : 'opacity-100'
+            gameState === 'running' 
+              ? (testMode === 'govt-exam' ? 'hidden' : 'opacity-0 pointer-events-none') 
+              : 'opacity-100'
           }`}
         >
           <div className="flex items-center gap-4">
@@ -1167,7 +1173,9 @@ export function TypingApp({ seoTitle, seoDescription }: TypingAppProps) {
 
       {/* ================= SEO & INFORMATIONAL FOOTER (Below the Fold) ================= */}
       <section className={`w-full max-w-[1080px] mx-auto mt-16 mb-12 text-left font-sans transition-opacity duration-500 ${
-        gameState === 'running' ? 'opacity-0 pointer-events-none' : 'opacity-100'
+        gameState === 'running' 
+          ? (testMode === 'govt-exam' ? 'hidden' : 'opacity-0 pointer-events-none') 
+          : 'opacity-100'
       }`}>
         <div className="grid grid-cols-1 md:grid-cols-2 gap-12 p-8 rounded-2xl bg-[var(--bg-panel)] border border-[var(--border-subtle)]">
           <article>
