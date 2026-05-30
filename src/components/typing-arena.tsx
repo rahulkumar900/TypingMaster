@@ -324,7 +324,7 @@ export const TypingArena: React.FC<TypingArenaProps> = ({
     const allSpans = wordsDisplay.querySelectorAll('.char');
     let correctCount = 0;
     let newTypingError = false;
-    const valueChars = Array.from(value);
+
 
     // Check correct inputs
     for (let i = 0; i < allSpans.length; i++) {
