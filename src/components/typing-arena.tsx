@@ -55,6 +55,7 @@ export const TypingArena: React.FC<TypingArenaProps> = ({
   const caretRef = useRef<HTMLDivElement | null>(null);
   const ghostCaretRef = useRef<HTMLDivElement | null>(null);
   const startTimeRef = useRef<number | null>(null);
+  const isComposingRef = useRef(false); // tracks IME composition state
 
   // Focus textarea
   const focusInput = () => {
@@ -213,6 +214,7 @@ export const TypingArena: React.FC<TypingArenaProps> = ({
   // Key Down audio & count trigger
   const handleKeyDown = (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
     if (gameState === 'completed') return;
+    if (isComposingRef.current) return; // ignore keypresses during IME composition
 
     if (e.key === 'Enter' && e.ctrlKey && (testMode === 'zen' || testMode === 'govt-exam')) {
       e.preventDefault();
@@ -230,19 +232,44 @@ export const TypingArena: React.FC<TypingArenaProps> = ({
       }
       synth?.playClick('backspace');
     } else if (e.key.length === 1 && !e.ctrlKey && !e.metaKey && !e.altKey) {
-      onKeystroke(false); // Keystroke registered
+      onKeystroke(false);
       synth?.playClick('char');
     }
+  };
+
+  // IME composition handlers (for Hindi, Japanese, Chinese, etc.)
+  const handleCompositionStart = () => {
+    isComposingRef.current = true;
+  };
+
+  const handleCompositionEnd = (e: React.CompositionEvent<HTMLTextAreaElement>) => {
+    isComposingRef.current = false;
+    // Fire a synthetic change after composition ends so the game registers the input
+    if (gameState === 'completed') return;
+    const value = (e.target as HTMLTextAreaElement).value;
+    if (gameState === 'idle' && value.length > 0) {
+      startTimeRef.current = Date.now();
+      onStart();
+    }
+    // Trigger handleChange manually with the current textarea value
+    const syntheticEvent = { target: { value } } as React.ChangeEvent<HTMLTextAreaElement>;
+    handleChange(syntheticEvent);
+    onKeystroke(false);
+    synth?.playClick('char');
   };
 
   // Change input text handler
   const handleChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
     if (gameState === 'completed') return;
+    if (isComposingRef.current) return; // wait for composition to finish
 
     const value = e.target.value;
+    // Use Array.from for proper Unicode grapheme segmentation (handles Hindi, etc.)
+    const valueChars = Array.from(value);
+    const targetChars = Array.from(targetText);
     
     // Only accept up to targetText length for modes other than govt-exam
-    if (testMode !== 'govt-exam' && value.length > targetText.length) return;
+    if (testMode !== 'govt-exam' && valueChars.length > targetChars.length) return;
 
     if (gameState === 'idle' && value.length > 0) {
       startTimeRef.current = Date.now();
@@ -252,7 +279,7 @@ export const TypingArena: React.FC<TypingArenaProps> = ({
     setTypedVal(value);
 
     // If Zen mode, and value.length is near the end, load more words
-    if (testMode === 'zen' && onLoadMoreWords && targetText.length - value.length < 50) {
+    if (testMode === 'zen' && onLoadMoreWords && targetChars.length - valueChars.length < 50) {
       onLoadMoreWords();
     }
 
@@ -260,55 +287,52 @@ export const TypingArena: React.FC<TypingArenaProps> = ({
       // Government exam mode live progress calculations
       let correctCount = 0;
       let newTypingError = false;
-      const len = Math.min(value.length, targetText.length);
+      const len = Math.min(valueChars.length, targetChars.length);
 
       for (let i = 0; i < len; i++) {
-        if (value[i] === targetText[i]) {
+        if (valueChars[i] === targetChars[i]) {
           correctCount++;
         } else {
-          // Flag error on the latest character to avoid buzzing repeatedly on already incorrect text
-          if (i === value.length - 1 && value.length > typedVal.length) {
+          if (i === valueChars.length - 1 && valueChars.length > Array.from(typedVal).length) {
             newTypingError = true;
           }
         }
       }
 
-      if (value.length > targetText.length && value.length > typedVal.length) {
+      if (valueChars.length > targetChars.length && valueChars.length > Array.from(typedVal).length) {
         newTypingError = true;
       }
 
       if (newTypingError) {
         synth?.playClick('error');
-        const lastCharIndex = value.length - 1;
+        const lastCharIndex = valueChars.length - 1;
         let missedChar: string | undefined = undefined;
-        if (lastCharIndex >= 0 && lastCharIndex < targetText.length) {
-          missedChar = targetText[lastCharIndex];
+        if (lastCharIndex >= 0 && lastCharIndex < targetChars.length) {
+          missedChar = targetChars[lastCharIndex];
         }
         onKeystroke(true, missedChar);
       }
 
-      // Send metrics upwards
-      onProgress(correctCount, value.length, value);
-      
-      // Do NOT trigger onComplete() automatically. Candidates submit manually.
+      onProgress(correctCount, valueChars.length, value);
       return;
     }
 
-    // Calculate correctness progress
+    // Calculate correctness progress using proper Unicode segmentation
     const wordsDisplay = wordsDisplayRef.current;
     if (!wordsDisplay) return;
 
     const allSpans = wordsDisplay.querySelectorAll('.char');
     let correctCount = 0;
     let newTypingError = false;
+    const valueChars = Array.from(value);
 
     // Check correct inputs
     for (let i = 0; i < allSpans.length; i++) {
       const span = allSpans[i] as HTMLElement;
       
-      if (i < value.length) {
+      if (i < valueChars.length) {
         const spanText = span.textContent === '\u00a0' ? ' ' : span.textContent;
-        const typedChar = value[i];
+        const typedChar = valueChars[i];
         
         if (typedChar === spanText) {
           if (!span.classList.contains('correct')) {
@@ -331,24 +355,24 @@ export const TypingArena: React.FC<TypingArenaProps> = ({
     // Trigger error sound and report typo stats
     if (newTypingError) {
       synth?.playClick('error');
-      const lastCharIndex = value.length - 1;
+      const lastCharIndex = valueChars.length - 1;
       let missedChar: string | undefined = undefined;
-      if (value.length > typedVal.length && lastCharIndex >= 0) {
-        const typedChar = value[lastCharIndex];
+      if (valueChars.length > Array.from(typedVal).length && lastCharIndex >= 0) {
+        const typedChar = valueChars[lastCharIndex];
         const span = allSpans[lastCharIndex] as HTMLElement;
         const targetChar = span?.classList.contains('space-char') ? ' ' : span?.textContent || '';
         if (typedChar !== targetChar) {
           missedChar = targetChar;
         }
       }
-      onKeystroke(true, missedChar); // error keystroke
+      onKeystroke(true, missedChar);
     }
 
     // Send metrics upwards
-    onProgress(correctCount, value.length, value);
+    onProgress(correctCount, valueChars.length, value);
 
-    // Complete condition
-    if (value.length >= targetText.length) {
+    // Complete condition — use char-level length
+    if (valueChars.length >= Array.from(targetText).length) {
       onComplete();
     }
   };
@@ -401,6 +425,8 @@ export const TypingArena: React.FC<TypingArenaProps> = ({
             value={typedVal}
             onChange={handleChange}
             onKeyDown={handleKeyDown}
+            onCompositionStart={handleCompositionStart}
+            onCompositionEnd={handleCompositionEnd}
             className="w-full flex-1 p-4 rounded-xl border border-[var(--border-active)] bg-[var(--bg-panel)] text-slate-100 font-mono resize-none focus:outline-none focus:border-[var(--accent-color)] focus:ring-1 focus:ring-[var(--accent-color)]/30 transition-all duration-200"
             style={{ fontSize: `${fontSize - 2}px`, fontFamily: fontFamily || 'inherit' }}
             placeholder="Start typing the passage here..."
@@ -450,6 +476,8 @@ export const TypingArena: React.FC<TypingArenaProps> = ({
           value={typedVal}
           onChange={handleChange}
           onKeyDown={handleKeyDown}
+          onCompositionStart={handleCompositionStart}
+          onCompositionEnd={handleCompositionEnd}
           className="absolute opacity-0 z-[-10] pointer-events-none"
           spellCheck="false"
           autoComplete="off"
@@ -496,7 +524,7 @@ export const TypingArena: React.FC<TypingArenaProps> = ({
 
           {words.map((wordText, wordIdx) => (
             <span key={wordIdx} className="word inline-block mb-2" id={`word-${wordIdx}`}>
-              {wordText.split('').map((char, charIdx) => (
+              {Array.from(wordText).map((char, charIdx) => (
                 <span key={charIdx} className="char transition-colors duration-100">
                   {char}
                 </span>
