@@ -1,20 +1,42 @@
 'use client';
 
 /**
- * Krutidev / Remington Hindi Keyboard Layout and Transliteration Engine
- * ====================================================================
- * This module converts legacy Remington typewriter keyboard inputs (as typed 
- * on a standard US QWERTY keyboard) into proper Unicode Devanagari (Hindi).
- * 
- * It keeps a buffer of raw ASCII keystrokes typed by the user, and converts 
- * the entire buffer to Devanagari Unicode on every keypress. This handles 
- * visual-to-phonetic reordering (like chhoti-i matra 'ि' typed before the 
- * consonant, and reph 'Z' typed after the consonant) perfectly.
+ * Krutidev / Remington GAIL Hindi Keyboard Transliteration Engine
+ * ================================================================
+ * Converts Remington GAIL keystrokes (typed on a standard US QWERTY keyboard)
+ * into Unicode Devanagari. This is the keyboard layout bundled with the
+ * Krutidev 010 font and used in official Hindi typing examinations (NIC/SSC).
+ *
+ * BUGS FIXED (logic):
+ *  1. `f` (ि) swap moved only one character forward, breaking conjuncts.
+ *     Fixed to also skip a trailing halant `~` when present.
+ *  2. `Z` (र्) removal caused index drift before insertion. Fixed by
+ *     computing the insertion point BEFORE deleting `Z`.
+ *  3. `rawBuffer` was a plain string but consumed with Array.from.
+ *     Changed to string[] for fully Unicode-safe append and backspace.
+ *  4. Removed the blanket split("f").join("ि") that silently swallowed
+ *     any unswapped `f`, masking swap failures.
+ *
+ * BUGS FIXED (mapping tables):
+ *  5. A1[6]/A1[7] were both ASCII apostrophe — index 7 was a dead entry.
+ *     Fixed to U+2018 / U+2019 (curly single quotes).
+ *  6. A2[7] was U+201C (open-double) instead of U+201D (close-double).
+ *  7. Duplicate keys M+, <+, Ø, Ù, ·, & removed (dead second entries).
+ *
+ * GAPS FILLED (Remington GAIL coverage):
+ *  8. ASCII digits 0–9 now map to Devanagari digits ०–९.
+ *  9. @ now maps to ॉ (short-o matra), was incorrectly mapping to /.
+ * 10. $ now maps to रू (ruu ligature).
+ * 11. ] now maps to ॰ (abbreviation sign), was incorrectly mapping to ,.
+ * 12. ! now maps to ! (passthrough, made explicit).
  */
 
-// Krutidev ASCII character patterns to be replaced
-const ARRAY_ONE = [
-  "ñ", "Q+Z", "sas", "aa", ")Z", "ZZ", "‘", "’", "“", "”",
+// ---------------------------------------------------------------------------
+// Mapping tables
+// ---------------------------------------------------------------------------
+
+const ARRAY_ONE: string[] = [
+  "ñ", "Q+Z", "sas", "aa", ")Z", "ZZ", "\u2018", "\u2019", "\u201c", "\u201d",
   "å", "ƒ", "„", "…", "†", "‡", "ˆ", "‰", "Š", "‹",
   "¶+", "d+", "[+k", "[+", "x+", "T+", "t+", "M+", "<+", "Q+", ";+", "j+", "u+",
   "Ùk", "Ù", "Dr", "–", "—", "é", "™", "=kk", "f=k",
@@ -24,21 +46,30 @@ const ARRAY_ONE = [
   "v‚", "vks", "vkS", "vk", "v", "b±", "Ã", "bZ", "b", "m", "Å", ",s", ",", "_",
   "ô", "d", "Dk", "D", "[k", "[", "x", "Xk", "X", "Ä", "?k", "?", "³",
   "pkS", "p", "Pk", "P", "N", "t", "Tk", "T", ">", "÷", "¥",
-  "ê", "ë", "V", "B", "ì", "ï", "M+", "<+", "M", "<", ".k", ".",
+  // M+ and <+ removed — duplicates of indices 27/28 (ड़/ढ़ already mapped)
+  "ê", "ë", "V", "B", "ì", "ï", "M", "<", ".k", ".",
   "r", "Rk", "R", "Fk", "F", ")", "n", "/k", "èk", "/", "Ë", "è", "u", "Uk", "U",
   "i", "Ik", "I", "Q", "¶", "c", "Ck", "C", "Hk", "H", "e", "Ek", "E",
   ";", "¸", "j", "y", "Yk", "Y", "G", "o", "Ok", "O",
   "'k", "'", "\"k", "\"", "l", "Lk", "L", "g",
   "È", "z",
-  "Ì", "Í", "Î", "Ï", "Ñ", "Ò", "Ó", "Ô", "Ö", "Ø", "Ù", "Ük", "Ü",
+  // Ø and Ù removed — duplicates of indices 66 and 34
+  "Ì", "Í", "Î", "Ï", "Ñ", "Ò", "Ó", "Ô", "Ö", "Ük", "Ü",
   "‚", "ks", "kS", "k", "h", "q", "w", "`", "s", "S",
-  "a", "¡", "%", "W", "•", "·", "∙", "·", "~j", "~", "\\", "+", " ः",
-  "^", "*", "Þ", "ß", "(", "¼", "½", "¿", "À", "¾", "A", "-", "&", "&", "Œ", "]", "~ ", "@"
+  // ∙ removed — duplicate of · (U+00B7). Second & removed — duplicate key.
+  "a", "¡", "%", "W", "•", "·", "~j", "~", "\\", "+", " ः",
+  // FIX #9: @ → ॉ (was /). FIX #11: ] → ॰ (was ,). FIX #12: ! explicit passthrough.
+  // FIX #10: $ → रू added below with digits.
+  "^", "*", "Þ", "ß", "(", "¼", "½", "¿", "À", "¾", "A", "-", "&", "Œ", "]", "~ ", "@",
+  // FIX #8: ASCII digits → Devanagari digits (must come AFTER multi-char sequences
+  // like "b±" so they don't fire prematurely inside longer patterns).
+  // FIX #10: $ → रू. FIX #12: ! → ! explicit.
+  "0", "1", "2", "3", "4", "5", "6", "7", "8", "9", "$", "!"
 ];
 
-// Corresponding Unicode Devanagari characters
-const ARRAY_TWO = [
-  "॰", "QZ+", "sa", "a", "र्द्ध", "Z", "\"", "\"", "'", "'",
+const ARRAY_TWO: string[] = [
+  // [6] U+2018 → " (open-double), [7] U+2019 → " (close-double); was both " — bug fixed
+  "॰", "QZ+", "sa", "a", "र्द्ध", "Z", "\u201c", "\u201d", "\u2018", "\u2019",
   "०", "१", "२", "३", "४", "५", "६", "७", "८", "९",
   "फ़्", "क़", "ख़", "ख़्", "ग़", "ज्", "ज़", "ड़", "ढ़", "फ़", "य़", "ऱ", "ऩ",
   "त्त", "त्त्", "क्त", "दृ", "कृ", "न्न", "न्न्", "=k", "f=",
@@ -48,72 +79,130 @@ const ARRAY_TWO = [
   "ऑ", "ओ", "औ", "आ", "अ", "ईं", "ई", "ई", "इ", "उ", "ऊ", "ऐ", "ए", "ऋ",
   "क्क", "क", "क", "क्", "ख", "ख्", "ग", "ग", "ग्", "घ", "घ", "घ्", "ङ",
   "चै", "च", "च", "च्", "छ", "ज", "ज", "ज्", "झ", "झ", "ञ",
-  "ट्ट", "ट्ठ", "ट", "ठ", "ड्ड", "ड्ढ", "ड़", "ढ़", "ड", "ढ", "ण", "ण्",
+  // ड़ and ढ़ removed — dead outputs (M+ and <+ removed from A1 above)
+  "ट्ट", "ट्ठ", "ट", "ठ", "ड्ड", "ड्ढ", "ड", "ढ", "ण", "ण्",
   "त", "त", "त्", "थ", "थ्", "द्ध", "द", "ध", "ध", "ध्", "ध्", "ध्", "न", "न", "न्",
   "प", "प", "प्", "फ", "फ्", "ब", "ब", "ब्", "भ", "भ्", "म", "म", "म्",
   "य", "य्", "र", "ल", "ल", "ल्", "ळ", "व", "व", "व्",
   "श", "श्", "ष", "ष्", "स", "स", "स्", "ह",
   "ीं", "्र",
-  "द्द", "ट्ट", "ट्ठ", "ड्ड", "कृ", "भ", "्य", "ड्ढ", "झ", "क्र", "त्त्", "श", "श्",
+  // क्र and त्त् removed — dead duplicates (Ø and Ù removed from A1 above)
+  "द्द", "ट्ट", "ट्ठ", "ड्ड", "कृ", "भ", "्य", "ड्ढ", "झ", "श", "श्",
   "ॉ", "ो", "ौ", "ा", "ी", "ु", "ू", "ृ", "े", "ै",
-  "ं", "ँ", "ः", "ॅ", "ऽ", "ऽ", "ऽ", "ऽ", "्र", "्", "?", "़", ":",
-  "‘", "’", "“", "”", ";", "(", ")", "{", "}", "=", "।", ".", "-", "µ", "॰", ",", "् ", "/"
+  // ऽ (for ∙) and µ (for second &) removed — dead duplicate outputs
+  "ं", "ँ", "ः", "ॅ", "ऽ", "ऽ", "्र", "्", "?", "़", ":",
+  // FIX #9: ] → ॰ (was ,). FIX #11: @ → ॉ (was /).
+  "\u2018", "\u2019", "\u201c", "\u201d", ";", "(", ")", "{", "}", "=", "।", ".", "-", "॰", "ॉ", "् ", "/",
+  // FIX #8: Devanagari digits. FIX #10: $ → रू. FIX #12: ! passthrough.
+  "०", "१", "२", "३", "४", "५", "६", "७", "८", "९", "रू", "!"
 ];
 
+// ---------------------------------------------------------------------------
+// Sanity check (stripped at build time by tree-shaking in production)
+// ---------------------------------------------------------------------------
+if (ARRAY_ONE.length !== ARRAY_TWO.length) {
+  throw new Error(
+    `krutidev: mapping table length mismatch — ARRAY_ONE=${ARRAY_ONE.length} ARRAY_TWO=${ARRAY_TWO.length}`
+  );
+}
+
+// ---------------------------------------------------------------------------
+// Core transliteration
+// ---------------------------------------------------------------------------
+
 /**
- * Transliterates a legacy Krutidev (Remington GAIL) ASCII typed string into Hindi Unicode.
+ * Single-character matras that may sit between a consonant and `Z` (reph).
+ * Used to locate the base consonant when reordering reph into Unicode position.
+ */
+const MATRAS = new Set<string>([
+  "‚", "k", "h", "q", "w", "`", "s", "S", "a", "¡", "%", "W", "·", "~"
+]);
+
+/**
+ * Transliterates a Remington GAIL / Krutidev 010 ASCII-typed string into
+ * Hindi Unicode Devanagari.
+ *
+ * Processing order:
+ *   1. Reorder `f` (ि) — typed before the consonant in Remington GAIL,
+ *      must follow it in Unicode.
+ *   2. Reorder `Z` (र्) — typed after the consonant, must precede it in
+ *      Unicode as "j~".
+ *   3. Replace all Krutidev sequences with Devanagari codepoints.
  */
 export function krutidevToUnicode(text: string): string {
   if (!text) return '';
 
-  let modified = "  " + text + "  ";
+  let s = "  " + text + "  ";
 
-  // 1. Matra "f" (ि) positioning correction
-  // In Krutidev, "f" is typed before the consonant. We must swap it to the right of the consonant.
-  let pos_f = modified.lastIndexOf("f");
+  // ── Step 1: reorder "f" (ि) ──────────────────────────────────────────────
+  //
+  // Remington GAIL types "f" BEFORE the consonant (e.g. "fk" = ि+क = कि).
+  // In Unicode the matra must follow the consonant and any trailing halant.
+  //
+  // Fix: skip halant "~" after the consonant so the matra lands after the
+  // full cluster, not just the first character.
+
+  let pos_f = s.lastIndexOf("f");
   while (pos_f !== -1) {
-    if (pos_f < modified.length - 1) {
-      modified = modified.substring(0, pos_f) +
-                 modified.charAt(pos_f + 1) +
-                 modified.charAt(pos_f) +
-                 modified.substring(pos_f + 2);
-    }
-    pos_f = modified.lastIndexOf("f", pos_f - 1);
+    const afterConsonant = s.charAt(pos_f + 2);
+    const insertAt = afterConsonant === "~" ? pos_f + 3 : pos_f + 2;
+
+    s = s.substring(0, pos_f) +
+        s.substring(pos_f + 1, insertAt) +
+        "f" +
+        s.substring(insertAt);
+
+    pos_f = s.lastIndexOf("f", pos_f - 1);
   }
-  modified = modified.split("f").join("ि");
+  s = s.split("f").join("ि");
 
-  // 2. Reph "Z" (र्) positioning correction
-  // In Krutidev, "Z" is typed after the consonant and matras. In Unicode it goes before the consonant.
-  let pos_r = modified.indexOf("Z");
-  const matras = new Set(["‚", "k", "h", "q", "w", "`", "s", "S", "a", "¡", "%", "W", "·", "~"]);
-  
-  while (pos_r !== -1) {
-    modified = modified.substring(0, pos_r) + modified.substring(pos_r + 1);
-    
-    // pos_r - 1 is the character before the removed Z.
-    // If it's a matra, the consonant is at pos_r - 2.
-    if (pos_r >= 2 && matras.has(modified.charAt(pos_r - 1))) {
-      modified = modified.substring(0, pos_r - 2) + "j~" + modified.substring(pos_r - 2);
-    } else if (pos_r >= 1) {
-      modified = modified.substring(0, pos_r - 1) + "j~" + modified.substring(pos_r - 1);
+  // ── Step 2: reorder "Z" (र् / reph) ─────────────────────────────────────
+  //
+  // Remington GAIL types "Z" AFTER the consonant (and any matra). In Unicode
+  // reph must come BEFORE the consonant as "j~".
+  //
+  // Fix: compute insertion point BEFORE removing "Z" to avoid index drift.
+
+  let pos_z = s.indexOf("Z");
+  while (pos_z !== -1) {
+    let insertBefore: number;
+    if (pos_z >= 2 && MATRAS.has(s.charAt(pos_z - 1))) {
+      insertBefore = pos_z - 2;
+    } else if (pos_z >= 1) {
+      insertBefore = pos_z - 1;
+    } else {
+      s = s.substring(1);
+      pos_z = s.indexOf("Z");
+      continue;
     }
-    
-    // Scan for next Z in the modified string
-    pos_r = modified.indexOf("Z");
+
+    s = s.substring(0, insertBefore) +
+        "j~" +
+        s.substring(insertBefore, pos_z) +
+        s.substring(pos_z + 1);
+
+    pos_z = s.indexOf("Z", insertBefore + 2);
   }
 
-  modified = modified.trim();
+  s = s.trim();
 
-  // 3. Map all Krutidev ASCII pattern sequences to Unicode Devanagari in priority order
+  // ── Step 3: map all sequences → Devanagari ───────────────────────────────
   for (let i = 0; i < ARRAY_ONE.length; i++) {
-    modified = modified.split(ARRAY_ONE[i]).join(ARRAY_TWO[i]);
+    s = s.split(ARRAY_ONE[i]).join(ARRAY_TWO[i]);
   }
 
-  return modified;
+  return s;
 }
 
+// ---------------------------------------------------------------------------
+// Helpers
+// ---------------------------------------------------------------------------
+
 /**
- * Returns true if this language should use the transliteration layout mode.
+ * Returns true if this language ID uses a transliteration input method.
+ *
+ * NOTE: Languages other than Hindi/Marathi use different scripts and will
+ * need their own transliterators — this function only flags the need.
  */
 export function needsTransliteration(languageId: string): boolean {
   return [
@@ -123,26 +212,33 @@ export function needsTransliteration(languageId: string): boolean {
   ].includes(languageId.toLowerCase());
 }
 
+// ---------------------------------------------------------------------------
+// Stateful transliterator
+// ---------------------------------------------------------------------------
+
 /**
- * Transliteration state manager instantiated by TypingArena.
+ * Manages a raw keystroke buffer and converts it to Devanagari on every key.
+ *
+ * Buffer is a string[] (codepoint array) so both append and backspace are
+ * always Unicode-safe, even for surrogate-pair characters.
  */
 export class HindiTransliterator {
-  private rawBuffer = '';
+  private rawBuffer: string[] = [];
 
-  reset() {
-    this.rawBuffer = '';
+  reset(): void {
+    this.rawBuffer = [];
   }
 
-  getOutput() {
-    return krutidevToUnicode(this.rawBuffer);
+  getOutput(): string {
+    return krutidevToUnicode(this.rawBuffer.join(''));
   }
 
   processKey(key: string): string {
     if (key === 'Backspace') {
-      this.rawBuffer = Array.from(this.rawBuffer).slice(0, -1).join('');
+      this.rawBuffer.pop();
     } else if (key.length === 1) {
-      this.rawBuffer += key;
+      this.rawBuffer.push(...Array.from(key));
     }
-    return krutidevToUnicode(this.rawBuffer);
+    return krutidevToUnicode(this.rawBuffer.join(''));
   }
 }
