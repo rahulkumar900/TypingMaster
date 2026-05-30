@@ -1,284 +1,148 @@
 'use client';
 
 /**
- * Hindi Phonetic Transliteration Engine
- * Converts Latin phonetic input to Devanagari Unicode in real-time.
- *
- * Scheme: ITRANS-inspired (commonly used in Indian typing tools)
- * Examples:
- *   "bharat" → "भारत"
- *   "namaste" → "नमस्ते"
- *   "hindi" → "हिंदी"
+ * Krutidev / Remington Hindi Keyboard Layout and Transliteration Engine
+ * ====================================================================
+ * This module converts legacy Remington typewriter keyboard inputs (as typed 
+ * on a standard US QWERTY keyboard) into proper Unicode Devanagari (Hindi).
+ * 
+ * It keeps a buffer of raw ASCII keystrokes typed by the user, and converts 
+ * the entire buffer to Devanagari Unicode on every keypress. This handles 
+ * visual-to-phonetic reordering (like chhoti-i matra 'ि' typed before the 
+ * consonant, and reph 'Z' typed after the consonant) perfectly.
  */
 
-// -----------------------------------------------------------------------
-// Mapping tables — longer sequences MUST come before shorter ones
-// -----------------------------------------------------------------------
-
-type ConsonantEntry = { latin: string; dev: string };
-type VowelEntry = { latin: string; standalone: string; matra: string };
-
-const CONSONANTS: ConsonantEntry[] = [
-  // Clusters
-  { latin: 'ksh', dev: 'क्ष' }, { latin: 'gya', dev: 'ज्ञ' },
-  { latin: 'dny', dev: 'ज्ञ' }, { latin: 'tr', dev: 'त्र' },
-  // Aspirated + others (2-char)
-  { latin: 'kh', dev: 'ख' }, { latin: 'gh', dev: 'घ' }, { latin: 'ng', dev: 'ङ' },
-  { latin: 'Ch', dev: 'छ' }, { latin: 'ch', dev: 'च' }, { latin: 'jh', dev: 'झ' }, { latin: 'ny', dev: 'ञ' },
-  { latin: 'Th', dev: 'ठ' }, { latin: 'Dh', dev: 'ढ' },
-  { latin: 'th', dev: 'थ' }, { latin: 'dh', dev: 'ध' },
-  { latin: 'ph', dev: 'फ' }, { latin: 'bh', dev: 'भ' },
-  { latin: 'sh', dev: 'श' }, { latin: 'Sh', dev: 'ष' },
-  // Simple consonants
-  { latin: 'k', dev: 'क' }, { latin: 'g', dev: 'ग' },
-  { latin: 'c', dev: 'च' }, { latin: 'j', dev: 'ज' },
-  { latin: 'T', dev: 'ट' }, { latin: 'D', dev: 'ड' }, { latin: 'N', dev: 'ण' },
-  { latin: 't', dev: 'त' }, { latin: 'd', dev: 'द' }, { latin: 'n', dev: 'न' },
-  { latin: 'p', dev: 'प' }, { latin: 'f', dev: 'फ' }, { latin: 'b', dev: 'ब' }, { latin: 'm', dev: 'म' },
-  { latin: 'y', dev: 'य' }, { latin: 'r', dev: 'र' }, { latin: 'l', dev: 'ल' },
-  { latin: 'v', dev: 'व' }, { latin: 'w', dev: 'व' },
-  { latin: 's', dev: 'स' }, { latin: 'h', dev: 'ह' },
+// Krutidev ASCII character patterns to be replaced
+const ARRAY_ONE = [
+  "ñ", "Q+Z", "sas", "aa", ")Z", "ZZ", "‘", "’", "“", "”",
+  "å", "ƒ", "„", "…", "†", "‡", "ˆ", "‰", "Š", "‹",
+  "¶+", "d+", "[+k", "[+", "x+", "T+", "t+", "M+", "<+", "Q+", ";+", "j+", "u+",
+  "Ùk", "Ù", "Dr", "–", "—", "é", "™", "=kk", "f=k",
+  "à", "á", "â", "ã", "ºz", "º", "í", "{k", "{", "=", "«",
+  "Nî", "Vî", "Bî", "Mî", "<î", "|", "K", "}",
+  "J", "Vª", "Mª", "<ªª", "Nª", "Ø", "Ý", "nzZ", "æ", "ç", "Á", "xz", "#", ":",
+  "v‚", "vks", "vkS", "vk", "v", "b±", "Ã", "bZ", "b", "m", "Å", ",s", ",", "_",
+  "ô", "d", "Dk", "D", "[k", "[", "x", "Xk", "X", "Ä", "?k", "?", "³",
+  "pkS", "p", "Pk", "P", "N", "t", "Tk", "T", ">", "÷", "¥",
+  "ê", "ë", "V", "B", "ì", "ï", "M+", "<+", "M", "<", ".k", ".",
+  "r", "Rk", "R", "Fk", "F", ")", "n", "/k", "èk", "/", "Ë", "è", "u", "Uk", "U",
+  "i", "Ik", "I", "Q", "¶", "c", "Ck", "C", "Hk", "H", "e", "Ek", "E",
+  ";", "¸", "j", "y", "Yk", "Y", "G", "o", "Ok", "O",
+  "'k", "'", "\"k", "\"", "l", "Lk", "L", "g",
+  "È", "z",
+  "Ì", "Í", "Î", "Ï", "Ñ", "Ò", "Ó", "Ô", "Ö", "Ø", "Ù", "Ük", "Ü",
+  "‚", "ks", "kS", "k", "h", "q", "w", "`", "s", "S",
+  "a", "¡", "%", "W", "•", "·", "∙", "·", "~j", "~", "\\", "+", " ः",
+  "^", "*", "Þ", "ß", "(", "¼", "½", "¿", "À", "¾", "A", "-", "&", "&", "Œ", "]", "~ ", "@"
 ];
 
-const VOWELS: VowelEntry[] = [
-  // Multi-char vowels first
-  { latin: 'aa', standalone: 'आ', matra: 'ा' },
-  { latin: 'ii', standalone: 'ई', matra: 'ी' },
-  { latin: 'uu', standalone: 'ऊ', matra: 'ू' },
-  { latin: 'ai', standalone: 'ऐ', matra: 'ै' },
-  { latin: 'au', standalone: 'औ', matra: 'ौ' },
-  // Single-char vowels
-  { latin: 'a',  standalone: 'अ', matra: '' },   // inherent — no matra
-  { latin: 'i',  standalone: 'इ', matra: 'ि' },
-  { latin: 'u',  standalone: 'उ', matra: 'ु' },
-  { latin: 'e',  standalone: 'ए', matra: 'े' },
-  { latin: 'o',  standalone: 'ओ', matra: 'ो' },
+// Corresponding Unicode Devanagari characters
+const ARRAY_TWO = [
+  "॰", "QZ+", "sa", "a", "र्द्ध", "Z", "\"", "\"", "'", "'",
+  "०", "१", "२", "३", "४", "५", "६", "७", "८", "९",
+  "फ़्", "क़", "ख़", "ख़्", "ग़", "ज्", "ज़", "ड़", "ढ़", "फ़", "य़", "ऱ", "ऩ",
+  "त्त", "त्त्", "क्त", "दृ", "कृ", "न्न", "न्न्", "=k", "f=",
+  "ह्न", "ह्य", "हृ", "ह्म", "ह्र", "ह्", "द्द", "क्ष", "क्ष्", "त्र", "त्र्",
+  "छ्य", "ट्य", "ठ्य", "ड्य", "ढ्य", "द्य", "ज्ञ", "द्व",
+  "श्र", "ट्र", "ड्र", "ढ्र", "छ्र", "क्र", "फ्र", "र्द्र", "द्र", "प्र", "प्र", "ग्र", "रु", "रू",
+  "ऑ", "ओ", "औ", "आ", "अ", "ईं", "ई", "ई", "इ", "उ", "ऊ", "ऐ", "ए", "ऋ",
+  "क्क", "क", "क", "क्", "ख", "ख्", "ग", "ग", "ग्", "घ", "घ", "घ्", "ङ",
+  "चै", "च", "च", "च्", "छ", "ज", "ज", "ज्", "झ", "झ", "ञ",
+  "ट्ट", "ट्ठ", "ट", "ठ", "ड्ड", "ड्ढ", "ड़", "ढ़", "ड", "ढ", "ण", "ण्",
+  "त", "त", "त्", "थ", "थ्", "द्ध", "द", "ध", "ध", "ध्", "ध्", "ध्", "न", "न", "न्",
+  "प", "प", "प्", "फ", "फ्", "ब", "ब", "ब्", "भ", "भ्", "म", "म", "म्",
+  "य", "य्", "र", "ल", "ल", "ल्", "ळ", "व", "व", "व्",
+  "श", "श्", "ष", "ष्", "स", "स", "स्", "ह",
+  "ीं", "्र",
+  "द्द", "ट्ट", "ट्ठ", "ड्ड", "कृ", "भ", "्य", "ड्ढ", "झ", "क्र", "त्त्", "श", "श्",
+  "ॉ", "ो", "ौ", "ा", "ी", "ु", "ू", "ृ", "े", "ै",
+  "ं", "ँ", "ः", "ॅ", "ऽ", "ऽ", "ऽ", "ऽ", "्र", "्", "?", "़", ":",
+  "‘", "’", "“", "”", ";", "(", ")", "{", "}", "=", "।", ".", "-", "µ", "॰", ",", "् ", "/"
 ];
 
-// Special characters
-const HALANT = '्';           // Virama — kills inherent vowel between consonants
-const ANUSVARA = 'ं';        // Nasalisation (M or ~)
-const VISARGA = 'ः';         // Aspiration (H)
-const NUKTA = '़';            // Nukta dot
+/**
+ * Transliterates a legacy Krutidev (Remington GAIL) ASCII typed string into Hindi Unicode.
+ */
+export function krutidevToUnicode(text: string): string {
+  if (!text) return '';
 
-// Devanagari code point ranges
-const DEV_CONSONANT_RE = /[\u0915-\u0939\u0958-\u095F]/; // क–ह + nukta forms
-const DEV_ANY_RE = /[\u0900-\u097F]/;
+  let modified = "  " + text + "  ";
 
-// Check if a character is a Devanagari consonant (ends with inherent 'a')
-function isDevConsonant(ch: string): boolean {
-  return DEV_CONSONANT_RE.test(ch);
-}
+  // 1. Matra "f" (ि) positioning correction
+  // In Krutidev, "f" is typed before the consonant. We must swap it to the right of the consonant.
+  let pos_f = modified.lastIndexOf("f");
+  while (pos_f !== -1) {
+    if (pos_f < modified.length - 1) {
+      modified = modified.substring(0, pos_f) +
+                 modified.charAt(pos_f + 1) +
+                 modified.charAt(pos_f) +
+                 modified.substring(pos_f + 2);
+    }
+    pos_f = modified.lastIndexOf("f", pos_f - 1);
+  }
+  modified = modified.split("f").join("ि");
 
-// -----------------------------------------------------------------------
-// Core transliteration engine
-// -----------------------------------------------------------------------
-
-export class HindiTransliterator {
-  private buffer = '';       // Unconverted Latin buffer
-  private result = '';       // Fully converted Devanagari output
-
-  reset() {
-    this.buffer = '';
-    this.result = '';
+  // 2. Reph "Z" (र्) positioning correction
+  // In Krutidev, "Z" is typed after the consonant and matras. In Unicode it goes before the consonant.
+  let pos_r = modified.indexOf("Z");
+  const matras = new Set(["‚", "k", "h", "q", "w", "`", "s", "S", "a", "¡", "%", "W", "·", "~"]);
+  
+  while (pos_r !== -1) {
+    modified = modified.substring(0, pos_r) + modified.substring(pos_r + 1);
+    
+    // pos_r - 1 is the character before the removed Z.
+    // If it's a matra, the consonant is at pos_r - 2.
+    if (pos_r >= 2 && matras.has(modified.charAt(pos_r - 1))) {
+      modified = modified.substring(0, pos_r - 2) + "j~" + modified.substring(pos_r - 2);
+    } else if (pos_r >= 1) {
+      modified = modified.substring(0, pos_r - 1) + "j~" + modified.substring(pos_r - 1);
+    }
+    
+    // Scan for next Z in the modified string
+    pos_r = modified.indexOf("Z");
   }
 
-  getOutput(): string {
-    return this.result + this.bufferToDevanagari(this.buffer);
+  modified = modified.trim();
+
+  // 3. Map all Krutidev ASCII pattern sequences to Unicode Devanagari in priority order
+  for (let i = 0; i < ARRAY_ONE.length; i++) {
+    modified = modified.split(ARRAY_ONE[i]).join(ARRAY_TWO[i]);
   }
 
-  /**
-   * Process a single input character.
-   * Returns the updated full output string.
-   */
-  processKey(key: string): string {
-    // Handle backspace
-    if (key === 'Backspace') {
-      this.handleBackspace();
-      return this.getOutput();
-    }
-
-    // Non-alphabetic / punctuation — flush buffer and append directly
-    if (!/[a-zA-Z~]/.test(key)) {
-      this.flush();
-      this.result += key;
-      return this.getOutput();
-    }
-
-    // Special: M = anusvara, H = visarga
-    if (key === 'M') {
-      this.flush();
-      this.result += ANUSVARA;
-      return this.getOutput();
-    }
-    if (key === 'H') {
-      this.flush();
-      this.result += VISARGA;
-      return this.getOutput();
-    }
-
-    this.buffer += key;
-
-    // Try to greedily convert the buffer
-    this.tryConvertBuffer();
-
-    return this.getOutput();
-  }
-
-  private tryConvertBuffer() {
-    let buf = this.buffer;
-    let converted = '';
-    let prevWasConsonant = this.resultEndsWithConsonant();
-
-    while (buf.length > 0) {
-      // 1. Try vowel match
-      const vowelMatch = this.matchVowel(buf);
-      if (vowelMatch) {
-        if (prevWasConsonant) {
-          // Remove implicit halant from previous result if present
-          if (converted === '' && this.result.endsWith(HALANT)) {
-            this.result = this.result.slice(0, -HALANT.length);
-          } else if (converted.endsWith(HALANT)) {
-            converted = converted.slice(0, -HALANT.length);
-          }
-          converted += vowelMatch.matra; // matra after consonant
-        } else {
-          converted += vowelMatch.standalone; // standalone vowel
-        }
-        buf = buf.slice(vowelMatch.latin.length);
-        prevWasConsonant = false;
-        continue;
-      }
-
-      // 2. Try consonant match
-      const consMatch = this.matchConsonant(buf);
-      if (consMatch) {
-        if (prevWasConsonant) {
-          // Add halant to join consonants (conjunct)
-          converted += HALANT;
-        }
-        converted += consMatch.dev;
-        buf = buf.slice(consMatch.latin.length);
-        prevWasConsonant = true;
-        continue;
-      }
-
-      // 3. No match yet — could be a partial sequence; keep remaining in buffer
-      break;
-    }
-
-    if (converted) {
-      this.result += converted;
-      this.buffer = buf;
-    }
-  }
-
-  private flush() {
-    // Force-convert remaining buffer
-    const remaining = this.bufferToDevanagari(this.buffer);
-    this.result += remaining;
-    this.buffer = '';
-  }
-
-  private bufferToDevanagari(buf: string): string {
-    if (!buf) return '';
-    let out = '';
-    let prevWasConsonant = this.resultEndsWithConsonant();
-
-    while (buf.length > 0) {
-      const vowelMatch = this.matchVowel(buf);
-      if (vowelMatch) {
-        if (prevWasConsonant) {
-          if (out.endsWith(HALANT)) out = out.slice(0, -HALANT.length);
-          out += vowelMatch.matra;
-        } else {
-          out += vowelMatch.standalone;
-        }
-        buf = buf.slice(vowelMatch.latin.length);
-        prevWasConsonant = false;
-        continue;
-      }
-
-      const consMatch = this.matchConsonant(buf);
-      if (consMatch) {
-        if (prevWasConsonant) out += HALANT;
-        out += consMatch.dev;
-        buf = buf.slice(consMatch.latin.length);
-        prevWasConsonant = true;
-        continue;
-      }
-
-      // Unrecognized character — pass through
-      out += buf[0];
-      buf = buf.slice(1);
-      prevWasConsonant = false;
-    }
-
-    return out;
-  }
-
-  private resultEndsWithConsonant(): boolean {
-    const fullResult = this.result;
-    if (!fullResult) return false;
-    const lastChar = fullResult[fullResult.length - 1];
-    return isDevConsonant(lastChar);
-  }
-
-  private matchVowel(buf: string): VowelEntry | null {
-    for (const v of VOWELS) {
-      if (buf.startsWith(v.latin)) {
-        // Ensure it's not actually the start of a longer vowel
-        const nextIdx = v.latin.length;
-        const nextChar = buf[nextIdx] || '';
-        // e.g. 'a' should not match if 'aa' is coming
-        if (v.latin === 'a' && nextChar === 'a') continue;
-        if (v.latin === 'a' && nextChar === 'i') continue; // 'ai'
-        if (v.latin === 'a' && nextChar === 'u') continue; // 'au'
-        if (v.latin === 'i' && nextChar === 'i') continue; // 'ii'
-        if (v.latin === 'u' && nextChar === 'u') continue; // 'uu'
-        if (v.latin === 'a' && nextChar === 'a') continue;
-        return v;
-      }
-    }
-    return null;
-  }
-
-  private matchConsonant(buf: string): ConsonantEntry | null {
-    for (const c of CONSONANTS) {
-      if (buf.startsWith(c.latin)) return c;
-    }
-    return null;
-  }
-
-  private handleBackspace() {
-    if (this.buffer.length > 0) {
-      this.buffer = this.buffer.slice(0, -1);
-    } else if (this.result.length > 0) {
-      // Remove last Unicode character (handles multi-byte Devanagari)
-      this.result = Array.from(this.result).slice(0, -1).join('');
-    }
-  }
+  return modified;
 }
 
 /**
- * Convert a full Latin phonetic string to Devanagari.
- * Useful for one-shot conversion (not interactive).
- */
-export function transliterateHindi(latin: string): string {
-  const engine = new HindiTransliterator();
-  for (const char of latin) {
-    engine.processKey(char);
-  }
-  return engine.getOutput();
-}
-
-/**
- * Returns true if the language requires phonetic transliteration in the browser.
- * (i.e. does not use a standard Latin keyboard natively)
+ * Returns true if this language should use the transliteration layout mode.
  */
 export function needsTransliteration(languageId: string): boolean {
   return [
     'hindi', 'marathi', 'gujarati', 'punjabi', 'bengali',
-    'odia', 'assamese', 'manipuri', 'kannada', 'telugu', 'tamil', 'malayalam'
-  ].includes(languageId);
+    'odia', 'assamese', 'manipuri', 'kannada', 'telugu',
+    'tamil', 'malayalam', 'urdu',
+  ].includes(languageId.toLowerCase());
+}
+
+/**
+ * Transliteration state manager instantiated by TypingArena.
+ */
+export class HindiTransliterator {
+  private rawBuffer = '';
+
+  reset() {
+    this.rawBuffer = '';
+  }
+
+  getOutput() {
+    return krutidevToUnicode(this.rawBuffer);
+  }
+
+  processKey(key: string): string {
+    if (key === 'Backspace') {
+      this.rawBuffer = Array.from(this.rawBuffer).slice(0, -1).join('');
+    } else if (key.length === 1) {
+      this.rawBuffer += key;
+    }
+    return krutidevToUnicode(this.rawBuffer);
+  }
 }
