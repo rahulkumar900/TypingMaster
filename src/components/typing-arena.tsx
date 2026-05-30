@@ -578,7 +578,7 @@ export const TypingArena: React.FC<TypingArenaProps> = ({
         <div 
           ref={wordsDisplayRef}
           className="words-container relative flex flex-wrap align-start text-[var(--text-muted)] font-mono select-none overflow-hidden leading-[1.8] tracking-[0.02em]"
-          style={{ fontSize: `${fontSize}px`, height: '5.4em' }}
+          style={{ fontSize: `${fontSize}px`, height: '6.3em' }}
         >
           {/* Caret */}
           <div 
