@@ -237,14 +237,36 @@ export const TypingArena: React.FC<TypingArenaProps> = ({
     }
   };
 
-  // IME composition handlers (for Hindi, Japanese, Chinese, etc.)
+  // IME composition handlers — per W3C IME API spec (https://www.w3.org/TR/ime-api/)
+  // During composition, element.value already contains the intermediate composed text.
+  // We must NOT block onChange during this time, and should also handle compositionupdate
+  // to catch live updates as the user selects candidates.
   const handleCompositionStart = () => {
     isComposingRef.current = true;
   };
 
+  // compositionupdate fires for every intermediate candidate change (per W3C spec)
+  // Read value directly from the DOM textarea (not React synthetic event) to get the latest text
+  const handleCompositionUpdate = () => {
+    if (gameState === 'completed' || !textareaRef.current) return;
+    const value = textareaRef.current.value;
+    if (gameState === 'idle' && value.length > 0) {
+      startTimeRef.current = Date.now();
+      onStart();
+    }
+    // Process the live intermediate value for visual feedback
+    const syntheticEvent = { target: { value } } as React.ChangeEvent<HTMLTextAreaElement>;
+    handleChange(syntheticEvent);
+  };
+
   const handleCompositionEnd = () => {
     isComposingRef.current = false;
-    // Count one keystroke for the whole composed character
+    // After composition ends, read the final committed value from the DOM
+    if (gameState === 'completed' || !textareaRef.current) return;
+    const value = textareaRef.current.value;
+    const syntheticEvent = { target: { value } } as React.ChangeEvent<HTMLTextAreaElement>;
+    handleChange(syntheticEvent);
+    // Count one keystroke for the entire composed word/character
     onKeystroke(false);
     synth?.playClick('char');
   };
@@ -417,6 +439,7 @@ export const TypingArena: React.FC<TypingArenaProps> = ({
             onChange={handleChange}
             onKeyDown={handleKeyDown}
             onCompositionStart={handleCompositionStart}
+            onCompositionUpdate={handleCompositionUpdate}
             onCompositionEnd={handleCompositionEnd}
             className="w-full flex-1 p-4 rounded-xl border border-[var(--border-active)] bg-[var(--bg-panel)] text-slate-100 font-mono resize-none focus:outline-none focus:border-[var(--accent-color)] focus:ring-1 focus:ring-[var(--accent-color)]/30 transition-all duration-200"
             style={{ fontSize: `${fontSize - 2}px`, fontFamily: fontFamily || 'inherit' }}
@@ -468,6 +491,7 @@ export const TypingArena: React.FC<TypingArenaProps> = ({
           onChange={handleChange}
           onKeyDown={handleKeyDown}
           onCompositionStart={handleCompositionStart}
+          onCompositionUpdate={handleCompositionUpdate}
           onCompositionEnd={handleCompositionEnd}
           className="sr-only"
           style={{ position: 'fixed', top: '-200px', left: '0', opacity: 0, width: '1px', height: '1px' }}
