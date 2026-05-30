@@ -543,6 +543,7 @@ export const TypingArena: React.FC<TypingArenaProps> = ({
       onClick={focusInput}
       className={`widget flex-1 flex flex-col justify-between p-4 md:p-9 min-h-[280px] relative bg-transparent border-none shadow-none transition-all duration-300 w-full ${isFocused ? 'cursor-text' : 'cursor-pointer'}`}
       id="widget-typing-arena"
+      style={{ minHeight: `${fontSize * 13}px` }}
     >
       <div className="relative w-full overflow-hidden flex-1">
         {/* Focusable textarea */}
