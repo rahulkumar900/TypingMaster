@@ -242,26 +242,17 @@ export const TypingArena: React.FC<TypingArenaProps> = ({
     isComposingRef.current = true;
   };
 
-  const handleCompositionEnd = (e: React.CompositionEvent<HTMLTextAreaElement>) => {
+  const handleCompositionEnd = () => {
     isComposingRef.current = false;
-    // Fire a synthetic change after composition ends so the game registers the input
-    if (gameState === 'completed') return;
-    const value = (e.target as HTMLTextAreaElement).value;
-    if (gameState === 'idle' && value.length > 0) {
-      startTimeRef.current = Date.now();
-      onStart();
-    }
-    // Trigger handleChange manually with the current textarea value
-    const syntheticEvent = { target: { value } } as React.ChangeEvent<HTMLTextAreaElement>;
-    handleChange(syntheticEvent);
+    // Count one keystroke for the whole composed character
     onKeystroke(false);
     synth?.playClick('char');
   };
 
-  // Change input text handler
+  // Change input text handler — also handles IME-composed text (Hindi, etc.)
   const handleChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
     if (gameState === 'completed') return;
-    if (isComposingRef.current) return; // wait for composition to finish
+    // Do NOT block during composition — React onChange already fires with final value
 
     const value = e.target.value;
     // Use Array.from for proper Unicode grapheme segmentation (handles Hindi, etc.)
@@ -478,10 +469,12 @@ export const TypingArena: React.FC<TypingArenaProps> = ({
           onKeyDown={handleKeyDown}
           onCompositionStart={handleCompositionStart}
           onCompositionEnd={handleCompositionEnd}
-          className="absolute opacity-0 z-[-10] pointer-events-none"
+          className="sr-only"
+          style={{ position: 'fixed', top: '-200px', left: '0', opacity: 0, width: '1px', height: '1px' }}
           spellCheck="false"
           autoComplete="off"
           autoCapitalize="off"
+          autoCorrect="off"
           disabled={gameState === 'completed'}
           onFocus={() => setIsFocused(true)}
           onBlur={() => setIsFocused(false)}
