@@ -47,7 +47,9 @@ export const TypingArena: React.FC<TypingArenaProps> = ({
   liveWpm,
   ghostWpm = 0
 }) => {
+  // typedVal is used for caret positioning (derived from actual textarea DOM value)
   const [typedVal, setTypedVal] = useState('');
+  const typedValRef = useRef(''); // always up-to-date without stale closure issues
   const [isFocused, setIsFocused] = useState(true);
   const containerRef = useRef<HTMLDivElement | null>(null);
   const wordsDisplayRef = useRef<HTMLDivElement | null>(null);
@@ -66,6 +68,7 @@ export const TypingArena: React.FC<TypingArenaProps> = ({
 
   // Reset typing state when resetCounter changes
   useEffect(() => {
+    typedValRef.current = '';
     setTypedVal('');
     startTimeRef.current = null;
     if (textareaRef.current) {
@@ -255,8 +258,7 @@ export const TypingArena: React.FC<TypingArenaProps> = ({
       onStart();
     }
     // Process the live intermediate value for visual feedback
-    const syntheticEvent = { target: { value } } as React.ChangeEvent<HTMLTextAreaElement>;
-    handleChange(syntheticEvent);
+    processInput(value);
   };
 
   const handleCompositionEnd = () => {
@@ -264,31 +266,36 @@ export const TypingArena: React.FC<TypingArenaProps> = ({
     // After composition ends, read the final committed value from the DOM
     if (gameState === 'completed' || !textareaRef.current) return;
     const value = textareaRef.current.value;
-    const syntheticEvent = { target: { value } } as React.ChangeEvent<HTMLTextAreaElement>;
-    handleChange(syntheticEvent);
+    processInput(value);
     // Count one keystroke for the entire composed word/character
     onKeystroke(false);
     synth?.playClick('char');
-  };
-
-  // Change input text handler — also handles IME-composed text (Hindi, etc.)
-  const handleChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
+  };  // Core input processor — called from onChange, compositionupdate, and compositionend
+  // Accepts the raw string value directly from the textarea DOM node
+  const processInput = (value: string) => {
     if (gameState === 'completed') return;
-    // Do NOT block during composition — React onChange already fires with final value
 
-    const value = e.target.value;
     // Use Array.from for proper Unicode grapheme segmentation (handles Hindi, etc.)
     const valueChars = Array.from(value);
     const targetChars = Array.from(targetText);
     
     // Only accept up to targetText length for modes other than govt-exam
-    if (testMode !== 'govt-exam' && valueChars.length > targetChars.length) return;
+    if (testMode !== 'govt-exam' && valueChars.length > targetChars.length) {
+      // Trim the textarea back to max allowed length
+      if (textareaRef.current) {
+        const trimmed = Array.from(textareaRef.current.value).slice(0, targetChars.length).join('');
+        textareaRef.current.value = trimmed;
+      }
+      return;
+    }
 
     if (gameState === 'idle' && value.length > 0) {
       startTimeRef.current = Date.now();
       onStart();
     }
 
+    // Update ref immediately (sync), state asynchronously (for caret render)
+    typedValRef.current = value;
     setTypedVal(value);
 
     // If Zen mode, and value.length is near the end, load more words
@@ -306,13 +313,13 @@ export const TypingArena: React.FC<TypingArenaProps> = ({
         if (valueChars[i] === targetChars[i]) {
           correctCount++;
         } else {
-          if (i === valueChars.length - 1 && valueChars.length > Array.from(typedVal).length) {
+          if (i === valueChars.length - 1 && valueChars.length > Array.from(typedValRef.current).length) {
             newTypingError = true;
           }
         }
       }
 
-      if (valueChars.length > targetChars.length && valueChars.length > Array.from(typedVal).length) {
+      if (valueChars.length > targetChars.length && valueChars.length > Array.from(typedValRef.current).length) {
         newTypingError = true;
       }
 
@@ -337,7 +344,6 @@ export const TypingArena: React.FC<TypingArenaProps> = ({
     const allSpans = wordsDisplay.querySelectorAll('.char');
     let correctCount = 0;
     let newTypingError = false;
-
 
     // Check correct inputs
     for (let i = 0; i < allSpans.length; i++) {
@@ -370,7 +376,7 @@ export const TypingArena: React.FC<TypingArenaProps> = ({
       synth?.playClick('error');
       const lastCharIndex = valueChars.length - 1;
       let missedChar: string | undefined = undefined;
-      if (valueChars.length > Array.from(typedVal).length && lastCharIndex >= 0) {
+      if (valueChars.length > Array.from(typedValRef.current).length && lastCharIndex >= 0) {
         const typedChar = valueChars[lastCharIndex];
         const span = allSpans[lastCharIndex] as HTMLElement;
         const targetChar = span?.classList.contains('space-char') ? ' ' : span?.textContent || '';
@@ -381,13 +387,17 @@ export const TypingArena: React.FC<TypingArenaProps> = ({
       onKeystroke(true, missedChar);
     }
 
-    // Send metrics upwards
     onProgress(correctCount, valueChars.length, value);
 
-    // Complete condition — use char-level length
     if (valueChars.length >= Array.from(targetText).length) {
       onComplete();
     }
+  };
+
+  // onChange handler — React synthetic event (fires for normal keystrokes and after IME commit)
+  const handleChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
+    if (isComposingRef.current) return; // during IME, compositionupdate handles it
+    processInput(e.target.value);
   };
 
   // Split targetText into words
@@ -435,7 +445,7 @@ export const TypingArena: React.FC<TypingArenaProps> = ({
           </div>
           <textarea
             ref={textareaRef}
-            value={typedVal}
+            defaultValue=""
             onChange={handleChange}
             onKeyDown={handleKeyDown}
             onCompositionStart={handleCompositionStart}
@@ -487,7 +497,7 @@ export const TypingArena: React.FC<TypingArenaProps> = ({
         {/* Focusable textarea */}
         <textarea
           ref={textareaRef}
-          value={typedVal}
+          defaultValue=""
           onChange={handleChange}
           onKeyDown={handleKeyDown}
           onCompositionStart={handleCompositionStart}
