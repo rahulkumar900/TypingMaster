@@ -113,13 +113,13 @@ export function TypingApp({ seoTitle, seoDescription }: TypingAppProps) {
       <h1 className="sr-only">Typing Test - Check Your WPM Typing Speed Online</h1>
       
       {/* Mobile Keyboard Warning */}
-      <div className="md:hidden w-full max-w-[1080px] mb-2 p-2 bg-amber-500/10 border border-amber-500/20 text-amber-500 text-[11px] font-mono rounded-lg text-center leading-tight">
+      <div className="md:hidden w-full max-w-[1250px] mb-2 p-2 bg-amber-500/10 border border-amber-500/20 text-amber-500 text-[11px] font-mono rounded-lg text-center leading-tight">
         For the best experience and most accurate WPM, please use a physical keyboard.
       </div>
 
 
       {/* ================= UNIFIED APP WINDOW CONTAINER (Image 2 style) ================= */}
-      <div className={`app-card-container w-full max-w-[1080px] bg-transparent border-none rounded-none p-6 md:p-8 shadow-none z-10 flex flex-col justify-between relative transition-all duration-300 ${
+      <div className={`app-card-container w-full max-w-[1250px] bg-transparent border-none rounded-none p-6 md:p-8 shadow-none z-10 flex flex-col justify-between relative transition-all duration-300 ${
         isFullScreenView ? 'h-[calc(100vh-40px)]' : 'min-h-[580px]'
       }`}>
         
@@ -1172,7 +1172,7 @@ export function TypingApp({ seoTitle, seoDescription }: TypingAppProps) {
       </div>
 
       {/* ================= SEO & INFORMATIONAL FOOTER (Below the Fold) ================= */}
-      <section className={`w-full max-w-[1080px] mx-auto mt-16 mb-12 text-left font-sans transition-opacity duration-500 ${
+      <section className={`w-full max-w-[1250px] mx-auto mt-16 mb-12 text-left font-sans transition-opacity duration-500 ${
         gameState === 'running' 
           ? (testMode === 'govt-exam' ? 'hidden' : 'opacity-0 pointer-events-none') 
           : 'opacity-100'

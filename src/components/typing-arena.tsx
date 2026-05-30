@@ -104,7 +104,7 @@ export const TypingArena: React.FC<TypingArenaProps> = ({
     const allSpans = wordsDisplay.querySelectorAll('.char');
     if (allSpans.length === 0) return;
 
-    if (gameState === 'completed') {
+    if (gameState === 'completed' || !isFocused) {
       caret.style.display = 'none';
       if (ghostCaretRef.current) ghostCaretRef.current.style.display = 'none';
       return;
@@ -162,7 +162,7 @@ export const TypingArena: React.FC<TypingArenaProps> = ({
         activeWord.classList.add('active-word');
       }
     }
-  }, [typedVal, fontSize, cursorStyle, gameState, resetCounter]);
+  }, [typedVal, fontSize, cursorStyle, gameState, resetCounter, isFocused]);
 
   // Ghost Caret positioning loop
   useEffect(() => {
@@ -514,7 +514,7 @@ export const TypingArena: React.FC<TypingArenaProps> = ({
             aria-label="Type the government exam text here"
           />
           {!isFocused && gameState !== 'completed' && (
-            <div className="absolute inset-0 z-20 flex items-center justify-center backdrop-blur-[2px] bg-[var(--bg-panel)]/50 rounded-xl transition-all pointer-events-none">
+            <div className="absolute inset-0 z-20 flex items-center justify-center backdrop-blur-[2px] rounded-xl transition-all pointer-events-none">
               <span className="flex items-center gap-2 bg-[var(--text-main)] text-[var(--bg-panel)] px-4 py-2 rounded-full text-sm font-semibold shadow-lg">
                 <Keyboard className="w-4 h-4" /> Click to focus and start typing
               </span>
@@ -567,7 +567,7 @@ export const TypingArena: React.FC<TypingArenaProps> = ({
         />
 
         {!isFocused && gameState !== 'completed' && (
-          <div className="absolute inset-0 z-20 flex items-center justify-center backdrop-blur-[2px] bg-[var(--bg-panel)]/50 rounded-xl transition-all pointer-events-none">
+          <div className="absolute inset-0 z-20 flex items-center justify-center backdrop-blur-[2px] rounded-xl transition-all pointer-events-none">
             <span className="flex items-center gap-2 bg-[var(--text-main)] text-[var(--bg-panel)] px-4 py-2 rounded-full text-sm font-semibold shadow-lg">
               <Keyboard className="w-4 h-4" /> Click to focus and start typing
             </span>
@@ -584,8 +584,8 @@ export const TypingArena: React.FC<TypingArenaProps> = ({
           <div 
             ref={caretRef}
             className={`caret absolute bg-[var(--accent-color)] pointer-events-none z-10 transition-all duration-100 ease-out ${
-              cursorStyle === 'pipe' ? 'pipe-cursor' : cursorStyle === 'block' ? 'block-cursor' : cursorStyle === 'outline' ? 'outline-cursor' : 'underline-cursor'
-            } ${!isFocused && gameState !== 'completed' ? 'opacity-0 scale-95' : 'opacity-100 scale-100'}`}
+              !isFocused ? 'hidden' : (cursorStyle === 'pipe' ? 'pipe-cursor' : cursorStyle === 'block' ? 'block-cursor' : cursorStyle === 'outline' ? 'outline-cursor' : 'underline-cursor')
+            }`}
             id="typing-caret"
           />
 
@@ -594,7 +594,7 @@ export const TypingArena: React.FC<TypingArenaProps> = ({
             <div 
               ref={ghostCaretRef}
               className={`caret absolute bg-slate-400 opacity-30 pointer-events-none z-5 transition-[left,top] duration-200 ease-linear ${
-                cursorStyle === 'pipe' ? 'pipe-cursor' : cursorStyle === 'block' ? 'block-cursor' : cursorStyle === 'outline' ? 'outline-cursor' : 'underline-cursor'
+                !isFocused ? 'hidden' : (cursorStyle === 'pipe' ? 'pipe-cursor' : cursorStyle === 'block' ? 'block-cursor' : cursorStyle === 'outline' ? 'outline-cursor' : 'underline-cursor')
               }`}
               id="ghost-typing-caret"
             />
