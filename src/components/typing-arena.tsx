@@ -3,6 +3,7 @@
 import React, { useRef, useEffect, useState } from 'react';
 import { Keyboard } from 'lucide-react';
 import { TypingAudioSynthesizer } from '@/lib/synth';
+import { HindiTransliterator, needsTransliteration } from '@/lib/transliterate';
 
 interface TypingArenaProps {
   targetText: string;
@@ -24,6 +25,7 @@ interface TypingArenaProps {
   timeLeft?: number;
   liveWpm?: number;
   ghostWpm?: number;
+  language?: string;  // e.g. 'hindi', 'english'
 }
 
 export const TypingArena: React.FC<TypingArenaProps> = ({
@@ -45,7 +47,8 @@ export const TypingArena: React.FC<TypingArenaProps> = ({
   disableBackspace = false,
   timeLeft,
   liveWpm,
-  ghostWpm = 0
+  ghostWpm = 0,
+  language = 'english',
 }) => {
   // typedVal is used for caret positioning (derived from actual textarea DOM value)
   const [typedVal, setTypedVal] = useState('');
@@ -58,6 +61,9 @@ export const TypingArena: React.FC<TypingArenaProps> = ({
   const ghostCaretRef = useRef<HTMLDivElement | null>(null);
   const startTimeRef = useRef<number | null>(null);
   const isComposingRef = useRef(false); // tracks IME composition state
+  // Phonetic transliteration engine (used when OS IME is not available)
+  const transliteratorRef = useRef<HindiTransliterator>(new HindiTransliterator());
+  const usePhonetic = needsTransliteration(language);
 
   // Focus textarea
   const focusInput = () => {
@@ -71,6 +77,7 @@ export const TypingArena: React.FC<TypingArenaProps> = ({
     typedValRef.current = '';
     setTypedVal('');
     startTimeRef.current = null;
+    transliteratorRef.current.reset(); // reset phonetic transliteration state
     if (textareaRef.current) {
       textareaRef.current.value = '';
     }
@@ -224,6 +231,50 @@ export const TypingArena: React.FC<TypingArenaProps> = ({
       onComplete();
       return;
     }
+
+    // ── Phonetic transliteration mode ──────────────────────────────────────
+    // When the selected language needs transliteration (Hindi, Marathi, etc.)
+    // we intercept every keypress, feed it to the transliterator engine, and
+    // write the resulting Devanagari string back into the textarea ourselves.
+    if (usePhonetic) {
+      const key = e.key;
+
+      // Let browser handle these normally
+      if (e.ctrlKey || e.metaKey || e.altKey) return;
+      if (['Tab', 'ArrowLeft', 'ArrowRight', 'ArrowUp', 'ArrowDown', 'Home', 'End'].includes(key)) return;
+
+      e.preventDefault(); // stop the raw Latin char from appearing
+
+      if (key === 'Backspace') {
+        if (disableBackspace) { synth?.playClick('error'); return; }
+        synth?.playClick('backspace');
+        const newOutput = transliteratorRef.current.processKey('Backspace');
+        if (textareaRef.current) textareaRef.current.value = newOutput;
+        processInput(newOutput);
+        return;
+      }
+
+      if (key === ' ') {
+        synth?.playClick('space');
+        const newOutput = transliteratorRef.current.processKey(' ');
+        if (textareaRef.current) textareaRef.current.value = newOutput;
+        processInput(newOutput);
+        onKeystroke(false);
+        return;
+      }
+
+      if (key.length === 1) {
+        synth?.playClick('char');
+        const newOutput = transliteratorRef.current.processKey(key);
+        if (textareaRef.current) textareaRef.current.value = newOutput;
+        processInput(newOutput);
+        onKeystroke(false);
+        return;
+      }
+
+      return;
+    }
+    // ── Normal (non-phonetic) mode ──────────────────────────────────────────
 
     if (e.key === ' ') {
       synth?.playClick('space');

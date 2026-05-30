@@ -1088,6 +1088,7 @@ export function TypingApp({ seoTitle, seoDescription }: TypingAppProps) {
                 timeLeft={timeLeft}
                 liveWpm={liveWpm}
                 ghostWpm={ghostWpm}
+                language={languageId}
               />
             </div>
 
