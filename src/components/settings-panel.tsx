@@ -318,46 +318,6 @@ export const SettingsPanel: React.FC<SettingsPanelProps> = ({
             </div>
           </div>
 
-          {/* Theme Gallery */}
-          <div className="flex flex-col gap-3">
-            <h3 className="text-[12px] font-semibold text-[var(--text-muted-alt)] uppercase tracking-wider flex items-center gap-1">
-              <Sparkles className="w-3.5 h-3.5" />
-              Theme Gallery
-            </h3>
-            <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
-              {[
-                { id: 'carbon', name: 'Carbon', bg: '#282a2d', main: '#d1d0c5', accent: '#e2b714' },
-                { id: 'midnight', name: 'Midnight', bg: '#0b0f19', main: '#f8fafc', accent: '#6366f1' },
-                { id: 'dracula', name: 'Dracula', bg: '#282a36', main: '#f8f8f2', accent: '#ff79c6' },
-                { id: 'matrix', name: 'Matrix', bg: '#000000', main: '#00ff00', accent: '#00ff00' },
-                { id: '8008', name: '8008', bg: '#333a45', main: '#e9ecf0', accent: '#f44c7f' },
-                { id: 'cyberpunk', name: 'Cyberpunk', bg: '#120917', main: '#fbcfe8', accent: '#ec4899' },
-                { id: 'paper', name: 'Paper', bg: '#f3f4f6', main: '#111827', accent: '#3b82f6' },
-              ].map((theme) => (
-                <button
-                  key={theme.id}
-                  onClick={() => onThemeChange(theme.id)}
-                  className={`flex flex-col gap-2 p-3 rounded-xl border transition-all cursor-pointer ${
-                    currentTheme === theme.id
-                      ? 'border-[var(--accent-color)] shadow-[0_4px_15px_rgba(var(--accent-rgb),0.15)] bg-[var(--bg-panel)]'
-                      : 'border-[var(--border-subtle)] hover:border-[var(--border-active)] bg-[var(--bg-panel)]'
-                  }`}
-                >
-                  <div className="flex w-full items-center justify-between">
-                    <span className={`text-[12px] font-bold ${currentTheme === theme.id ? 'text-[var(--accent-color)]' : 'text-[var(--text-muted-alt)]'}`}>
-                      {theme.name}
-                    </span>
-                    {/* Mini Color Palette Preview */}
-                    <div className="flex -space-x-1">
-                      <div className="w-3.5 h-3.5 rounded-full border border-black/50 z-10" style={{ backgroundColor: theme.bg }} />
-                      <div className="w-3.5 h-3.5 rounded-full border border-black/50 z-20" style={{ backgroundColor: theme.main }} />
-                      <div className="w-3.5 h-3.5 rounded-full border border-black/50 z-30" style={{ backgroundColor: theme.accent }} />
-                    </div>
-                  </div>
-                </button>
-              ))}
-            </div>
-          </div>
 
           {/* Interface Toggles */}
           <div className="flex flex-col gap-3 animate-fadeIn">

@@ -76,7 +76,7 @@ export const TypingArena: React.FC<TypingArenaProps> = ({
   useEffect(() => {
     typedValRef.current = '';
     setTypedVal('');
-    startTimeRef.current = null;
+    startTimeRef.current = gameState === 'running' ? Date.now() : null;
     transliteratorRef.current.reset(); // reset phonetic transliteration state
     if (textareaRef.current) {
       textareaRef.current.value = '';
@@ -275,6 +275,18 @@ export const TypingArena: React.FC<TypingArenaProps> = ({
       return;
     }
     // ── Normal (non-phonetic) mode ──────────────────────────────────────────
+    const currentLength = Array.from(typedValRef.current).length;
+    const targetChars = Array.from(targetText);
+
+    if (e.key.length === 1 && !e.ctrlKey && !e.metaKey && !e.altKey) {
+      const expectedChar = targetChars[currentLength];
+      if (expectedChar && e.key !== expectedChar) {
+        e.preventDefault();
+        synth?.playClick('error');
+        onKeystroke(true, expectedChar);
+        return;
+      }
+    }
 
     if (e.key === ' ') {
       synth?.playClick('space');

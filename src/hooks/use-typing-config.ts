@@ -45,7 +45,7 @@ export function useTypingConfig() {
       if (saved) {
         try {
           const config = JSON.parse(saved);
-          setCurrentTheme(config.currentTheme || 'carbon');
+          setCurrentTheme('carbon');
           setDimMode(config.dimMode || false);
           setCursorStyle(config.cursorStyle || 'pipe');
           setLanguageId(config.languageId || config.language || 'english');
@@ -88,7 +88,7 @@ export function useTypingConfig() {
     }
     
     const config = {
-      currentTheme,
+      currentTheme: 'carbon',
       dimMode,
       languageId,
       fontId,

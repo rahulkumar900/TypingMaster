@@ -1,17 +1,8 @@
 import type { Metadata } from "next";
-import { Outfit, Space_Mono } from "next/font/google";
 import "./globals.css";
+import { AuthProvider } from "@/context/auth-context";
+import { Toaster } from "sonner";
 
-const outfit = Outfit({
-  subsets: ["latin"],
-  variable: "--font-outfit",
-});
-
-const spaceMono = Space_Mono({
-  weight: ["400", "700"],
-  subsets: ["latin"],
-  variable: "--font-space-mono",
-});
 
 export const metadata: Metadata = {
   title: "Typing Test & WPM Speed Test | Centerville",
@@ -80,7 +71,7 @@ export default function RootLayout({
   return (
     <html
       lang="en"
-      className={`${outfit.variable} ${spaceMono.variable} h-full antialiased`}
+      className="h-full antialiased"
     >
       <head>
         <script
@@ -89,8 +80,12 @@ export default function RootLayout({
         />
       </head>
       <body className="h-full transition-colors duration-500 overflow-x-hidden">
-        {children}
+        <AuthProvider>
+          {children}
+          <Toaster theme="dark" position="top-right" richColors />
+        </AuthProvider>
       </body>
     </html>
   );
 }
+

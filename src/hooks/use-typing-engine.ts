@@ -1,8 +1,18 @@
 import { useState, useRef, useCallback, useEffect } from 'react';
 import { LANGUAGES } from '@/lib/languages';
 import { TestRecord } from '@/components/stats-dashboard';
+import { useAuth } from '@/context/auth-context';
 
 export function useTypingEngine(config: any) {
+  // Try to use auth if available safely
+  let auth: any = null;
+  try {
+    auth = useAuth();
+  } catch (e) {
+    // Auth context not initialized yet (e.g. static shell render)
+  }
+  const token = auth?.token;
+
   // Text source states
   const [targetText, setTargetText] = useState<string>('');
   const [author, setAuthor] = useState<string>('');
@@ -45,17 +55,48 @@ export function useTypingEngine(config: any) {
 
   // Load History Table
   useEffect(() => {
-    if (typeof window !== 'undefined') {
-      const savedHist = localStorage.getItem('centerville_test_history');
-      if (savedHist) {
-        try {
-          setTestHistory(JSON.parse(savedHist));
-        } catch (e) {
-          console.error("Failed to load run history", e);
+    if (token) {
+      fetch('http://localhost:4000/api/stats', {
+        headers: {
+          'Authorization': `Bearer ${token}`
+        }
+      })
+      .then(res => {
+        if (!res.ok) throw new Error('Failed to fetch stats from DB');
+        return res.json();
+      })
+      .then(data => {
+        const mappedHistory: TestRecord[] = data.map((item: any) => ({
+          id: item.id.toString(),
+          date: new Date(item.date).toLocaleDateString(undefined, { month: 'short', day: 'numeric', year: 'numeric', hour: '2-digit', minute: '2-digit' }),
+          mode: item.mode,
+          limitValue: 0,
+          wpm: item.wpm,
+          accuracy: parseFloat(item.accuracy).toFixed(2),
+          rawAccuracy: Math.round(parseFloat(item.accuracy)),
+          missedKeys: {},
+          wpmHistory: [],
+          rawWpmHistory: [],
+          timeHistory: []
+        }));
+        setTestHistory(mappedHistory);
+      })
+      .catch(err => {
+        console.error('Failed to sync history with database API:', err);
+      });
+    } else {
+      if (typeof window !== 'undefined') {
+        const savedHist = localStorage.getItem('centerville_test_history');
+        if (savedHist) {
+          try {
+            setTestHistory(JSON.parse(savedHist));
+          } catch (e) {
+            console.error("Failed to load run history", e);
+          }
         }
       }
     }
-  }, []);
+  }, [token]);
 
   const generateText = useCallback(() => {
     const activeLang = LANGUAGES.find(l => l.id === config.languageId) || LANGUAGES[0];
@@ -354,6 +395,31 @@ export function useTypingEngine(config: any) {
       examScore: scoreCard
     };
 
+    if (token) {
+      fetch('http://localhost:4000/api/stats', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`
+        },
+        body: JSON.stringify({
+          wpm: finalWpm,
+          accuracy: parseFloat(finalAccuracy),
+          test_type: config.testMode
+        })
+      })
+      .then(res => {
+        if (!res.ok) throw new Error('Failed to save stats to server');
+        return res.json();
+      })
+      .then(savedItem => {
+        console.log('Saved stats to server:', savedItem);
+      })
+      .catch(err => {
+        console.error('Failed to save stats to server:', err);
+      });
+    }
+
     setTestHistory(prev => {
       const updated = [newRecord, ...prev];
       localStorage.setItem('centerville_test_history', JSON.stringify(updated));
@@ -434,12 +500,37 @@ export function useTypingEngine(config: any) {
     }
   };
 
+  const getCharacterStats = useCallback(() => {
+    const target = targetText;
+    const typed = typedTextRef.current;
+    let correct = 0;
+    let incorrect = 0;
+    let extra = 0;
+    
+    const minLen = Math.min(target.length, typed.length);
+    for (let i = 0; i < minLen; i++) {
+      if (typed[i] === target[i]) {
+        correct++;
+      } else {
+        incorrect++;
+      }
+    }
+    if (typed.length > target.length) {
+      extra = typed.length - target.length;
+    }
+    const missed = Math.max(0, target.length - typed.length);
+    
+    return { correct, incorrect, extra, missed };
+  }, [targetText]);
+
   return {
     targetText, author, title,
     gameState, timeLeft, resetCounter,
     wpm, rawWpm, accuracy, rawAccuracy, liveWpm,
     missedKeys, wpmHistory, rawWpmHistory, timeHistory,
-    testHistory, examScore,
-    resetTest, startTest, completeTest, handleProgress, loadMoreZenWords, handleKeystroke, handleClearHistory
+    testHistory, setTestHistory, examScore,
+    resetTest, startTest, completeTest, handleProgress, loadMoreZenWords, handleKeystroke, handleClearHistory,
+    getCharacterStats
   };
 }
+
