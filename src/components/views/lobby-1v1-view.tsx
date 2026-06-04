@@ -54,7 +54,8 @@ export function Lobby1v1View({ user, config }: Lobby1v1ViewProps) {
     if (!isActive) return;
 
     const token = typeof window !== 'undefined' ? localStorage.getItem('typing_thunder_token') : null;
-    const socket = io('http://localhost:4000', {
+    const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'https://typingmaster-bibp.onrender.com';
+    const socket = io(apiUrl, {
       auth: { token }
     });
     socketRef.current = socket;

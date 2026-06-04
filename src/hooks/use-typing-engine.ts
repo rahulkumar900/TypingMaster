@@ -56,7 +56,8 @@ export function useTypingEngine(config: any) {
   // Load History Table
   useEffect(() => {
     if (token) {
-      fetch('http://localhost:4000/api/stats', {
+      const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'https://typingmaster-bibp.onrender.com';
+      fetch(`${apiUrl}/api/stats`, {
         headers: {
           'Authorization': `Bearer ${token}`
         }
@@ -396,7 +397,8 @@ export function useTypingEngine(config: any) {
     };
 
     if (token) {
-      fetch('http://localhost:4000/api/stats', {
+      const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'https://typingmaster-bibp.onrender.com';
+      fetch(`${apiUrl}/api/stats`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
