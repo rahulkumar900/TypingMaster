@@ -232,6 +232,16 @@ export const TypingArena: React.FC<TypingArenaProps> = ({
       return;
     }
 
+    // Start the test on first printable keystroke (similar to Monkeytype)
+    if (gameState === 'idle') {
+      const isModifier = e.ctrlKey || e.metaKey || e.altKey;
+      const isPrintable = e.key.length === 1 || e.key === ' ';
+      if (isPrintable && !isModifier && e.key !== 'Escape' && e.key !== 'Tab') {
+        startTimeRef.current = Date.now();
+        onStart();
+      }
+    }
+
     // ── Phonetic transliteration mode ──────────────────────────────────────
     // When the selected language needs transliteration (Hindi, Marathi, etc.)
     // we intercept every keypress, feed it to the transliterator engine, and
@@ -592,10 +602,9 @@ export const TypingArena: React.FC<TypingArenaProps> = ({
           className="words-container relative flex flex-wrap align-start text-[var(--text-muted)] font-mono select-none overflow-hidden leading-[1.8] tracking-[0.02em]"
           style={{ fontSize: `${fontSize}px`, height: '6.3em' }}
         >
-          {/* Caret */}
           <div 
             ref={caretRef}
-            className={`caret absolute bg-[var(--accent-color)] pointer-events-none z-10 transition-all duration-100 ease-out ${
+            className={`caret absolute bg-white pointer-events-none z-10 transition-all duration-100 ease-out ${
               !isFocused ? 'hidden' : (cursorStyle === 'pipe' ? 'pipe-cursor' : cursorStyle === 'block' ? 'block-cursor' : cursorStyle === 'outline' ? 'outline-cursor' : 'underline-cursor')
             }`}
             id="typing-caret"

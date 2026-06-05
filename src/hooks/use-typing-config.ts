@@ -3,7 +3,7 @@ import { TypingAudioSynthesizer } from '@/lib/synth';
 
 export function useTypingConfig() {
   // Global customizable settings
-  const [currentTheme, setCurrentTheme] = useState<string>('carbon');
+  const currentTheme = 'carbon';
   const [languageId, setLanguageId] = useState<string>('english');
   const [fontId, setFontId] = useState<string>('standard');
   const [dimMode, setDimMode] = useState<boolean>(false);
@@ -45,7 +45,6 @@ export function useTypingConfig() {
       if (saved) {
         try {
           const config = JSON.parse(saved);
-          setCurrentTheme('carbon');
           setDimMode(config.dimMode || false);
           setCursorStyle(config.cursorStyle || 'pipe');
           setLanguageId(config.languageId || config.language || 'english');
@@ -88,7 +87,7 @@ export function useTypingConfig() {
     }
     
     const config = {
-      currentTheme: 'carbon',
+      currentTheme,
       dimMode,
       languageId,
       fontId,
@@ -127,20 +126,16 @@ export function useTypingConfig() {
 
   useEffect(() => {
     if (typeof window !== 'undefined') {
-      // Apply unified theme class
-      document.body.className = document.body.className.replace(/theme-\w+/g, '');
-      document.body.classList.add(`theme-${currentTheme}`);
-
       if (dimMode) {
         document.body.classList.add('dim-mode');
       } else {
         document.body.classList.remove('dim-mode');
       }
     }
-  }, [currentTheme, dimMode]);
+  }, [dimMode]);
 
   return {
-    currentTheme, setCurrentTheme,
+    currentTheme,
     languageId, setLanguageId,
     fontId, setFontId,
     dimMode, setDimMode,

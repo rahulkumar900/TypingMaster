@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useState, useEffect, useRef, useCallback } from 'react';
-import { List, Moon, RefreshCw, Volume2, VolumeX, LayoutGrid, AlertTriangle, TrendingUp, Sparkles, Settings, Trophy, Clock, BookOpen, Check, FileText, Keyboard, Info, Sliders, Palette, Globe, Mail, Lock, DollarSign, MessageSquare, Shield, ChevronLeft, ChevronRight, Share2 } from 'lucide-react';
+import { List, Moon, RefreshCw, Volume2, VolumeX, LayoutGrid, AlertTriangle, TrendingUp, Sparkles, Settings, Trophy, Clock, BookOpen, Check, FileText, Keyboard, Info, Sliders, Palette, Globe, Mail, Lock, DollarSign, MessageSquare, Shield, ChevronLeft, ChevronRight, Share2, X, Ghost } from 'lucide-react';
 import { StatsWidget } from '@/components/stats-widget';
 import { SettingsPanel } from '@/components/settings-panel';
 import { StatsDashboard, TestRecord } from '@/components/stats-dashboard';
@@ -57,14 +57,14 @@ const renderAvatar = (url: string, sizeClass = "w-6 h-6") => {
 };
 
 interface TypingAppProps {
+  initialTab?: 'test' | '1v1' | 'practice' | 'sphere' | 'ratings' | 'profile';
   seoTitle?: string;
   seoDescription?: string;
 }
 
-export function TypingApp({ seoTitle, seoDescription }: TypingAppProps) {
+export function TypingApp({ initialTab = 'test', seoTitle, seoDescription }: TypingAppProps) {
   const config = useTypingConfig();
   const {
-    currentTheme, setCurrentTheme,
     languageId, setLanguageId,
     fontId, setFontId,
     dimMode, setDimMode,
@@ -102,16 +102,41 @@ export function TypingApp({ seoTitle, seoDescription }: TypingAppProps) {
   const { user: currentUser, logout, updateUser } = useAuth();
 
   // Routing and Auth states
-  const [activeTab, setActiveTab] = useState<'test' | '1v1' | 'practice' | 'sphere' | 'ratings' | 'profile'>('test');
+  const [activeTab, setActiveTab] = useState<'test' | '1v1' | 'practice' | 'sphere' | 'ratings' | 'profile'>(initialTab);
   const [isAuthOpen, setIsAuthOpen] = useState(false);
   const [pendingTab, setPendingTab] = useState<'test' | '1v1' | 'practice' | 'sphere' | 'ratings' | 'profile' | null>(null);
   const [typedLength, setTypedLength] = useState(0);
   const [showDetailed, setShowDetailed] = useState(false);
 
+  // Sync activeTab state when initialTab prop changes
+  useEffect(() => {
+    setActiveTab(initialTab);
+  }, [initialTab]);
+
+  // Auth lock check for direct page loading
+  useEffect(() => {
+    const isLockedTab = ['1v1', 'sphere', 'ratings', 'profile'].includes(activeTab);
+    if (isLockedTab && !currentUser) {
+      router.push('/login');
+    }
+  }, [activeTab, currentUser, router]);
+
   // Auto-reset detailed results view on any test restart or status change
   useEffect(() => {
     setShowDetailed(false);
   }, [resetCounter, gameState]);
+
+  // Calculate elapsed time and ghost percentage for progress bar
+  let elapsedTime = 0;
+  if (gameState === 'running') {
+    if (testMode === 'time') {
+      elapsedTime = testTimeLimit - timeLeft;
+    } else {
+      elapsedTime = timeLeft;
+    }
+  }
+  const ghostChars = (elapsedTime * (ghostWpm * 5)) / 60;
+  const ghostPercent = targetText.length > 0 ? Math.min(100, (ghostChars / targetText.length) * 100) : 0;
 
   // Sync typed length reset with engine resets
   useEffect(() => {
@@ -133,6 +158,17 @@ export function TypingApp({ seoTitle, seoDescription }: TypingAppProps) {
     setActiveTab(tabId);
     if (tabId === 'test') {
       resetTest();
+      router.push('/typing-test');
+    } else if (tabId === '1v1') {
+      router.push('/play-1vs1');
+    } else if (tabId === 'practice') {
+      router.push('/typing-practice');
+    } else if (tabId === 'sphere') {
+      router.push('/sphere');
+    } else if (tabId === 'ratings') {
+      router.push('/ratings');
+    } else if (tabId === 'profile') {
+      router.push('/profile');
     }
   };
 
@@ -140,6 +176,16 @@ export function TypingApp({ seoTitle, seoDescription }: TypingAppProps) {
   const [isSettingsOpen, setIsSettingsOpen] = useState<boolean>(false);
   const [isDashboardOpen, setIsDashboardOpen] = useState<boolean>(false);
   const [mobileConfigOpen, setMobileConfigOpen] = useState<boolean>(false);
+
+  // Config modals presentation states
+  const [isCustomTimeOpen, setIsCustomTimeOpen] = useState<boolean>(false);
+  const [isCustomWordLimitOpen, setIsCustomWordLimitOpen] = useState<boolean>(false);
+  const [isCustomTextOpen, setIsCustomTextOpen] = useState<boolean>(false);
+  const [isLanguageModalOpen, setIsLanguageModalOpen] = useState<boolean>(false);
+  const [customTimeInput, setCustomTimeInput] = useState<string>('');
+  const [customWordInput, setCustomWordInput] = useState<string>('');
+  const [customTextInput, setCustomTextInput] = useState<string>('');
+  const [languageSearchQuery, setLanguageSearchQuery] = useState<string>('');
 
   // Handle sound status updates
   const toggleSound = () => {
@@ -205,7 +251,7 @@ export function TypingApp({ seoTitle, seoDescription }: TypingAppProps) {
         
         {/* Global Header (Fades out when racing in standard test, hidden in exam test) */}
         <header 
-          className={`flex flex-col sm:flex-row items-center justify-between w-full transition-all duration-500 mb-6 md:mb-10 gap-4 border-b border-zinc-900 pb-5 ${
+          className={`flex flex-col sm:flex-row items-center justify-between w-full transition-all duration-500 mb-6 md:mb-10 gap-4 border-b border-[var(--border-subtle)] pb-5 ${
             activeTab === 'test' && (gameState === 'running' || (gameState === 'completed' && testMode !== 'govt-exam' && !showDetailed))
               ? 'opacity-0 pointer-events-none mb-0 h-0 overflow-hidden py-0 border-none' 
               : 'opacity-100'
@@ -217,16 +263,16 @@ export function TypingApp({ seoTitle, seoDescription }: TypingAppProps) {
             className="flex items-center gap-2.5 cursor-pointer select-none group"
             onClick={() => handleTabClick('test')}
           >
-            <svg className="w-5 h-5 text-white animate-pulse" viewBox="0 0 24 24" fill="currentColor">
+            <svg className="w-5 h-5 text-white" viewBox="0 0 24 24" fill="currentColor">
               <path d="M19 9h-6l2-7H5L3 15h6l-2 7 12-13z" />
             </svg>
-            <div className="text-lg font-bold text-white tracking-tight leading-none font-sans">
+            <div className="text-lg font-bold text-[var(--text-main)] tracking-tight leading-none font-sans">
               TypingThunder
             </div>
           </div>
 
           {/* Navigation Pills */}
-          <nav className="flex flex-wrap items-center justify-center gap-4 text-xs font-semibold text-zinc-500">
+          <nav className="flex flex-wrap items-center justify-center gap-6 text-xs font-semibold text-[var(--text-muted)]">
             {([
               { id: 'test', label: 'Speed Test' },
               { id: '1v1', label: 'Play 1 v 1' },
@@ -237,13 +283,13 @@ export function TypingApp({ seoTitle, seoDescription }: TypingAppProps) {
               <button
                 key={tab.id}
                 onClick={() => handleTabClick(tab.id)}
-                className={`hover:text-white cursor-pointer transition-colors ${
+                className={`hover:text-white cursor-pointer transition-colors relative pb-1.5 ${
                   activeTab === tab.id
-                    ? 'text-white font-semibold'
-                    : 'text-zinc-500'
+                    ? 'text-white font-bold'
+                    : 'text-[var(--text-muted)]'
                 }`}
               >
-                {tab.label}
+                <span>{tab.label}</span>
               </button>
             ))}
           </nav>
@@ -254,15 +300,15 @@ export function TypingApp({ seoTitle, seoDescription }: TypingAppProps) {
               <div className="flex items-center gap-4">
                 <button 
                   onClick={() => handleTabClick('profile')}
-                  className="flex items-center gap-2.5 text-zinc-400 hover:text-white transition-all cursor-pointer"
+                  className="flex items-center gap-2.5 text-[var(--text-muted)] hover:text-[var(--text-main)] transition-all cursor-pointer"
                 >
-                  <span className="text-sm font-medium text-zinc-300 tracking-tight">{currentUser.username}</span>
+                  <span className="text-sm font-medium text-[var(--text-main)] tracking-tight">{currentUser.username}</span>
                   {renderAvatar(currentUser.avatarUrl, "w-7 h-7")}
                 </button>
-                <span className="text-zinc-800 text-xs select-none">|</span>
+                <span className="text-[var(--border-active)] text-xs select-none">|</span>
                 <button
                   onClick={() => logout()}
-                  className="text-zinc-500 hover:text-red-400 text-[10px] font-bold uppercase tracking-wider transition-all cursor-pointer"
+                  className="text-[var(--text-muted)] hover:text-red-400 text-[10px] font-bold uppercase tracking-wider transition-all cursor-pointer"
                 >
                   Logout
                 </button>
@@ -271,13 +317,13 @@ export function TypingApp({ seoTitle, seoDescription }: TypingAppProps) {
               <>
                 <button
                   onClick={() => router.push('/signup')}
-                  className="px-4 py-2 rounded-full bg-white text-black text-xs font-bold transition-all hover:bg-zinc-200 cursor-pointer shadow-[0_4px_14px_rgba(255,255,255,0.05)]"
+                  className="px-4 py-2 rounded-full bg-white text-zinc-950 text-xs font-bold transition-all hover:bg-zinc-200 cursor-pointer shadow-sm"
                 >
                   Sign Up
                 </button>
                 <button
                   onClick={() => router.push('/login')}
-                  className="text-zinc-300 hover:text-white text-xs font-bold transition-all cursor-pointer px-1 py-1"
+                  className="text-[var(--text-main)] hover:text-white text-xs font-bold transition-all cursor-pointer px-3 py-2 rounded-full hover:bg-[var(--bg-hover)]"
                 >
                   Login
                 </button>
@@ -298,10 +344,10 @@ export function TypingApp({ seoTitle, seoDescription }: TypingAppProps) {
                     /* Simple Results view (mockup page 4) */
                     <div className="flex flex-col items-center justify-center w-full max-w-[800px] gap-12">
                       {/* Floating instruction pill */}
-                      <div className="flex items-center gap-1 bg-[#1a1a1c] border border-zinc-800 rounded px-2.5 py-1.5 text-[11px] text-zinc-500 font-mono">
-                        <span className="bg-zinc-800 px-1 py-0.5 rounded text-zinc-400 mr-1">Shift</span>
+                      <div className="flex items-center gap-1 bg-[var(--bg-panel)] border border-[var(--border-subtle)] rounded px-2.5 py-1.5 text-[11px] text-[var(--text-muted)] font-mono">
+                        <span className="bg-[var(--bg-widget)] border border-[var(--border-subtle)] px-1 py-0.5 rounded text-[var(--text-main)] mr-1">Shift</span>
                         <span>+</span>
-                        <span className="bg-zinc-800 px-1.5 py-0.5 rounded text-zinc-400 mx-1">R</span>
+                        <span className="bg-[var(--bg-widget)] border border-[var(--border-subtle)] px-1.5 py-0.5 rounded text-[var(--text-main)] mx-1">R</span>
                         <span className="ml-1">: Restart Test</span>
                       </div>
 
@@ -388,20 +434,20 @@ export function TypingApp({ seoTitle, seoDescription }: TypingAppProps) {
                       <div className="flex items-center justify-center gap-12 mt-6">
                         <button 
                           onClick={() => setShowDetailed(true)}
-                          className="w-[108px] h-[56px] rounded-[30px] border-2 border-[#333333] hover:border-white bg-black shadow-[0_4px_8px_rgba(0,0,0,0.25)] flex items-center justify-center transition-all duration-300 text-zinc-400 hover:text-white cursor-pointer active:scale-95"
+                          className="w-[108px] h-[56px] rounded-[30px] border border-[var(--border-active)] hover:border-[var(--accent-color)] bg-[var(--bg-widget)]/60 hover:bg-[var(--accent-color)]/10 shadow-[0_4px_12px_rgba(0,0,0,0.15)] flex items-center justify-center transition-all duration-300 text-[var(--text-muted)] hover:text-[var(--accent-color)] cursor-pointer active:scale-95"
                           title="Show Detailed Results"
                         >
                           <ChevronRight className="w-5 h-5" />
                         </button>
                         <button 
                           onClick={resetTest}
-                          className="w-[108px] h-[56px] rounded-[30px] border-2 border-[#333333] hover:border-white bg-black shadow-[0_4px_8px_rgba(0,0,0,0.25)] flex items-center justify-center transition-all duration-300 text-zinc-400 hover:text-white cursor-pointer active:scale-95"
+                          className="w-[108px] h-[56px] rounded-[30px] border border-[var(--border-active)] hover:border-[var(--accent-color)] bg-[var(--bg-widget)]/60 hover:bg-[var(--accent-color)]/10 shadow-[0_4px_12px_rgba(0,0,0,0.15)] flex items-center justify-center transition-all duration-300 text-[var(--text-muted)] hover:text-[var(--accent-color)] cursor-pointer active:scale-95"
                           title="Restart Test"
                         >
                           <RefreshCw className="w-5 h-5" />
                         </button>
                         <button 
-                          className="w-[108px] h-[56px] rounded-[30px] border-2 border-[#333333] hover:border-white bg-black shadow-[0_4px_8px_rgba(0,0,0,0.25)] flex items-center justify-center transition-all duration-300 text-zinc-400 hover:text-white cursor-pointer active:scale-95"
+                          className="w-[108px] h-[56px] rounded-[30px] border border-[var(--border-active)] hover:border-[var(--accent-color)] bg-[var(--bg-widget)]/60 hover:bg-[var(--accent-color)]/10 shadow-[0_4px_12px_rgba(0,0,0,0.15)] flex items-center justify-center transition-all duration-300 text-[var(--text-muted)] hover:text-[var(--accent-color)] cursor-pointer active:scale-95"
                           title="Share Results"
                         >
                           <Share2 className="w-5 h-5" />
@@ -478,20 +524,20 @@ export function TypingApp({ seoTitle, seoDescription }: TypingAppProps) {
                       <div className="flex items-center justify-center gap-12 mt-6">
                         <button 
                           onClick={() => setShowDetailed(false)}
-                          className="w-[108px] h-[56px] rounded-[30px] border-2 border-[#333333] hover:border-white bg-black shadow-[0_4px_8px_rgba(0,0,0,0.25)] flex items-center justify-center transition-all duration-300 text-zinc-400 hover:text-white cursor-pointer active:scale-95"
+                          className="w-[108px] h-[56px] rounded-[30px] border border-[var(--border-active)] hover:border-[var(--accent-color)] bg-[var(--bg-widget)]/60 hover:bg-[var(--accent-color)]/10 shadow-[0_4px_12px_rgba(0,0,0,0.15)] flex items-center justify-center transition-all duration-300 text-[var(--text-muted)] hover:text-[var(--accent-color)] cursor-pointer active:scale-95"
                           title="Back to Simple Results"
                         >
                           <ChevronLeft className="w-5 h-5" />
                         </button>
                         <button 
                           onClick={resetTest}
-                          className="w-[108px] h-[56px] rounded-[30px] border-2 border-[#333333] hover:border-white bg-black shadow-[0_4px_8px_rgba(0,0,0,0.25)] flex items-center justify-center transition-all duration-300 text-zinc-400 hover:text-white cursor-pointer active:scale-95"
+                          className="w-[108px] h-[56px] rounded-[30px] border border-[var(--border-active)] hover:border-[var(--accent-color)] bg-[var(--bg-widget)]/60 hover:bg-[var(--accent-color)]/10 shadow-[0_4px_12px_rgba(0,0,0,0.15)] flex items-center justify-center transition-all duration-300 text-[var(--text-muted)] hover:text-[var(--accent-color)] cursor-pointer active:scale-95"
                           title="Restart Test"
                         >
                           <RefreshCw className="w-5 h-5" />
                         </button>
                         <button 
-                          className="w-[108px] h-[56px] rounded-[30px] border-2 border-[#333333] hover:border-white bg-black shadow-[0_4px_8px_rgba(0,0,0,0.25)] flex items-center justify-center transition-all duration-300 text-zinc-400 hover:text-white cursor-pointer active:scale-95"
+                          className="w-[108px] h-[56px] rounded-[30px] border border-[var(--border-active)] hover:border-[var(--accent-color)] bg-[var(--bg-widget)]/60 hover:bg-[var(--accent-color)]/10 shadow-[0_4px_12px_rgba(0,0,0,0.15)] flex items-center justify-center transition-all duration-300 text-[var(--text-muted)] hover:text-[var(--accent-color)] cursor-pointer active:scale-95"
                           title="Share Results"
                         >
                           <Share2 className="w-5 h-5" />
@@ -516,7 +562,7 @@ export function TypingApp({ seoTitle, seoDescription }: TypingAppProps) {
                   <div className="w-full max-w-[800px] mx-auto mt-4 mb-12 select-none relative">
                     {/* The floating user card */}
                     <div 
-                      className="absolute -top-12 flex flex-col items-center transition-all duration-150 ease-out"
+                      className="absolute -top-12 flex flex-col items-center transition-all duration-150 ease-out z-10"
                       style={{ 
                         left: `${targetText.length > 0 ? Math.min(100, Math.max(0, (typedLength / targetText.length) * 100)) : 0}%`,
                         transform: 'translateX(-50%)'
@@ -527,6 +573,26 @@ export function TypingApp({ seoTitle, seoDescription }: TypingAppProps) {
                         {currentUser?.username || 'Lakshayyyy'}
                       </span>
                     </div>
+
+                    {/* The ghost pacer floating card */}
+                    {ghostWpm > 0 && testMode !== 'govt-exam' && (
+                      <div 
+                        className={`absolute -top-12 flex flex-col items-center z-5 ${
+                          gameState === 'running' ? 'transition-all duration-1000 ease-linear' : 'transition-all duration-150 ease-out'
+                        }`}
+                        style={{ 
+                          left: `${ghostPercent}%`,
+                          transform: 'translateX(-50%)'
+                        }}
+                      >
+                        <div className="w-7 h-7 rounded-full bg-zinc-900 border border-zinc-700 flex items-center justify-center text-zinc-400 shadow-[0_2px_5px_rgba(0,0,0,0.5)]">
+                          <Ghost className="w-4 h-4 text-[var(--accent-color)] animate-pulse" />
+                        </div>
+                        <span className="text-[10px] text-zinc-500 mt-1.5 font-sans font-medium tracking-tight">
+                          Ghost Pacer ({ghostWpm} WPM)
+                        </span>
+                      </div>
+                    )}
 
                     {/* Track Line and Dots */}
                     <div className="relative pt-6">
@@ -597,16 +663,17 @@ export function TypingApp({ seoTitle, seoDescription }: TypingAppProps) {
                   >
                     <div className="flex flex-wrap items-center justify-center gap-5 font-mono text-[13px] text-zinc-500 select-none" id="speed-test-pills">
                       {/* Pill 1: Punctuation and Numbers */}
-                      <div className="flex items-center h-[40px] p-[3px] rounded-full border border-[#1f1f22] bg-black select-none gap-[6px]">
+                      <div className="flex items-center h-[46px] p-[2px] rounded-full border border-[var(--border-subtle)]/80 bg-[var(--bg-widget)]/60 backdrop-blur-sm select-none gap-[6px] transition-all duration-300">
                         <button 
                           onClick={() => {
                             const next = !includePunctuation;
                             setIncludePunctuation(next);
                             saveConfig({ includePunctuation: next });
+                            resetTest();
                           }}
-                          className={`relative z-10 w-[34px] h-[34px] rounded-full flex items-center justify-center transition-colors duration-200 cursor-pointer text-sm ${
+                          className={`relative z-10 w-[38px] h-[38px] rounded-full flex items-center justify-center transition-colors duration-200 cursor-pointer text-base ${
                             includePunctuation 
-                              ? 'bg-[#2c2c2f] text-white font-bold' 
+                              ? 'bg-zinc-800 text-white font-bold' 
                               : 'text-zinc-500 hover:text-white'
                           }`}
                           title="Toggle Punctuation"
@@ -618,10 +685,11 @@ export function TypingApp({ seoTitle, seoDescription }: TypingAppProps) {
                             const next = !includeNumbers;
                             setIncludeNumbers(next);
                             saveConfig({ includeNumbers: next });
+                            resetTest();
                           }}
-                          className={`relative z-10 w-[34px] h-[34px] rounded-full flex items-center justify-center transition-colors duration-200 cursor-pointer text-sm ${
+                          className={`relative z-10 w-[38px] h-[38px] rounded-full flex items-center justify-center transition-colors duration-200 cursor-pointer text-base ${
                             includeNumbers 
-                              ? 'bg-[#2c2c2f] text-white font-bold' 
+                              ? 'bg-zinc-800 text-white font-bold' 
                               : 'text-zinc-500 hover:text-white'
                           }`}
                           title="Toggle Numbers"
@@ -631,118 +699,180 @@ export function TypingApp({ seoTitle, seoDescription }: TypingAppProps) {
                       </div>
 
                       {/* Pill 2: Mode Selector */}
-                      <div className="relative flex items-center h-[40px] p-[3px] rounded-full border border-[#1f1f22] bg-black select-none gap-4">
-                        {/* Sliding background capsule */}
-                        <div 
-                          className="absolute top-[3px] w-[34px] h-[34px] rounded-full bg-[#2c2c2f] transition-all duration-300 ease-out"
-                          style={{
-                            left: testMode === 'time' ? '3px' : 'calc(100% - 37px)',
-                            opacity: (testMode === 'time' || testMode === 'words') ? 1 : 0
-                          }}
-                        />
-                        
-                        <button 
-                          onClick={() => {
-                            setTestMode('time');
-                            saveConfig({ testMode: 'time' });
-                          }}
-                          className={`relative z-10 flex items-center justify-center w-[34px] h-[34px] rounded-full transition-colors duration-200 cursor-pointer ${
-                            testMode === 'time' 
-                              ? 'text-white font-bold' 
-                              : 'text-zinc-500 hover:text-white'
-                          }`}
-                          title="Time Mode"
-                        >
-                          <Clock className="w-3.5 h-3.5" />
-                        </button>
-                        
-                        <span className="relative z-10 text-zinc-400 font-bold font-mono min-w-[24px] text-sm text-center px-1">
-                          {testMode === 'time' ? testTimeLimit : wordLimit}
-                        </span>
+                      <div className="flex items-center h-[46px] p-[2px] rounded-full border border-[var(--border-subtle)]/80 bg-[var(--bg-widget)]/60 backdrop-blur-sm select-none gap-[6px] transition-all duration-300">
+                        {(['time', 'words', 'quotes', 'zen', 'custom', 'weak-keys', 'govt-exam'] as const).map((mode) => {
+                          let Icon = Clock;
+                          let title = "Time Mode";
+                          if (mode === 'time') { Icon = Clock; title = "Time Mode"; }
+                          else if (mode === 'words') { Icon = FileText; title = "Words Mode"; }
+                          else if (mode === 'quotes') { Icon = BookOpen; title = "Quotes Mode"; }
+                          else if (mode === 'zen') { Icon = Sparkles; title = "Zen Mode"; }
+                          else if (mode === 'custom') { Icon = Settings; title = "Custom Mode"; }
+                          else if (mode === 'weak-keys') { Icon = AlertTriangle; title = "Weak Keys Drills"; }
+                          else if (mode === 'govt-exam') { Icon = Keyboard; title = "Government Exam Mode"; }
 
-                        <button 
-                          onClick={() => {
-                            setTestMode('words');
-                            saveConfig({ testMode: 'words' });
-                          }}
-                          className={`relative z-10 flex items-center justify-center w-[34px] h-[34px] rounded-full transition-colors duration-200 cursor-pointer font-sans text-sm font-bold ${
-                            testMode === 'words' 
-                              ? 'text-white font-bold' 
-                              : 'text-zinc-500 hover:text-white'
-                          }`}
-                          title="Words Mode"
-                        >
-                          T
-                        </button>
-                      </div>
-
-                      {/* Pill 3: Limits */}
-                      <div className="relative flex items-center h-[40px] p-[3px] rounded-full border border-[#1f1f22] bg-black select-none gap-[18px]">
-                        {/* Sliding background capsule */}
-                        <div 
-                          className="absolute top-[3px] w-[34px] h-[34px] rounded-full bg-[#2c2c2f] transition-all duration-300 ease-out"
-                          style={{
-                            left: `${3 + (testMode === 'time' 
-                              ? [15, 30, 60, 120].indexOf(testTimeLimit as any)
-                              : [10, 25, 50, 100].indexOf(wordLimit as any)
-                            ) * 52}px`,
-                            opacity: (testMode === 'time' && [15, 30, 60, 120].includes(testTimeLimit as any)) || (testMode === 'words' && [10, 25, 50, 100].includes(wordLimit as any)) ? 1 : 0
-                          }}
-                        />
-                        {testMode === 'time' ? (
-                          ([15, 30, 60, 120] as const).map((t) => (
+                          return (
                             <button
-                              key={t}
+                              key={mode}
                               onClick={() => {
-                                setTestTimeLimit(t);
-                                saveConfig({ testTimeLimit: t });
+                                setTestMode(mode);
+                                saveConfig({ testMode: mode });
+                                resetTest();
                               }}
-                              className={`relative z-10 w-[34px] h-[34px] rounded-full flex items-center justify-center transition-colors duration-200 cursor-pointer text-sm ${
-                                testTimeLimit === t 
-                                  ? 'text-white font-bold' 
+                              className={`w-[38px] h-[38px] rounded-full flex items-center justify-center transition-all cursor-pointer ${
+                                testMode === mode
+                                  ? 'bg-zinc-800 text-white font-bold'
                                   : 'text-zinc-500 hover:text-white'
                               }`}
+                              title={title}
                             >
-                              {t}
+                              <Icon className="w-[18px] h-[18px]" />
                             </button>
-                          ))
-                        ) : (
-                          ([10, 25, 50, 100] as const).map((w) => (
-                            <button
-                              key={w}
-                              onClick={() => {
-                                setWordLimit(w);
-                                saveConfig({ wordLimit: w });
-                              }}
-                              className={`relative z-10 w-[34px] h-[34px] rounded-full flex items-center justify-center transition-colors duration-200 cursor-pointer text-sm ${
-                                wordLimit === w 
-                                  ? 'text-white font-bold' 
-                                  : 'text-zinc-500 hover:text-white'
-                              }`}
-                            >
-                              {w}
-                            </button>
-                          ))
-                        )}
+                          );
+                        })}
                       </div>
+
+                      {/* Pill 3: Limits / Suboptions */}
+                      {(testMode === 'time' || testMode === 'words' || testMode === 'custom' || testMode === 'govt-exam') && (
+                        <div className="flex items-center h-[46px] p-[2px] rounded-full border border-[var(--border-subtle)]/80 bg-[var(--bg-widget)]/60 backdrop-blur-sm select-none gap-[6px] transition-all duration-300">
+                          {testMode === 'time' && (
+                            <>
+                              {([15, 30, 60, 120] as const).map((t) => (
+                                <button
+                                  key={t}
+                                  onClick={() => {
+                                    setTestTimeLimit(t);
+                                    saveConfig({ testTimeLimit: t });
+                                    resetTest();
+                                  }}
+                                  className={`w-[38px] h-[38px] rounded-full flex items-center justify-center transition-all cursor-pointer text-sm font-bold font-mono ${
+                                    testTimeLimit === t
+                                      ? 'bg-zinc-800 text-white font-bold'
+                                      : 'text-zinc-500 hover:text-white'
+                                  }`}
+                                >
+                                  {t}
+                                </button>
+                              ))}
+                              <button
+                                onClick={() => {
+                                  setCustomTimeInput(testTimeLimit.toString());
+                                  setIsCustomTimeOpen(true);
+                                }}
+                                className={`w-[38px] h-[38px] rounded-full flex items-center justify-center transition-all cursor-pointer text-[11px] font-bold font-mono ${
+                                  ![15, 30, 60, 120].includes(testTimeLimit)
+                                    ? 'bg-zinc-800 text-white font-bold'
+                                    : 'text-zinc-500 hover:text-white'
+                                }`}
+                                title="Custom Time"
+                              >
+                                {![15, 30, 60, 120].includes(testTimeLimit) ? (
+                                  <span>{testTimeLimit}s</span>
+                                ) : (
+                                  <Sliders className="w-[18px] h-[18px]" />
+                                )}
+                              </button>
+                            </>
+                          )}
+
+                          {testMode === 'words' && (
+                            <>
+                              {([10, 25, 50, 100] as const).map((w) => (
+                                <button
+                                  key={w}
+                                  onClick={() => {
+                                    setWordLimit(w);
+                                    saveConfig({ wordLimit: w });
+                                    resetTest();
+                                  }}
+                                  className={`w-[38px] h-[38px] rounded-full flex items-center justify-center transition-all cursor-pointer text-sm font-bold font-mono ${
+                                    wordLimit === w
+                                      ? 'bg-zinc-800 text-white font-bold'
+                                      : 'text-zinc-500 hover:text-white'
+                                  }`}
+                                >
+                                  {w}
+                                </button>
+                              ))}
+                              <button
+                                onClick={() => {
+                                  setCustomWordInput(wordLimit.toString());
+                                  setIsCustomWordLimitOpen(true);
+                                }}
+                                className={`w-[38px] h-[38px] rounded-full flex items-center justify-center transition-all cursor-pointer text-[10px] font-bold font-mono ${
+                                  ![10, 25, 50, 100].includes(wordLimit)
+                                    ? 'bg-zinc-800 text-white font-bold'
+                                    : 'text-zinc-500 hover:text-white'
+                                }`}
+                                title="Custom Words"
+                              >
+                                {![10, 25, 50, 100].includes(wordLimit) ? (
+                                  <span>{wordLimit}w</span>
+                                ) : (
+                                  <Sliders className="w-[18px] h-[18px]" />
+                                )}
+                              </button>
+                            </>
+                          )}
+
+                          {testMode === 'custom' && (
+                            <button
+                              onClick={() => {
+                                setCustomTextInput(customText);
+                                setIsCustomTextOpen(true);
+                              }}
+                              className="h-[38px] px-4 rounded-full flex items-center justify-center transition-all cursor-pointer text-xs font-bold text-zinc-400 hover:text-white gap-2 hover:bg-zinc-900"
+                              title="Edit Custom Text"
+                            >
+                              <FileText className="w-[18px] h-[18px] text-zinc-400" />
+                              <span>Edit Custom Text</span>
+                            </button>
+                          )}
+
+                          {testMode === 'govt-exam' && (
+                            <div className="flex items-center gap-[6px]">
+                              {(['ssc-chsl', 'ssc-cgl', 'state-clerk'] as const).map((type) => (
+                                <button
+                                  key={type}
+                                  onClick={() => {
+                                    setGovtExamType(type);
+                                    saveConfig({ govtExamType: type });
+                                    resetTest();
+                                  }}
+                                  className={`h-[38px] px-3.5 rounded-full flex items-center justify-center transition-all cursor-pointer text-[11px] font-bold uppercase ${
+                                    govtExamType === type
+                                      ? 'bg-zinc-800 text-white font-bold'
+                                      : 'text-zinc-500 hover:text-white'
+                                  }`}
+                                >
+                                  {type === 'ssc-chsl' ? 'CHSL' : type === 'ssc-cgl' ? 'CGL' : 'Clerk'}
+                                </button>
+                              ))}
+                            </div>
+                          )}
+                        </div>
+                      )}
 
                       {/* Pill 4: Language Selection */}
-                      <div className="flex items-center h-[40px] px-3.5 rounded-full border border-[#1f1f22] bg-black select-none">
+                      <div className="flex items-center h-[46px] px-5 rounded-full border border-[var(--border-subtle)]/80 bg-[var(--bg-widget)]/60 backdrop-blur-sm select-none transition-all duration-300">
                         <button 
-                          onClick={() => setIsSettingsOpen(true)}
-                          className="flex items-center gap-1.5 hover:text-white transition-colors cursor-pointer text-[13px] text-zinc-500 font-mono"
+                          onClick={() => {
+                            setLanguageSearchQuery('');
+                            setIsLanguageModalOpen(true);
+                          }}
+                          className="flex items-center gap-2 hover:text-white transition-colors cursor-pointer text-xs text-[var(--text-main)] font-mono uppercase font-bold"
                           title="Change Language"
                         >
-                          <Globe className="w-3.5 h-3.5" />
-                          <span>{LANGUAGES.find(l => l.id === languageId)?.name.split(' ')[0].toLowerCase() || 'english'}</span>
+                          <Globe className="w-[18px] h-[18px] text-zinc-400" />
+                          <span>{LANGUAGES.find(l => l.id === languageId)?.name.split(' ')[0] || 'English'}</span>
                         </button>
                       </div>
                     </div>
 
                     {/* Subtle restart instruction */}
-                    <div className="text-[11px] text-zinc-600 font-mono flex items-center gap-1.5 mt-2">
+                    <div className="text-[11px] text-[var(--text-muted)] opacity-60 font-mono flex items-center gap-1.5 mt-2">
                       <span>Press</span>
-                      <kbd className="bg-zinc-900 border border-zinc-800 rounded px-1.5 py-0.5 text-zinc-400">Esc</kbd>
+                      <kbd className="bg-[var(--bg-panel)] border border-[var(--border-subtle)] rounded px-1.5 py-0.5 text-[var(--text-main)]">Esc</kbd>
                       <span>to restart</span>
                     </div>
                   </div>
@@ -1160,55 +1290,25 @@ export function TypingApp({ seoTitle, seoDescription }: TypingAppProps) {
         isOpen={isSettingsOpen}
         onClose={() => setIsSettingsOpen(false)}
         languageId={languageId}
-        onLanguageChange={(langId) => {
-          setLanguageId(langId);
-          saveConfig({ languageId: langId });
-        }}
         fontId={fontId}
         onFontIdChange={(fId) => {
           setFontId(fId);
           saveConfig({ fontId: fId });
-        }}
-        // Theme
-        currentTheme={currentTheme}
-        onThemeChange={(theme) => {
-          setCurrentTheme(theme);
-          saveConfig({ currentTheme: theme });
         }}
         cursorStyle={cursorStyle}
         onCursorChange={(style) => {
           setCursorStyle(style);
           saveConfig({ cursorStyle: style });
         }}
-        testTimeLimit={testTimeLimit}
-        onTimeChange={(time) => {
-          setTestTimeLimit(time);
-          saveConfig({ testTimeLimit: time });
-        }}
-        wordLimit={wordLimit}
-        onWordLimitChange={(limit) => {
-          setWordLimit(limit);
-          saveConfig({ wordLimit: limit });
-        }}
         fontSize={fontSize}
         onFontSizeChange={(size) => {
           setFontSize(size);
           saveConfig({ fontSize: size });
         }}
-        testMode={testMode}
-        onModeChange={(mode) => {
-          setTestMode(mode);
-          saveConfig({ testMode: mode });
-        }}
         switchProfile={switchProfile}
         onSwitchChange={(profile) => {
           setSwitchProfile(profile);
           saveConfig({ switchProfile: profile });
-        }}
-        customText={customText}
-        onCustomTextChange={(text) => {
-          setCustomText(text);
-          saveConfig({ customText: text });
         }}
         includePunctuation={includePunctuation}
         onPunctuationChange={(val) => {
@@ -1256,6 +1356,279 @@ export function TypingApp({ seoTitle, seoDescription }: TypingAppProps) {
           }
         }}
       />
+
+      {/* Searchable Language Selector Modal */}
+      {isLanguageModalOpen && (
+        <div 
+          className="fixed inset-0 bg-black/60 backdrop-blur-md z-50 flex items-center justify-center p-4 animate-fadeIn"
+          onClick={() => setIsLanguageModalOpen(false)}
+        >
+          <div 
+            className="w-full max-w-[500px] max-h-[85vh] bg-[#0c0d12] border border-zinc-800 rounded-3xl p-6 md:p-8 flex flex-col justify-between shadow-2xl relative animate-scaleIn overflow-hidden"
+            onClick={(e) => e.stopPropagation()}
+          >
+            {/* Header */}
+            <header className="flex justify-between items-center border-b border-zinc-900/60 pb-4 mb-4">
+              <div className="flex items-center gap-2">
+                <Globe className="w-5 h-5 text-[var(--accent-color)]" />
+                <h3 className="text-lg font-bold text-white">Select Language</h3>
+              </div>
+              <button 
+                onClick={() => setIsLanguageModalOpen(false)}
+                className="w-8 h-8 flex items-center justify-center rounded-full hover:bg-[var(--bg-panel)] border border-zinc-900 text-zinc-500 hover:text-white transition-all cursor-pointer"
+              >
+                <X className="w-4 h-4" />
+              </button>
+            </header>
+
+            {/* Search Input */}
+            <div className="mb-4">
+              <input
+                type="text"
+                value={languageSearchQuery}
+                onChange={(e) => setLanguageSearchQuery(e.target.value)}
+                placeholder="Search languages..."
+                className="w-full bg-black border border-zinc-900 rounded-xl px-4 py-3 text-sm text-white placeholder-zinc-600 focus:border-[var(--accent-color)] transition-colors focus:outline-none font-sans"
+                autoFocus
+              />
+            </div>
+
+            {/* Scrollable Language List */}
+            <div className="flex-1 overflow-y-auto pr-1 space-y-1 max-h-[45vh] scrollbar-thin scrollbar-thumb-zinc-800 scrollbar-track-transparent">
+              {LANGUAGES.filter(lang => 
+                lang.name.toLowerCase().includes(languageSearchQuery.toLowerCase()) ||
+                lang.id.toLowerCase().includes(languageSearchQuery.toLowerCase())
+              ).map(lang => (
+                <button
+                  key={lang.id}
+                  onClick={() => {
+                    setLanguageId(lang.id);
+                    setFontId(lang.fonts[0].id); // Auto-select first font
+                    saveConfig({ languageId: lang.id, fontId: lang.fonts[0].id });
+                    resetTest();
+                    setIsLanguageModalOpen(false);
+                  }}
+                  className={`w-full flex items-center justify-between px-4 py-3 rounded-xl transition-all cursor-pointer text-left ${
+                    languageId === lang.id
+                      ? 'bg-[var(--accent-color)] text-black font-bold'
+                      : 'hover:bg-zinc-900 text-zinc-400 hover:text-white'
+                  }`}
+                >
+                  <span className="text-[13.5px] font-semibold">{lang.name}</span>
+                  {languageId === lang.id && <Check className="w-4 h-4" />}
+                </button>
+              ))}
+              {LANGUAGES.filter(lang => 
+                lang.name.toLowerCase().includes(languageSearchQuery.toLowerCase()) ||
+                lang.id.toLowerCase().includes(languageSearchQuery.toLowerCase())
+              ).length === 0 && (
+                <div className="text-center py-8 text-zinc-600 text-xs font-mono">
+                  No languages match your search
+                </div>
+              )}
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Custom Time Modal */}
+      {isCustomTimeOpen && (
+        <div 
+          className="fixed inset-0 bg-black/60 backdrop-blur-md z-50 flex items-center justify-center p-4 animate-fadeIn"
+          onClick={() => setIsCustomTimeOpen(false)}
+        >
+          <form 
+            onSubmit={(e) => {
+              e.preventDefault();
+              const parsed = parseInt(customTimeInput);
+              if (!isNaN(parsed) && parsed >= 5 && parsed <= 3600) {
+                setTestTimeLimit(parsed);
+                saveConfig({ testTimeLimit: parsed });
+                resetTest();
+                setIsCustomTimeOpen(false);
+              }
+            }}
+            className="w-full max-w-[400px] bg-[#0c0d12] border border-zinc-800 rounded-3xl p-6 md:p-8 flex flex-col gap-6 shadow-2xl relative animate-scaleIn"
+            onClick={(e) => e.stopPropagation()}
+          >
+            {/* Header */}
+            <div className="flex justify-between items-center">
+              <div className="flex items-center gap-2">
+                <Clock className="w-5 h-5 text-[var(--accent-color)]" />
+                <h3 className="text-lg font-bold text-white">Custom Duration</h3>
+              </div>
+              <button 
+                type="button"
+                onClick={() => setIsCustomTimeOpen(false)}
+                className="w-8 h-8 flex items-center justify-center rounded-full hover:bg-[var(--bg-panel)] border border-zinc-900 text-zinc-500 hover:text-white transition-all cursor-pointer"
+              >
+                <X className="w-4 h-4" />
+              </button>
+            </div>
+
+            <div className="flex flex-col gap-1.5">
+              <label className="text-[12px] font-semibold text-zinc-500 uppercase tracking-wider">Duration in seconds (5 - 3600)</label>
+              <input
+                type="number"
+                min="5"
+                max="3600"
+                value={customTimeInput}
+                onChange={(e) => setCustomTimeInput(e.target.value)}
+                placeholder="e.g. 30"
+                className="w-full bg-black border border-zinc-900 rounded-xl px-4 py-3 text-sm text-white placeholder-zinc-600 focus:border-[var(--accent-color)] transition-colors focus:outline-none font-mono"
+                autoFocus
+              />
+            </div>
+
+            <div className="flex justify-end gap-3">
+              <button
+                type="button"
+                onClick={() => setIsCustomTimeOpen(false)}
+                className="px-5 py-2.5 rounded-full border border-zinc-900 text-zinc-400 hover:text-white text-xs font-semibold cursor-pointer"
+              >
+                Cancel
+              </button>
+              <button
+                type="submit"
+                className="px-5 py-2.5 rounded-full bg-[var(--accent-color)] hover:bg-white text-black text-xs font-bold transition-all cursor-pointer"
+              >
+                Apply
+              </button>
+            </div>
+          </form>
+        </div>
+      )}
+
+      {/* Custom Word Limit Modal */}
+      {isCustomWordLimitOpen && (
+        <div 
+          className="fixed inset-0 bg-black/60 backdrop-blur-md z-50 flex items-center justify-center p-4 animate-fadeIn"
+          onClick={() => setIsCustomWordLimitOpen(false)}
+        >
+          <form 
+            onSubmit={(e) => {
+              e.preventDefault();
+              const parsed = parseInt(customWordInput);
+              if (!isNaN(parsed) && parsed >= 5 && parsed <= 1000) {
+                setWordLimit(parsed);
+                saveConfig({ wordLimit: parsed });
+                resetTest();
+                setIsCustomWordLimitOpen(false);
+              }
+            }}
+            className="w-full max-w-[400px] bg-[#0c0d12] border border-zinc-800 rounded-3xl p-6 md:p-8 flex flex-col gap-6 shadow-2xl relative animate-scaleIn"
+            onClick={(e) => e.stopPropagation()}
+          >
+            {/* Header */}
+            <div className="flex justify-between items-center">
+              <div className="flex items-center gap-2">
+                <FileText className="w-5 h-5 text-[var(--accent-color)]" />
+                <h3 className="text-lg font-bold text-white">Custom Word Count</h3>
+              </div>
+              <button 
+                type="button"
+                onClick={() => setIsCustomWordLimitOpen(false)}
+                className="w-8 h-8 flex items-center justify-center rounded-full hover:bg-[var(--bg-panel)] border border-zinc-900 text-zinc-500 hover:text-white transition-all cursor-pointer"
+              >
+                <X className="w-4 h-4" />
+              </button>
+            </div>
+
+            <div className="flex flex-col gap-1.5">
+              <label className="text-[12px] font-semibold text-zinc-500 uppercase tracking-wider">Number of words (5 - 1000)</label>
+              <input
+                type="number"
+                min="5"
+                max="1000"
+                value={customWordInput}
+                onChange={(e) => setCustomWordInput(e.target.value)}
+                placeholder="e.g. 50"
+                className="w-full bg-black border border-zinc-900 rounded-xl px-4 py-3 text-sm text-white placeholder-zinc-600 focus:border-[var(--accent-color)] transition-colors focus:outline-none font-mono"
+                autoFocus
+              />
+            </div>
+
+            <div className="flex justify-end gap-3">
+              <button
+                type="button"
+                onClick={() => setIsCustomWordLimitOpen(false)}
+                className="px-5 py-2.5 rounded-full border border-zinc-900 text-zinc-400 hover:text-white text-xs font-semibold cursor-pointer"
+              >
+                Cancel
+              </button>
+              <button
+                type="submit"
+                className="px-5 py-2.5 rounded-full bg-[var(--accent-color)] hover:bg-white text-black text-xs font-bold transition-all cursor-pointer"
+              >
+                Apply
+              </button>
+            </div>
+          </form>
+        </div>
+      )}
+
+      {/* Custom Text Modal */}
+      {isCustomTextOpen && (
+        <div 
+          className="fixed inset-0 bg-black/60 backdrop-blur-md z-50 flex items-center justify-center p-4 animate-fadeIn"
+          onClick={() => setIsCustomTextOpen(false)}
+        >
+          <form 
+            onSubmit={(e) => {
+              e.preventDefault();
+              setCustomText(customTextInput);
+              saveConfig({ customText: customTextInput });
+              resetTest();
+              setIsCustomTextOpen(false);
+            }}
+            className="w-full max-w-[600px] bg-[#0c0d12] border border-zinc-800 rounded-3xl p-6 md:p-8 flex flex-col gap-6 shadow-2xl relative animate-scaleIn"
+            onClick={(e) => e.stopPropagation()}
+          >
+            {/* Header */}
+            <div className="flex justify-between items-center">
+              <div className="flex items-center gap-2">
+                <FileText className="w-5 h-5 text-[var(--accent-color)]" />
+                <h3 className="text-lg font-bold text-white">Custom Practice Text</h3>
+              </div>
+              <button 
+                type="button"
+                onClick={() => setIsCustomTextOpen(false)}
+                className="w-8 h-8 flex items-center justify-center rounded-full hover:bg-[var(--bg-panel)] border border-zinc-900 text-zinc-500 hover:text-white transition-all cursor-pointer"
+              >
+                <X className="w-4 h-4" />
+              </button>
+            </div>
+
+            <div className="flex flex-col gap-2">
+              <label className="text-[12px] font-semibold text-zinc-500 uppercase tracking-wider">Paste practice text below</label>
+              <textarea
+                value={customTextInput}
+                onChange={(e) => setCustomTextInput(e.target.value)}
+                placeholder="Type or paste custom text here..."
+                rows={6}
+                className="w-full bg-black border border-zinc-900 rounded-xl p-4 text-sm text-white placeholder-zinc-600 focus:border-[var(--accent-color)] transition-colors focus:outline-none font-mono resize-none"
+                autoFocus
+              />
+            </div>
+
+            <div className="flex justify-end gap-3">
+              <button
+                type="button"
+                onClick={() => setIsCustomTextOpen(false)}
+                className="px-5 py-2.5 rounded-full border border-zinc-900 text-zinc-400 hover:text-white text-xs font-semibold cursor-pointer"
+              >
+                Cancel
+              </button>
+              <button
+                type="submit"
+                className="px-5 py-2.5 rounded-full bg-[var(--accent-color)] hover:bg-white text-black text-xs font-bold transition-all cursor-pointer"
+              >
+                Apply
+              </button>
+            </div>
+          </form>
+        </div>
+      )}
 
     </div>
   );

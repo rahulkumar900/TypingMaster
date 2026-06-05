@@ -12,6 +12,7 @@ export const metadata: Metadata = {
 export default function TypingPracticePage() {
   return (
     <TypingApp 
+      initialTab="practice"
       seoTitle="Typing Practice Hub"
       seoDescription="Consistent typing practice is the only way to build muscle memory and increase your typing speed. Use our Weak Keys drill mode to practice the exact letters you struggle with the most."
     />

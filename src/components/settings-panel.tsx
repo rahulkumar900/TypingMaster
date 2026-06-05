@@ -9,32 +9,21 @@ interface SettingsPanelProps {
   onClose: () => void;
   cursorStyle: 'pipe' | 'block' | 'outline' | 'underline';
   onCursorChange: (style: 'pipe' | 'block' | 'outline' | 'underline') => void;
-  testTimeLimit: number;
-  onTimeChange: (time: number) => void;
-  wordLimit: number;
-  onWordLimitChange: (limit: number) => void;
   fontSize: number;
   onFontSizeChange: (size: number) => void;
-  testMode: 'time' | 'words' | 'quotes' | 'custom' | 'zen' | 'weak-keys' | 'govt-exam';
-  onModeChange: (mode: 'time' | 'words' | 'quotes' | 'custom' | 'zen' | 'weak-keys' | 'govt-exam') => void;
   switchProfile: 'blue' | 'brown' | 'red';
   onSwitchChange: (profile: 'blue' | 'brown' | 'red') => void;
-  customText: string;
-  onCustomTextChange: (text: string) => void;
   includePunctuation: boolean;
   onPunctuationChange: (val: boolean) => void;
   includeNumbers: boolean;
   onNumbersChange: (val: boolean) => void;
   showSpeedometer: boolean;
   onShowSpeedometerChange: (val: boolean) => void;
-  currentTheme: string;
-  onThemeChange: (theme: string) => void;
   suddenDeath: boolean;
   onSuddenDeathChange: (val: boolean) => void;
   ghostWpm: number;
   onGhostWpmChange: (wpm: number) => void;
   languageId: string;
-  onLanguageChange: (langId: string) => void;
   fontId: string;
   onFontIdChange: (fontId: string) => void;
 }
@@ -44,32 +33,21 @@ export const SettingsPanel: React.FC<SettingsPanelProps> = ({
   onClose,
   cursorStyle,
   onCursorChange,
-  testTimeLimit,
-  onTimeChange,
-  wordLimit,
-  onWordLimitChange,
   fontSize,
   onFontSizeChange,
-  testMode,
-  onModeChange,
   switchProfile,
   onSwitchChange,
-  customText,
-  onCustomTextChange,
   includePunctuation,
   onPunctuationChange,
   includeNumbers,
   onNumbersChange,
   showSpeedometer,
   onShowSpeedometerChange,
-  currentTheme,
-  onThemeChange,
   suddenDeath,
   onSuddenDeathChange,
   ghostWpm,
   onGhostWpmChange,
   languageId,
-  onLanguageChange,
   fontId,
   onFontIdChange
 }) => {
@@ -82,7 +60,7 @@ export const SettingsPanel: React.FC<SettingsPanelProps> = ({
     >
       {/* Settings Panel Sliding Drawer Container */}
       <aside 
-        className="w-full max-w-[400px] h-full bg-[#0c0d12] border-l border-[var(--border-active)] p-6 md:p-8 flex flex-col justify-between shadow-2xl overflow-y-auto animate-slideIn"
+        className="w-full max-w-[400px] h-full bg-[var(--bg-panel)] border-l border-[var(--border-active)] p-6 md:p-8 flex flex-col justify-between shadow-2xl overflow-y-auto animate-slideIn"
         onClick={(e) => e.stopPropagation()}
         aria-label="Typing settings"
       >
@@ -91,7 +69,7 @@ export const SettingsPanel: React.FC<SettingsPanelProps> = ({
           <header className="flex justify-between items-center border-b border-[var(--border-subtle)] pb-4">
             <div className="flex items-center gap-2">
               <Settings className="w-5 h-5 text-[var(--accent-color)]" />
-              <h2 className="text-xl font-bold text-white font-sans">Settings</h2>
+              <h2 className="text-xl font-bold text-[var(--text-main)] font-sans">Settings</h2>
             </div>
             <button 
               onClick={onClose}
@@ -101,121 +79,33 @@ export const SettingsPanel: React.FC<SettingsPanelProps> = ({
             </button>
           </header>
 
-          {/* Test Modes Selectors */}
-          <div className="flex flex-col gap-3">
+          {/* Practice Modifiers (Punctuation / Numbers) */}
+          <div className="flex flex-col gap-3 animate-fadeIn">
             <h3 className="text-[12px] font-semibold text-[var(--text-muted-alt)] uppercase tracking-wider flex items-center gap-1">
-              <Type className="w-3.5 h-3.5" />
-              Test Mode
+              <Sliders className="w-3.5 h-3.5" />
+              Practice Modifiers
             </h3>
-            <div className="grid grid-cols-2 gap-2 bg-[var(--bg-panel)] p-1 rounded-xl border border-[var(--border-subtle)] w-full">
-              {(['time', 'words', 'quotes', 'custom', 'zen', 'weak-keys', 'govt-exam'] as const).map((mode) => (
-                <button
-                  key={mode}
-                  onClick={() => onModeChange(mode)}
-                  className={`py-2 px-1 rounded-lg text-[11px] font-semibold transition-all cursor-pointer uppercase ${
-                    testMode === mode
-                      ? 'bg-[var(--accent-color)] text-black font-bold shadow-[0_4px_12px_rgba(var(--accent-rgb),0.2)]'
-                      : 'text-[var(--text-muted-alt)] hover:text-slate-50'
-                  }`}
-                >
-                  {mode === 'weak-keys' ? 'weak keys' : mode === 'govt-exam' ? 'govt exam' : mode}
-                </button>
-              ))}
+            <div className="flex flex-col gap-2">
+              <label className="flex items-center justify-between p-3 rounded-xl bg-[var(--bg-panel)] border border-[var(--border-subtle)] cursor-pointer hover:bg-[var(--bg-panel)] transition-colors">
+                <span className="text-[13px] font-semibold text-[var(--text-main)]">Punctuation</span>
+                <input
+                  type="checkbox"
+                  checked={includePunctuation}
+                  onChange={(e) => onPunctuationChange(e.target.checked)}
+                  className="w-4 h-4 rounded border-[var(--border-active)] bg-black text-[var(--accent-color)] focus:ring-0 cursor-pointer"
+                />
+              </label>
+              <label className="flex items-center justify-between p-3 rounded-xl bg-[var(--bg-panel)] border border-[var(--border-subtle)] cursor-pointer hover:bg-[var(--bg-panel)] transition-colors">
+                <span className="text-[13px] font-semibold text-[var(--text-main)]">Numbers</span>
+                <input
+                  type="checkbox"
+                  checked={includeNumbers}
+                  onChange={(e) => onNumbersChange(e.target.checked)}
+                  className="w-4 h-4 rounded border-[var(--border-active)] bg-black text-[var(--accent-color)] focus:ring-0 cursor-pointer"
+                />
+              </label>
             </div>
           </div>
-
-          {/* Dynamic mode suboptions */}
-          {testMode === 'time' && (
-            <div className="flex flex-col gap-3 animate-fadeIn">
-              <h3 className="text-[12px] font-semibold text-[var(--text-muted-alt)] uppercase tracking-wider flex items-center gap-1">
-                <Sliders className="w-3.5 h-3.5" />
-                Duration <span className="text-[10px] lowercase opacity-70 ml-0.5">(seconds)</span>
-              </h3>
-              <div className="flex bg-[var(--bg-panel)] p-1 rounded-xl border border-[var(--border-subtle)] w-full">
-                {([15, 30, 60, 120] as const).map((time) => (
-                  <button
-                    key={time}
-                    onClick={() => onTimeChange(time)}
-                    className={`flex-1 py-2 rounded-lg text-[13px] font-semibold transition-all cursor-pointer ${
-                      testTimeLimit === time
-                        ? 'bg-[var(--accent-color)] text-black font-bold'
-                        : 'text-[var(--text-muted-alt)] hover:text-slate-50'
-                    }`}
-                  >
-                    {time}
-                  </button>
-                ))}
-              </div>
-            </div>
-          )}
-
-          {testMode === 'words' && (
-            <div className="flex flex-col gap-3 animate-fadeIn">
-              <h3 className="text-[12px] font-semibold text-[var(--text-muted-alt)] uppercase tracking-wider flex items-center gap-1">
-                <Sliders className="w-3.5 h-3.5" />
-                Word Count
-              </h3>
-              <div className="flex bg-[var(--bg-panel)] p-1 rounded-xl border border-[var(--border-subtle)] w-full">
-                {([10, 25, 50, 100] as const).map((limit) => (
-                  <button
-                    key={limit}
-                    onClick={() => onWordLimitChange(limit)}
-                    className={`flex-1 py-2 rounded-lg text-[13px] font-semibold transition-all cursor-pointer ${
-                      wordLimit === limit
-                        ? 'bg-[var(--accent-color)] text-black font-bold'
-                        : 'text-[var(--text-muted-alt)] hover:text-slate-50'
-                    }`}
-                  >
-                    {limit}
-                  </button>
-                ))}
-              </div>
-            </div>
-          )}
-
-          {testMode === 'custom' && (
-            <div className="flex flex-col gap-3 animate-fadeIn">
-              <h3 className="text-[12px] font-semibold text-[var(--text-muted-alt)] uppercase tracking-wider flex items-center gap-1">
-                <FileText className="w-3.5 h-3.5" />
-                Custom Text
-              </h3>
-              <textarea
-                value={customText}
-                onChange={(e) => onCustomTextChange(e.target.value)}
-                placeholder="Paste your custom text here to practice typing..."
-                className="w-full h-32 bg-black border border-[var(--border-subtle)] rounded-xl p-3 text-[13px] font-mono text-white placeholder-slate-600 resize-none focus:border-[var(--accent-color)] transition-colors focus:outline-none"
-              />
-            </div>
-          )}
-          {/* Practice Modifiers (Punctuation / Numbers) */}
-          {(testMode === 'time' || testMode === 'words') && (
-            <div className="flex flex-col gap-3 animate-fadeIn">
-              <h3 className="text-[12px] font-semibold text-[var(--text-muted-alt)] uppercase tracking-wider flex items-center gap-1">
-                <Sliders className="w-3.5 h-3.5" />
-                Practice Modifiers
-              </h3>
-              <div className="flex flex-col gap-2">
-                <label className="flex items-center justify-between p-3 rounded-xl bg-[var(--bg-panel)] border border-[var(--border-subtle)] cursor-pointer hover:bg-[var(--bg-panel)] transition-colors">
-                  <span className="text-[13px] font-semibold text-[var(--text-main)]">Punctuation</span>
-                  <input
-                    type="checkbox"
-                    checked={includePunctuation}
-                    onChange={(e) => onPunctuationChange(e.target.checked)}
-                    className="w-4 h-4 rounded border-[var(--border-active)] bg-black text-[var(--accent-color)] focus:ring-0 cursor-pointer"
-                  />
-                </label>
-                <label className="flex items-center justify-between p-3 rounded-xl bg-[var(--bg-panel)] border border-[var(--border-subtle)] cursor-pointer hover:bg-[var(--bg-panel)] transition-colors">
-                  <span className="text-[13px] font-semibold text-[var(--text-main)]">Numbers</span>
-                  <input
-                    type="checkbox"
-                    checked={includeNumbers}
-                    onChange={(e) => onNumbersChange(e.target.checked)}
-                    className="w-4 h-4 rounded border-[var(--border-active)] bg-black text-[var(--accent-color)] focus:ring-0 cursor-pointer"
-                  />
-                </label>
-              </div>
-            </div>
-          )}
 
           {/* Sound Switch Profiles selector */}
           <div className="flex flex-col gap-3">
@@ -269,31 +159,11 @@ export const SettingsPanel: React.FC<SettingsPanelProps> = ({
           <div className="flex flex-col gap-3">
             <h3 className="text-[12px] font-semibold text-[var(--text-muted-alt)] uppercase tracking-wider flex items-center gap-1">
               <Globe className="w-3.5 h-3.5" />
-              Language & Exam Font
+              Exam Font & Layout
             </h3>
-            
-            {/* Language Selection */}
-            <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
-              {LANGUAGES.map((lang) => (
-                <button
-                  key={lang.id}
-                  onClick={() => {
-                    onLanguageChange(lang.id);
-                    onFontIdChange(lang.fonts[0].id); // Auto-select first font
-                  }}
-                  className={`flex items-center justify-center p-2 rounded-lg border transition-all cursor-pointer text-[12px] font-bold ${
-                    languageId === lang.id
-                      ? 'bg-[var(--accent-color)] text-black border-[var(--accent-color)] shadow-[0_4px_12px_rgba(var(--accent-rgb),0.2)]'
-                      : 'border-[var(--border-subtle)] hover:border-[var(--border-active)] bg-[var(--bg-panel)] text-[var(--text-muted-alt)]'
-                  }`}
-                >
-                  {lang.name}
-                </button>
-              ))}
-            </div>
 
             {/* Font / Layout Selection based on active language */}
-            <div className="bg-[var(--bg-panel)] border border-[var(--border-subtle)] rounded-xl p-3 mt-1 flex flex-col gap-2">
+            <div className="bg-[var(--bg-panel)] border border-[var(--border-subtle)] rounded-xl p-3 flex flex-col gap-2">
               <span className="text-[11px] text-[var(--text-muted-alt)] font-semibold uppercase tracking-wider">Specific Exam Layout (Font)</span>
               <div className="flex flex-col gap-2">
                 {LANGUAGES.find(l => l.id === languageId)?.fonts.map(font => (

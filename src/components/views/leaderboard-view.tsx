@@ -52,14 +52,60 @@ const MOCK_LEADERBOARDS: Record<string, LeaderboardEntry[]> = {
 
 export function LeaderboardView({ user }: LeaderboardViewProps) {
   const [filter, setFilter] = useState<'daily' | 'weekly' | 'alltime'>('weekly');
-  const data = MOCK_LEADERBOARDS[filter];
+  const [leaderboardData, setLeaderboardData] = useState<LeaderboardEntry[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+
+  React.useEffect(() => {
+    setIsLoading(true);
+    const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'https://typingmaster-bibp.onrender.com';
+    fetch(`${apiUrl}/api/leaderboard`)
+      .then(res => {
+        if (!res.ok) throw new Error('Failed to fetch ratings data');
+        return res.json();
+      })
+      .then(data => {
+        const realEntries: LeaderboardEntry[] = data.map((item: any, idx: number) => ({
+          rank: idx + 1,
+          username: item.username,
+          avatarUrl: item.avatarUrl || `https://api.dicebear.com/7.x/bottts/svg?seed=${item.username}`,
+          avgWpm: Math.round(parseFloat(item.averageWpm || item.highestWpm || '0')),
+          accuracy: parseFloat(item.averageAccuracy || '100').toFixed(2),
+          matchesPlayed: item.racesPlayed || 0
+        }));
+
+        if (realEntries.length < 10) {
+          const mocks = MOCK_LEADERBOARDS[filter] || MOCK_LEADERBOARDS.weekly;
+          const padded = [...realEntries];
+          const seenUsernames = new Set(realEntries.map(e => e.username.toLowerCase()));
+          
+          let rankCounter = realEntries.length + 1;
+          mocks.forEach(mock => {
+            if (!seenUsernames.has(mock.username.toLowerCase()) && padded.length < 10) {
+              padded.push({
+                ...mock,
+                rank: rankCounter++
+              });
+            }
+          });
+          setLeaderboardData(padded);
+        } else {
+          setLeaderboardData(realEntries);
+        }
+        setIsLoading(false);
+      })
+      .catch(err => {
+        console.error('Error fetching real ratings, falling back to mock data:', err);
+        setLeaderboardData(MOCK_LEADERBOARDS[filter]);
+        setIsLoading(false);
+      });
+  }, [filter]);
 
   // Separate podium players (1st, 2nd, 3rd) from table list
-  const podium1st = data.find(p => p.rank === 1);
-  const podium2nd = data.find(p => p.rank === 2);
-  const podium3rd = data.find(p => p.rank === 3);
+  const podium1st = leaderboardData.find(p => p.rank === 1);
+  const podium2nd = leaderboardData.find(p => p.rank === 2);
+  const podium3rd = leaderboardData.find(p => p.rank === 3);
   
-  const listPlayers = data.filter(p => p.rank > 3);
+  const listPlayers = leaderboardData.filter(p => p.rank > 3);
 
   return (
     <div className="w-full text-zinc-300 animate-fadeIn text-left">

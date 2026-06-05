@@ -1,5 +1,5 @@
 import { TypingApp } from '@/components/typing-app';
 
 export default function Home() {
-  return <TypingApp />;
+  return <TypingApp initialTab="test" />;
 }

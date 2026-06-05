@@ -12,6 +12,7 @@ export const metadata: Metadata = {
 export default function OnlineTypingTestPage() {
   return (
     <TypingApp 
+      initialTab="test"
       seoTitle="Online Typing Test"
       seoDescription="Centerville is a premium, free online typing test designed to help you check your words per minute (WPM) and accuracy online in real-time. Practice today to improve your typing mechanics."
     />

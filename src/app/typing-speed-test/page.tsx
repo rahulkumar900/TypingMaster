@@ -12,6 +12,7 @@ export const metadata: Metadata = {
 export default function TypingSpeedTestPage() {
   return (
     <TypingApp 
+      initialTab="test"
       seoTitle="Typing Speed Test"
       seoDescription="Welcome to the Centerville Typing Speed Test. We calculate your true WPM (Words Per Minute) using strict error penalties so you know exactly how fast your fingers fly across the keyboard."
     />

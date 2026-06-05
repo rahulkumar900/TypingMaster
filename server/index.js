@@ -208,6 +208,29 @@ app.post('/api/stats', authenticateToken, async (req, res) => {
   }
 });
 
+app.get('/api/leaderboard', async (req, res) => {
+  try {
+    const result = await pool.query(
+      `SELECT 
+        u.username,
+        u.avatar as "avatarUrl",
+        us.races_played as "racesPlayed",
+        us.races_won as "racesWon",
+        us.highest_wpm as "highestWpm",
+        us.average_wpm as "averageWpm",
+        us.average_accuracy as "averageAccuracy"
+      FROM user_stats us
+      JOIN users u ON us.user_id = u.id
+      ORDER BY us.highest_wpm DESC
+      LIMIT 100`
+    );
+    res.json(result.rows);
+  } catch (err) {
+    console.error('Error fetching leaderboard:', err);
+    res.status(500).json({ error: 'Failed to fetch leaderboard data' });
+  }
+});
+
 // -- SOCKET IO MIDDLEWARE -- //
 io.use((socket, next) => {
   const token = socket.handshake.auth.token;

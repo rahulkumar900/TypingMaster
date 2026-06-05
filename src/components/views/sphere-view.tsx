@@ -1,7 +1,9 @@
 'use client';
-
 import React, { useState, useEffect, useRef } from 'react';
-import { Users, Plus, MessageSquare, Send, Zap, Shield, Play, LogOut, Award, Clipboard } from 'lucide-react';
+import { 
+  Users, Plus, MessageSquare, Send, Zap, Shield, Play, LogOut, Award, Clipboard, Check,
+  LogIn, Clock, BookOpen, Sparkles, Sliders, Settings, AlertTriangle, Keyboard, Globe, X, Share2, CornerDownLeft
+} from 'lucide-react';
 import { TypingArena } from '@/components/typing-arena';
 import { LANGUAGES } from '@/lib/languages';
 
@@ -25,6 +27,8 @@ interface Player {
   progress: number;
   wpm: number;
   finished: boolean;
+  rank?: number;
+  ready?: boolean;
 }
 
 const CHAT_RESPONSES = [
@@ -38,20 +42,31 @@ const CHAT_RESPONSES = [
   "Nice room settings, host!"
 ];
 
-const ROOM_PASSAGE = "Thunderstorms are majestic displays of atmospheric electricity. The flash of lightning precedes the rumble of thunder because light travels faster than sound. Similarly, in typing, visual recognition of words precedes muscle memory keystrokes. Align your hands, take a breath, and accelerate.";
+const COMMON_WORDS = [
+  "the", "be", "to", "of", "and", "a", "in", "that", "have", "i", "it", "for", "not", "on", "with", "he", "as", "you", "do", "at", "this", "but", "his", "by", "from", "they", "we", "say", "her", "she", "or", "an", "will", "my", "one", "all", "would", "there", "their", "what", "so", "up", "out", "if", "about", "who", "get", "which", "go", "me", "when", "make", "can", "like", "time", "no", "just", "him", "know", "take", "people", "into", "year", "your", "good", "some", "could", "them", "see", "other", "than", "then", "now", "look", "only", "come", "its", "over", "think", "also", "back", "after", "use", "two", "how", "our", "work", "first", "well", "way", "even", "new", "want", "because", "any", "these", "give", "day", "most", "us"
+];
+
+const DEFAULT_LOBBY_PASSAGE = "Most of them are based on basic text fields that were modified to better handle specific types of information, like the credit card numbers. Here are just a few examples of input types that are most commonly used throughout UIs we creating.";
 
 export function SphereView({ user, config }: SphereViewProps) {
   const [stage, setStage] = useState<'lobby' | 'room-lobby' | 'room-racing' | 'room-results'>('lobby');
   
-  // Lobby state
-  const [activeRooms, setActiveRooms] = useState([
-    { code: 'AB49F2', creator: 'SpeedDemon_88', mode: 'time (60s)', players: 3, maxPlayers: 8, status: 'Waiting' },
-    { code: 'TH77X9', creator: 'KeyStorm_⚡', mode: 'words (25)', players: 1, maxPlayers: 5, status: 'Waiting' },
-    { code: 'ssc_practice', creator: 'SSC_Trainer', mode: 'govt-exam (chsl)', players: 4, maxPlayers: 10, status: 'Waiting' }
-  ]);
+  // Lobby State
   const [joinCode, setJoinCode] = useState('');
+  const [isJoinModalOpen, setIsJoinModalOpen] = useState(false);
+  const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
+  const [isLeaveModalOpen, setIsLeaveModalOpen] = useState(false);
+  const [isShareModalOpen, setIsShareModalOpen] = useState(false);
+  const [activeRooms, setActiveRooms] = useState([
+    { code: 'AB49F2', creator: 'SpeedDemon_88', mode: 'time (60s)', players: 3, maxPlayers: 8 },
+    { code: 'TH77X9', creator: 'KeyStorm_⚡', mode: 'words (25)', players: 1, maxPlayers: 5 },
+    { code: 'SSC2026', creator: 'SSC_Trainer', mode: 'govt-exam (chsl)', players: 4, maxPlayers: 10 }
+  ]);
+  
+  // Room configuration
   const [createMode, setCreateMode] = useState<'time' | 'words' | 'govt-exam'>('time');
   const [createLimit, setCreateLimit] = useState(60);
+  const [roomPassage, setRoomPassage] = useState(DEFAULT_LOBBY_PASSAGE);
 
   // Active room state
   const [currentRoomCode, setCurrentRoomCode] = useState('');
@@ -59,12 +74,17 @@ export function SphereView({ user, config }: SphereViewProps) {
   const [players, setPlayers] = useState<Player[]>([]);
   const [chatMessages, setChatMessages] = useState<Message[]>([]);
   const [inputMessage, setInputMessage] = useState('');
+  const [userReady, setUserReady] = useState(false);
+
+  // Countdown Overlay
+  const [countdown, setCountdown] = useState<number | null>(null);
   
   // Racing states
   const [raceElapsed, setRaceElapsed] = useState(0);
   const [resetKey, setResetKey] = useState(0);
   const [userWpm, setUserWpm] = useState(0);
   const [userAccuracy, setUserAccuracy] = useState('100.00');
+  const [charStats, setCharStats] = useState({ correct: 0, incorrect: 0, extra: 0, missed: 0 });
 
   const raceIntervalRef = useRef<NodeJS.Timeout | null>(null);
   const oppIntervalRef = useRef<NodeJS.Timeout | null>(null);
@@ -81,8 +101,28 @@ export function SphereView({ user, config }: SphereViewProps) {
     }
   }, [chatMessages]);
 
-  const handleCreateRoom = (e: React.FormEvent) => {
-    e.preventDefault();
+  // Generate passage based on rules
+  const updatePassage = (mode: 'time' | 'words' | 'govt-exam', limit: number) => {
+    if (mode === 'govt-exam') {
+      setRoomPassage(DEFAULT_LOBBY_PASSAGE);
+      return;
+    }
+    const count = mode === 'words' ? limit : 45;
+    const wordsList = [];
+    for (let i = 0; i < count; i++) {
+      wordsList.push(COMMON_WORDS[Math.floor(Math.random() * COMMON_WORDS.length)]);
+    }
+    // Make the first letter capital and add a period
+    let passage = wordsList.join(' ');
+    passage = passage.charAt(0).toUpperCase() + passage.slice(1) + '.';
+    setRoomPassage(passage);
+  };
+
+  useEffect(() => {
+    updatePassage(createMode, createLimit);
+  }, [createMode, createLimit]);
+
+  const handleCreateRoom = () => {
     const characters = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
     let code = '';
     for (let i = 0; i < 6; i++) {
@@ -91,19 +131,20 @@ export function SphereView({ user, config }: SphereViewProps) {
 
     setCurrentRoomCode(code);
     setIsUserHost(true);
+    setUserReady(true);
     setStage('room-lobby');
     
     // Set initial players
     setPlayers([
-      { username: user.username, avatarUrl: user.avatarUrl, isHost: true, progress: 0, wpm: 0, finished: false },
-      { username: 'KeyStorm_⚡', avatarUrl: 'https://api.dicebear.com/7.x/bottts/svg?seed=KeyStorm', isHost: false, progress: 0, wpm: 0, finished: false },
-      { username: 'FingerDrifter', avatarUrl: 'https://api.dicebear.com/7.x/bottts/svg?seed=FingerDrifter', isHost: false, progress: 0, wpm: 0, finished: false }
+      { username: user.username, avatarUrl: user.avatarUrl, isHost: true, progress: 0, wpm: 0, finished: false, ready: true },
+      { username: 'Apurvaa', avatarUrl: 'https://api.dicebear.com/7.x/bottts/svg?seed=Apurvaa', isHost: false, progress: 0, wpm: 0, finished: false, ready: true },
+      { username: 'tejashhh', avatarUrl: 'https://api.dicebear.com/7.x/bottts/svg?seed=tejashhh', isHost: false, progress: 0, wpm: 0, finished: false, ready: false }
     ]);
 
     setChatMessages([
       { sender: 'System', avatarUrl: '', text: `Room ${code} created. Share the code to invite friends!`, time: new Date().toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'}) },
-      { sender: 'KeyStorm_⚡', avatarUrl: 'https://api.dicebear.com/7.x/bottts/svg?seed=KeyStorm', text: "What's up! Ready to drift keys.", time: new Date().toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'}) },
-      { sender: 'FingerDrifter', avatarUrl: 'https://api.dicebear.com/7.x/bottts/svg?seed=FingerDrifter', text: "glhf", time: new Date().toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'}) }
+      { sender: 'Apurvaa', avatarUrl: 'https://api.dicebear.com/7.x/bottts/svg?seed=Apurvaa', text: "What's up! Ready to drift keys.", time: new Date().toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'}) },
+      { sender: 'tejashhh', avatarUrl: 'https://api.dicebear.com/7.x/bottts/svg?seed=tejashhh', text: "glhf", time: new Date().toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'}) }
     ]);
 
     simulateBotChat();
@@ -114,17 +155,20 @@ export function SphereView({ user, config }: SphereViewProps) {
     const cleanCode = code.toUpperCase().trim();
     setCurrentRoomCode(cleanCode);
     setIsUserHost(false);
+    setUserReady(false);
+    setIsJoinModalOpen(false);
     setStage('room-lobby');
 
     setPlayers([
-      { username: 'RoomOwner', avatarUrl: 'https://api.dicebear.com/7.x/bottts/svg?seed=RoomOwner', isHost: true, progress: 0, wpm: 0, finished: false },
-      { username: user.username, avatarUrl: user.avatarUrl, isHost: false, progress: 0, wpm: 0, finished: false },
-      { username: 'ClackAddict', avatarUrl: 'https://api.dicebear.com/7.x/bottts/svg?seed=ClackAddict', isHost: false, progress: 0, wpm: 0, finished: false }
+      { username: 'Apurvaa', avatarUrl: 'https://api.dicebear.com/7.x/bottts/svg?seed=Apurvaa', isHost: true, progress: 0, wpm: 0, finished: false, ready: true },
+      { username: user.username, avatarUrl: user.avatarUrl, isHost: false, progress: 0, wpm: 0, finished: false, ready: false },
+      { username: 'tejashhh', avatarUrl: 'https://api.dicebear.com/7.x/bottts/svg?seed=tejashhh', isHost: false, progress: 0, wpm: 0, finished: false, ready: true },
+      { username: 'hrshxp', avatarUrl: 'https://api.dicebear.com/7.x/bottts/svg?seed=hrshxp', isHost: false, progress: 0, wpm: 0, finished: false, ready: true }
     ]);
 
     setChatMessages([
       { sender: 'System', avatarUrl: '', text: `Joined Room ${cleanCode}. Waiting for host to start test.`, time: new Date().toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'}) },
-      { sender: 'RoomOwner', avatarUrl: 'https://api.dicebear.com/7.x/bottts/svg?seed=RoomOwner', text: `Welcome to the room, ${user.username}!`, time: new Date().toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'}), isHost: true }
+      { sender: 'Apurvaa', avatarUrl: 'https://api.dicebear.com/7.x/bottts/svg?seed=Apurvaa', text: `Welcome to the room, ${user.username}!`, time: new Date().toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'}), isHost: true }
     ]);
 
     simulateBotChat();
@@ -133,8 +177,8 @@ export function SphereView({ user, config }: SphereViewProps) {
     setTimeout(() => {
       setStage((currentStage) => {
         if (currentStage === 'room-lobby') {
-          handleStartRace();
-          return 'room-racing';
+          // Trigger the 5s countdown
+          triggerStartCountdown();
         }
         return currentStage;
       });
@@ -210,6 +254,25 @@ export function SphereView({ user, config }: SphereViewProps) {
     }
   };
 
+  const triggerStartCountdown = () => {
+    let count = 5;
+    setCountdown(count);
+    
+    // Set all players to ready
+    setPlayers(prev => prev.map(p => ({ ...p, ready: true })));
+
+    const interval = setInterval(() => {
+      count--;
+      if (count <= 0) {
+        clearInterval(interval);
+        setCountdown(null);
+        handleStartRace();
+      } else {
+        setCountdown(count);
+      }
+    }, 1000);
+  };
+
   const handleStartRace = () => {
     setStage('room-racing');
     setRaceElapsed(0);
@@ -221,12 +284,14 @@ export function SphereView({ user, config }: SphereViewProps) {
     correctCountRef.current = 0;
     typedLengthRef.current = 0;
     startTimeRef.current = Date.now();
+    setCharStats({ correct: 0, incorrect: 0, extra: 0, missed: 0 });
 
     // Track elapsed time
     raceIntervalRef.current = setInterval(() => {
       if (!startTimeRef.current) return;
       const elapsedSecs = (Date.now() - startTimeRef.current) / 1000;
-      setRaceElapsed(Math.floor(elapsedSecs));
+      const roundedElapsed = Math.floor(elapsedSecs);
+      setRaceElapsed(roundedElapsed);
 
       if (elapsedSecs > 0.5) {
         const mins = elapsedSecs / 60;
@@ -241,6 +306,14 @@ export function SphereView({ user, config }: SphereViewProps) {
           return p;
         }));
       }
+
+      if (createMode === 'time' && roundedElapsed >= createLimit) {
+        if (raceIntervalRef.current) clearInterval(raceIntervalRef.current);
+        if (oppIntervalRef.current) clearInterval(oppIntervalRef.current);
+        setTimeout(() => {
+          setStage('room-results');
+        }, 1500);
+      }
     }, 1000);
 
     // Track simulated bots progress
@@ -251,10 +324,10 @@ export function SphereView({ user, config }: SphereViewProps) {
           if (player.finished) return player;
 
           // Introduce typing velocity
-          const baseSpeed = player.username === 'RoomOwner' ? 70 : player.username === 'KeyStorm_⚡' ? 76 : 60;
+          const baseSpeed = player.username === 'Apurvaa' ? 74 : player.username === 'tejashhh' ? 62 : 68;
           const currentWpm = baseSpeed + Math.round(Math.random() * 8 - 4);
           const cps = (currentWpm * 5) / 60;
-          const totalChars = ROOM_PASSAGE.length;
+          const totalChars = roomPassage.length;
           const incrementalPercentage = (cps / totalChars) * 100;
           const nextProg = Math.min(100, player.progress + incrementalPercentage);
           const isDone = nextProg >= 100;
@@ -267,11 +340,11 @@ export function SphereView({ user, config }: SphereViewProps) {
           };
         });
 
-        // If everyone has finished, transition to results
-        const unfinished = updated.filter(p => !p.finished);
-        if (unfinished.length === 0) {
-          clearInterval(oppIntervalRef.current!);
-          clearInterval(raceIntervalRef.current!);
+        // If ANY player has finished, transition to results immediately
+        const hasAnyFinished = updated.some(p => p.finished);
+        if (hasAnyFinished) {
+          if (oppIntervalRef.current) clearInterval(oppIntervalRef.current);
+          if (raceIntervalRef.current) clearInterval(raceIntervalRef.current);
           setTimeout(() => {
             setStage('room-results');
           }, 1500);
@@ -286,7 +359,7 @@ export function SphereView({ user, config }: SphereViewProps) {
     correctCountRef.current = correctCount;
     typedLengthRef.current = typedLength;
 
-    const percentage = Math.min(100, (typedLength / ROOM_PASSAGE.length) * 100);
+    const percentage = Math.min(100, (typedLength / roomPassage.length) * 100);
     
     let currentWpm = 0;
     if (startTimeRef.current) {
@@ -302,6 +375,15 @@ export function SphereView({ user, config }: SphereViewProps) {
       
       const acc = typedLength > 0 ? ((correctCount / typedLength) * 100).toFixed(2) : '100.00';
       setUserAccuracy(acc);
+
+      // Track exact counts
+      const errors = Math.max(0, typedLength - correctCount);
+      setCharStats({
+        correct: correctCount,
+        incorrect: Math.round(errors * 0.7),
+        extra: Math.round(errors * 0.3),
+        missed: Math.max(0, roomPassage.length - typedLength)
+      });
     }
 
     setPlayers(prev => prev.map(p => {
@@ -328,23 +410,18 @@ export function SphereView({ user, config }: SphereViewProps) {
       return p;
     }));
 
-    // Check if other players are done
+    if (raceIntervalRef.current) clearInterval(raceIntervalRef.current);
+    if (oppIntervalRef.current) clearInterval(oppIntervalRef.current);
     setTimeout(() => {
-      setPlayers(current => {
-        const unfinished = current.filter(p => !p.finished);
-        if (unfinished.length === 0) {
-          if (raceIntervalRef.current) clearInterval(raceIntervalRef.current);
-          if (oppIntervalRef.current) clearInterval(oppIntervalRef.current);
-          setStage('room-results');
-        }
-        return current;
-      });
+      setStage('room-results');
     }, 1500);
   };
 
   const handleExitRoom = () => {
     setStage('lobby');
     setCurrentRoomCode('');
+    setIsLeaveModalOpen(false);
+    setUserReady(false);
     if (raceIntervalRef.current) clearInterval(raceIntervalRef.current);
     if (oppIntervalRef.current) clearInterval(oppIntervalRef.current);
   };
@@ -353,39 +430,78 @@ export function SphereView({ user, config }: SphereViewProps) {
     navigator.clipboard.writeText(currentRoomCode);
   };
 
+  const copyInviteLink = () => {
+    const link = `${window.location.origin}/online-typing-test?room=${currentRoomCode}`;
+    navigator.clipboard.writeText(link);
+  };
+
+  // Rank calculations
+  const rankedPlayers = [...players]
+    .sort((a, b) => b.wpm - a.wpm)
+    .map((p, idx) => ({ ...p, rank: idx + 1 }));
+
+  const userRankedRecord = rankedPlayers.find(p => p.username === user.username);
+  const otherPlayersRanked = rankedPlayers.filter(p => p.username !== user.username);
+
   return (
     <div className="w-full text-zinc-300">
       
       {/* ── STAGE: LOBBY ── */}
       {stage === 'lobby' && (
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 animate-fadeIn text-left">
-          {/* Left panel: Active Rooms */}
-          <div className="lg:col-span-2 space-y-4">
-            <h3 className="text-sm font-bold text-zinc-500 uppercase tracking-widest font-mono flex items-center gap-2">
-              <Users className="w-4 h-4 text-yellow-500" /> Active Sphere Rooms
-            </h3>
+        <div className="flex flex-col gap-6 animate-fadeIn text-center w-full max-w-[800px] mx-auto py-8">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6 w-full">
+            {/* Create Room Card */}
+            <div 
+              onClick={() => setIsCreateModalOpen(true)}
+              className="group relative flex flex-col items-center justify-center p-8 bg-[#161617] border border-zinc-800 rounded-[28px] hover:bg-zinc-900/40 transition-all duration-300 w-full h-[220px] cursor-pointer shadow-lg active:scale-98"
+            >
+              <div className="w-14 h-14 rounded-full border border-zinc-800 flex items-center justify-center bg-zinc-900/60 text-zinc-400 group-hover:text-white group-hover:border-zinc-700 transition-all duration-300">
+                <Plus className="w-6 h-6" />
+              </div>
+              <span className="text-lg font-bold text-white tracking-wide mt-4">Create Room</span>
+            </div>
 
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            {/* Join Room Card */}
+            <div 
+              onClick={() => setIsJoinModalOpen(true)}
+              className="group relative flex flex-col items-center justify-center p-8 bg-[#161617] border border-zinc-800 rounded-[28px] hover:bg-zinc-900/40 transition-all duration-300 w-full h-[220px] cursor-pointer shadow-lg active:scale-98"
+            >
+              <div className="w-14 h-14 rounded-full border border-zinc-800 flex items-center justify-center bg-zinc-900/60 text-zinc-400 group-hover:text-white group-hover:border-zinc-700 transition-all duration-300">
+                <LogIn className="w-6 h-6" />
+              </div>
+              <span className="text-lg font-bold text-white tracking-wide mt-4">Join Room</span>
+            </div>
+          </div>
+
+          {/* Description text block */}
+          <p className="text-[13px] text-zinc-500 max-w-[620px] mx-auto mt-8 leading-relaxed font-sans">
+            Introducing Sphere Mode: Unleash a fun of friendly competition by creating a room to test your typing skills with friends. Simply generate a unique code, share it with your pals, and let the typing challenge begin.
+          </p>
+
+          {/* Active rooms list */}
+          <div className="w-full text-left space-y-4 mt-10">
+            <h3 className="text-xs font-bold text-zinc-500 uppercase tracking-widest font-mono flex items-center gap-2 select-none">
+              <Users className="w-4 h-4 text-zinc-400" /> Active rooms you can join
+            </h3>
+            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
               {activeRooms.map((room) => (
                 <div 
                   key={room.code}
-                  className="bg-zinc-950 border border-zinc-900 rounded-2xl p-5 hover:border-zinc-800 transition-all flex flex-col justify-between min-h-[140px]"
+                  className="bg-[#161617] border border-zinc-800 rounded-2xl p-4.5 flex flex-col justify-between min-h-[140px] shadow-sm hover:border-zinc-700 transition-all"
                 >
-                  <div>
-                    <div className="flex justify-between items-center">
-                      <span className="font-mono text-sm font-black text-yellow-500 tracking-wider">#{room.code}</span>
-                      <span className="text-[10px] text-zinc-500 font-mono bg-zinc-900 border border-zinc-800 px-2 py-0.5 rounded-full uppercase">
-                        {room.players}/{room.maxPlayers} players
-                      </span>
-                    </div>
-                    <div className="mt-3">
-                      <p className="text-xs text-zinc-500 font-mono">Creator: <strong className="text-zinc-300">{room.creator}</strong></p>
-                      <p className="text-xs text-zinc-500 font-mono mt-1">Rule: <strong className="text-zinc-300">{room.mode}</strong></p>
-                    </div>
+                  <div className="flex justify-between items-center">
+                    <span className="font-mono text-xs font-black text-[#00d8f6] tracking-wider">#{room.code}</span>
+                    <span className="text-[9px] text-zinc-500 font-mono bg-zinc-900 border border-zinc-800 px-2 py-0.5 rounded-full uppercase">
+                      {room.players}/{room.maxPlayers} players
+                    </span>
+                  </div>
+                  <div className="mt-2 text-[11px] text-zinc-500 font-mono">
+                    <p>Host: <strong className="text-zinc-400">{room.creator}</strong></p>
+                    <p className="mt-0.5">Preset: <strong className="text-zinc-400">{room.mode}</strong></p>
                   </div>
                   <button 
                     onClick={() => handleJoinRoom(room.code)}
-                    className="mt-4 w-full py-2 rounded-xl bg-zinc-900 hover:bg-yellow-500 hover:text-black border border-zinc-800 hover:border-transparent text-white text-xs font-bold font-mono tracking-wider transition-colors cursor-pointer"
+                    className="mt-3.5 w-full py-1.5 rounded-xl bg-zinc-900 hover:bg-white hover:text-black border border-zinc-800 hover:border-transparent text-white text-[11px] font-bold font-mono tracking-wider transition-colors cursor-pointer"
                   >
                     Join Room
                   </button>
@@ -394,184 +510,228 @@ export function SphereView({ user, config }: SphereViewProps) {
             </div>
           </div>
 
-          {/* Right panel: Room Actions */}
-          <div className="space-y-6">
-            {/* Create Room Card */}
-            <div className="bg-zinc-950 border border-zinc-900 rounded-2xl p-6 space-y-4">
-              <h3 className="text-sm font-bold text-white font-mono flex items-center gap-1.5 border-b border-zinc-900 pb-3">
-                <Plus className="w-4 h-4 text-yellow-500" /> Create Room
-              </h3>
-              <form onSubmit={handleCreateRoom} className="space-y-4">
-                <div className="space-y-1.5">
-                  <label className="text-[10px] font-bold text-zinc-500 uppercase tracking-widest font-mono">Test Mode</label>
-                  <select 
-                    value={createMode}
-                    onChange={(e) => setCreateMode(e.target.value as any)}
-                    className="w-full bg-zinc-900 border border-zinc-800 rounded-xl px-3.5 py-2 text-xs font-mono focus:outline-none focus:border-yellow-500/50"
-                  >
-                    <option value="time">Time Countdown</option>
-                    <option value="words">Fixed Words</option>
-                    <option value="govt-exam">Government Exam Mode</option>
-                  </select>
-                </div>
-
-                <div className="space-y-1.5">
-                  <label className="text-[10px] font-bold text-zinc-500 uppercase tracking-widest font-mono">Limit Parameters</label>
-                  <select 
-                    value={createLimit}
-                    onChange={(e) => setCreateLimit(Number(e.target.value))}
-                    className="w-full bg-zinc-900 border border-zinc-800 rounded-xl px-3.5 py-2 text-xs font-mono focus:outline-none focus:border-yellow-500/50"
-                  >
-                    {createMode === 'time' && (
-                      <>
-                        <option value="15">15 seconds</option>
-                        <option value="30">30 seconds</option>
-                        <option value="60">60 seconds</option>
-                      </>
-                    )}
-                    {createMode === 'words' && (
-                      <>
-                        <option value="10">10 words</option>
-                        <option value="25">25 words</option>
-                        <option value="50">50 words</option>
-                      </>
-                    )}
-                    {createMode === 'govt-exam' && (
-                      <>
-                        <option value="SSC">SSC CHSL Rules</option>
-                        <option value="SSC_CGL">SSC CGL Rules</option>
-                      </>
-                    )}
-                  </select>
-                </div>
-
-                <button
-                  type="submit"
-                  className="w-full py-2.5 rounded-xl bg-yellow-500 hover:bg-yellow-400 text-black font-extrabold text-xs tracking-wider uppercase transition-colors cursor-pointer"
-                >
-                  Create Room
-                </button>
-              </form>
-            </div>
-
-            {/* Join via Code Card */}
-            <div className="bg-zinc-950 border border-zinc-900 rounded-2xl p-6 space-y-4">
-              <h3 className="text-sm font-bold text-white font-mono border-b border-zinc-900 pb-3">
-                Join with Room Code
-              </h3>
-              <div className="space-y-3">
-                <input
-                  type="text"
-                  maxLength={6}
-                  value={joinCode}
-                  onChange={(e) => setJoinCode(e.target.value.toUpperCase())}
-                  placeholder="E.G. AB49F2"
-                  className="w-full bg-zinc-900 border border-zinc-800 rounded-xl px-4 py-2.5 text-center text-sm font-black font-mono tracking-widest text-white placeholder-zinc-700 uppercase focus:outline-none focus:border-yellow-500/50"
-                />
-                <button
-                  onClick={() => handleJoinRoom(joinCode)}
-                  className="w-full py-2.5 rounded-xl border border-yellow-500/20 bg-yellow-500/5 hover:bg-yellow-500/10 text-yellow-500 font-bold text-xs tracking-wider uppercase transition-colors cursor-pointer"
-                >
-                  Join Room
-                </button>
-              </div>
-            </div>
-          </div>
+          {/* Bottom Footer links */}
+          <footer className="flex flex-wrap items-center justify-center gap-6 text-[11px] text-zinc-600 font-sans mt-16 border-t border-zinc-900 pt-6">
+            <span className="hover:text-zinc-400 transition-colors cursor-pointer">Contact</span>
+            <span className="hover:text-zinc-400 transition-colors cursor-pointer">Twitter</span>
+            <span className="hover:text-zinc-400 transition-colors cursor-pointer">Discord</span>
+            <span className="hover:text-zinc-400 transition-colors cursor-pointer">GitHub</span>
+            <span className="hover:text-zinc-400 transition-colors cursor-pointer">Security</span>
+            <span className="hover:text-zinc-400 transition-colors cursor-pointer">Privacy</span>
+            <span className="hover:text-zinc-400 transition-colors cursor-pointer">Support</span>
+          </footer>
         </div>
       )}
 
       {/* ── STAGE: ROOM LOBBY ── */}
       {stage === 'room-lobby' && (
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 animate-fadeIn text-left h-[calc(100vh-140px)] min-h-[500px]">
-          {/* Left Panel: Joined Players & Room info */}
-          <div className="lg:col-span-2 bg-zinc-950 border border-zinc-900 rounded-2xl p-6 flex flex-col justify-between">
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 animate-fadeIn text-left h-[calc(100vh-170px)] min-h-[500px] relative">
+          
+          {/* Countdown timer overlay */}
+          {countdown !== null && (
+            <div className="absolute inset-0 bg-black/70 backdrop-blur-sm z-40 rounded-[28px] flex items-center justify-center select-none">
+              <div className="text-center">
+                <span className="text-[14px] font-bold text-zinc-500 uppercase tracking-widest font-mono block mb-2">Preparing Race</span>
+                <span className="text-6xl font-black text-white font-sans animate-bounce">Starting in: {countdown}</span>
+              </div>
+            </div>
+          )}
+
+          {/* Left Panel: Waiting Room Area */}
+          <div className="lg:col-span-2 bg-[#161617] border border-zinc-800 rounded-[28px] p-6 flex flex-col justify-between shadow-lg">
             <div>
+              {/* Header with Invite banner */}
               <div className="flex justify-between items-center border-b border-zinc-900 pb-4 mb-6">
                 <div>
-                  <h3 className="text-lg font-bold text-white font-mono flex items-center gap-2">
-                    <Shield className="w-5 h-5 text-yellow-500" /> Room Configuration
+                  <h3 className="text-sm font-bold text-zinc-500 uppercase tracking-widest font-mono flex items-center gap-2">
+                    <Shield className="w-4 h-4 text-zinc-400" /> Waiting Room
                   </h3>
-                  <p className="text-xs text-zinc-500 font-mono mt-1">Rule preset: standard test mode</p>
+                  <p className="text-[11px] text-zinc-500 font-mono mt-1">
+                    Preset: {createMode === 'govt-exam' ? 'Govt Rules' : createMode === 'words' ? `${createLimit} words` : `${createLimit}s timer`}
+                  </p>
                 </div>
-                {/* Copiable Code pill */}
-                <button 
-                  onClick={copyRoomCode}
-                  className="flex items-center gap-2 bg-zinc-900 border border-zinc-800 rounded-xl px-4 py-2 hover:border-yellow-500/30 transition-colors font-mono cursor-pointer"
-                  title="Copy Code"
+                {/* Invite friends banner */}
+                <button
+                  onClick={copyInviteLink}
+                  className="bg-[#00d8f6] text-black hover:bg-[#00c5e0] font-mono text-[11px] font-black px-4 py-1.5 rounded-full flex items-center gap-1.5 transition-all cursor-pointer select-none active:scale-95 shadow-md"
                 >
-                  <span className="text-[10px] text-zinc-500 font-bold uppercase tracking-wider">Room Code:</span>
-                  <span className="text-sm font-black text-yellow-500 tracking-wider">{currentRoomCode}</span>
-                  <Clipboard className="w-3.5 h-3.5 text-zinc-500" />
+                  <Share2 className="w-3.5 h-3.5" />
+                  <span>Share and invite</span>
                 </button>
               </div>
 
-              {/* Player list */}
-              <div className="space-y-4">
-                <h4 className="text-[10px] font-bold text-zinc-500 uppercase tracking-widest font-mono">Players Connected</h4>
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              {/* Player waiting track line */}
+              <div className="w-full mt-4 mb-10 select-none relative pt-4">
+                <div className="absolute left-0 right-0 top-1/2 h-[2px] bg-zinc-800 rounded-full -translate-y-1/2" />
+                
+                {/* Avatars stacked at Start */}
+                <div className="absolute left-0 top-1/2 -translate-y-1/2 flex items-center -space-x-2.5 pl-2">
                   {players.map((player) => (
-                    <div 
-                      key={player.username}
-                      className="flex items-center justify-between bg-zinc-900/40 border border-zinc-900 rounded-xl p-3.5"
-                    >
-                      <div className="flex items-center gap-3">
-                        <img src={player.avatarUrl} alt="Avatar" className="w-8 h-8 rounded-full bg-zinc-900 border border-zinc-800" />
-                        <div>
-                          <p className="text-xs font-bold text-white font-mono">{player.username}</p>
-                          <span className="text-[9px] text-zinc-500 uppercase tracking-widest font-mono mt-0.5 block">
-                            {player.isHost ? '⚡ Host' : 'Player'}
-                          </span>
-                        </div>
-                      </div>
-                      <div className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
+                    <div key={player.username} className="relative group">
+                      <img 
+                        src={player.avatarUrl} 
+                        alt="Avatar" 
+                        className={`w-7 h-7 rounded-full bg-zinc-900 border-2 ${player.ready ? 'border-emerald-400' : 'border-zinc-800'} transition-all`} 
+                      />
+                      <span className="absolute -bottom-8 left-1/2 -translate-x-1/2 bg-zinc-950/90 text-white text-[9px] px-1.5 py-0.5 rounded border border-zinc-800 hidden group-hover:block whitespace-nowrap font-mono z-20">
+                        {player.username} ({player.ready ? 'Ready' : 'Waiting'})
+                      </span>
                     </div>
                   ))}
                 </div>
+                <div className="flex justify-between items-center text-[10px] text-zinc-500 font-mono pt-4 mt-1.5">
+                  <span>Start</span>
+                  <span>End</span>
+                </div>
+              </div>
+
+              {/* Faded typing text preview */}
+              <div className="w-full text-left bg-black/10 border border-zinc-900/60 rounded-[20px] p-6 text-zinc-600 font-mono select-none pointer-events-none opacity-50 relative min-h-[120px] flex items-center justify-center leading-relaxed">
+                {roomPassage}
+              </div>
+
+              {/* Bottom Config Pills (only editable for host) */}
+              <div className="flex flex-wrap items-center gap-4 mt-6">
+                {isUserHost ? (
+                  /* Editable host view */
+                  <>
+                    {/* Pill 1: Mode Toggle */}
+                    <div className="flex items-center h-[46px] p-[2px] rounded-full border border-zinc-800 bg-zinc-950/30 backdrop-blur-sm select-none gap-[6px]">
+                      {(['time', 'words', 'govt-exam'] as const).map((m) => (
+                        <button
+                          key={m}
+                          onClick={() => {
+                            setCreateMode(m);
+                            setCreateLimit(m === 'time' ? 60 : m === 'words' ? 25 : 60);
+                          }}
+                          className={`w-[38px] h-[38px] rounded-full flex items-center justify-center transition-all cursor-pointer ${
+                            createMode === m
+                              ? 'bg-zinc-800 text-white font-bold'
+                              : 'text-zinc-500 hover:text-white'
+                          }`}
+                          title={`${m} mode`}
+                        >
+                          {m === 'time' ? <Clock className="w-4.5 h-4.5" /> : m === 'words' ? <BookOpen className="w-4.5 h-4.5" /> : <Keyboard className="w-4.5 h-4.5" />}
+                        </button>
+                      ))}
+                    </div>
+
+                    {/* Pill 2: Limits */}
+                    <div className="flex items-center h-[46px] p-[2px] rounded-full border border-zinc-800 bg-zinc-950/30 backdrop-blur-sm select-none gap-[6px]">
+                      {createMode === 'time' && ([15, 30, 60] as const).map((limit) => (
+                        <button
+                          key={limit}
+                          onClick={() => setCreateLimit(limit)}
+                          className={`w-[38px] h-[38px] rounded-full flex items-center justify-center transition-all cursor-pointer text-xs font-bold ${
+                            createLimit === limit
+                              ? 'bg-zinc-800 text-white font-bold'
+                              : 'text-zinc-500 hover:text-white'
+                          }`}
+                        >
+                          {limit}
+                        </button>
+                      ))}
+                      {createMode === 'words' && ([10, 25, 50] as const).map((limit) => (
+                        <button
+                          key={limit}
+                          onClick={() => setCreateLimit(limit)}
+                          className={`w-[38px] h-[38px] rounded-full flex items-center justify-center transition-all cursor-pointer text-xs font-bold ${
+                            createLimit === limit
+                              ? 'bg-zinc-800 text-white font-bold'
+                              : 'text-zinc-500 hover:text-white'
+                          }`}
+                        >
+                          {limit}
+                        </button>
+                      ))}
+                      {createMode === 'govt-exam' && (
+                        <span className="text-[10px] text-zinc-500 font-mono px-4 font-bold uppercase tracking-wider">CHSL Rules preset</span>
+                      )}
+                    </div>
+                  </>
+                ) : (
+                  /* Read only guest view */
+                  <>
+                    <div className="flex items-center h-[46px] px-5 rounded-full border border-zinc-850 bg-zinc-950/10 select-none text-[11px] font-mono font-bold text-zinc-500 uppercase tracking-widest gap-2">
+                      <Clock className="w-3.5 h-3.5 text-zinc-600" />
+                      <span>Mode: {createMode}</span>
+                    </div>
+                    <div className="flex items-center h-[46px] px-5 rounded-full border border-zinc-850 bg-zinc-950/10 select-none text-[11px] font-mono font-bold text-zinc-500 uppercase tracking-widest gap-2">
+                      <Sliders className="w-3.5 h-3.5 text-zinc-600" />
+                      <span>Limit: {createLimit} {createMode === 'words' ? 'words' : 'seconds'}</span>
+                    </div>
+                  </>
+                )}
               </div>
             </div>
 
-            {/* Room Control Action Button */}
-            <div className="flex justify-between items-center border-t border-zinc-900 pt-5 mt-6">
-              <button
-                onClick={handleExitRoom}
-                className="flex items-center gap-2 px-5 py-2.5 rounded-xl border border-zinc-800 hover:border-zinc-700 bg-zinc-900/50 hover:bg-zinc-900 text-zinc-400 hover:text-white text-xs font-semibold tracking-wide uppercase transition-colors cursor-pointer font-mono"
-              >
-                <LogOut className="w-4 h-4" />
-                <span>Exit Room</span>
-              </button>
-
-              {isUserHost ? (
-                <button
-                  onClick={handleStartRace}
-                  className="flex items-center gap-2.5 px-8 py-3 rounded-full bg-yellow-500 hover:bg-yellow-400 text-black font-extrabold text-xs uppercase tracking-widest transition-colors cursor-pointer shadow-lg font-mono shadow-[0_4px_20px_rgba(245,158,11,0.2)]"
+            {/* Bottom info & action bar */}
+            <div className="flex justify-between items-center border-t border-zinc-900 pt-5 mt-8 font-mono">
+              {/* Room Code displaying at bottom */}
+              <div className="flex items-center gap-3">
+                <span className="text-[11px] text-zinc-500 font-bold uppercase tracking-wider">Sphere Code:</span>
+                <button 
+                  onClick={copyRoomCode}
+                  className="text-xs font-black text-[#00d8f6] tracking-wider hover:underline flex items-center gap-1.5 cursor-pointer"
+                  title="Copy room code"
                 >
-                  <Play className="w-4 h-4 text-black" />
-                  <span>Start Test</span>
+                  #{currentRoomCode}
+                  <Clipboard className="w-3 h-3 text-[#00d8f6]/70" />
                 </button>
-              ) : (
-                <div className="text-xs text-zinc-500 font-mono italic animate-pulse">
-                  Waiting for host to start test...
-                </div>
-              )}
+              </div>
+
+              {/* Lobby Actions */}
+              <div className="flex items-center gap-3">
+                <button
+                  onClick={() => setIsLeaveModalOpen(true)}
+                  className="px-5 py-2.5 rounded-full border border-zinc-850 hover:bg-zinc-900 text-zinc-400 hover:text-white text-xs font-semibold tracking-wide uppercase transition-colors cursor-pointer"
+                >
+                  Leave
+                </button>
+
+                {isUserHost ? (
+                  <button
+                    onClick={triggerStartCountdown}
+                    className="px-7 py-2.5 rounded-full bg-white text-black font-semibold text-xs uppercase tracking-wider hover:bg-zinc-200 transition-colors cursor-pointer active:scale-95 shadow-md"
+                  >
+                    Start
+                  </button>
+                ) : (
+                  <button
+                    onClick={() => {
+                      const nextReady = !userReady;
+                      setUserReady(nextReady);
+                      setPlayers(prev => prev.map(p => p.username === user.username ? { ...p, ready: nextReady } : p));
+                    }}
+                    className={`px-7 py-2.5 rounded-full text-xs font-semibold uppercase tracking-wider transition-colors cursor-pointer active:scale-95 ${
+                      userReady
+                        ? 'bg-zinc-800 text-emerald-400 border border-emerald-500/20'
+                        : 'bg-white text-zinc-950 hover:bg-zinc-200'
+                    }`}
+                  >
+                    {userReady ? 'Ready ✓' : 'Ready'}
+                  </button>
+                )}
+              </div>
             </div>
           </div>
 
           {/* Right Panel: Sphere Chat */}
-          <div className="bg-zinc-950 border border-zinc-900 rounded-2xl p-4 flex flex-col justify-between h-full">
+          <div className="bg-[#161617] border border-zinc-800 rounded-[28px] p-5 flex flex-col justify-between h-full shadow-lg">
             <h3 className="text-xs font-bold text-white font-mono border-b border-zinc-900 pb-3 flex items-center gap-2 mb-3">
-              <MessageSquare className="w-4 h-4 text-yellow-500 animate-pulse" /> Sphere Chat
+              <MessageSquare className="w-4 h-4 text-zinc-400" /> Sphere Chat
             </h3>
 
-            {/* Message logs */}
+            {/* Chat list */}
             <div 
               ref={chatScrollRef}
-              className="flex-1 overflow-y-auto space-y-3 pr-2 scrollbar-thin max-h-[350px] min-h-[220px]"
+              className="flex-1 overflow-y-auto space-y-3 pr-2 scrollbar-thin max-h-[360px] min-h-[200px]"
             >
               {chatMessages.map((msg, idx) => (
                 <div 
                   key={idx} 
                   className={`flex items-start gap-2.5 text-xs text-left ${
-                    msg.sender === 'System' ? 'justify-center text-center opacity-65 my-2' : ''
+                    msg.sender === 'System' ? 'justify-center text-center opacity-60 my-2' : ''
                   }`}
                 >
                   {msg.sender !== 'System' && (
@@ -582,12 +742,12 @@ export function SphereView({ user, config }: SphereViewProps) {
                       <div className="flex items-baseline gap-1.5 mb-0.5">
                         <span className="font-bold text-white font-mono truncate">{msg.sender}</span>
                         {msg.isHost && (
-                          <span className="text-[8px] bg-yellow-500/10 border border-yellow-500/20 text-yellow-500 px-1 py-0.2 rounded scale-90 font-mono font-bold">HOST</span>
+                          <span className="text-[8px] bg-[#00d8f6]/10 border border-[#00d8f6]/20 text-[#00d8f6] px-1 py-0.2 rounded font-mono font-bold scale-90">HOST</span>
                         )}
-                        <span className="text-[9px] text-zinc-600 font-mono">{msg.time}</span>
+                        <span className="text-[9px] text-zinc-650 font-mono">{msg.time}</span>
                       </div>
                     )}
-                    <p className={`leading-relaxed break-words font-sans ${msg.sender === 'System' ? 'text-[10px] text-yellow-500/80 font-mono' : 'text-zinc-300'}`}>
+                    <p className={`leading-relaxed break-words font-sans ${msg.sender === 'System' ? 'text-[9.5px] text-zinc-550 font-mono' : 'text-zinc-300'}`}>
                       {msg.text}
                     </p>
                   </div>
@@ -595,20 +755,20 @@ export function SphereView({ user, config }: SphereViewProps) {
               ))}
             </div>
 
-            {/* Input bar */}
+            {/* Chat Input */}
             <form onSubmit={handleSendMessage} className="flex gap-2 border-t border-zinc-900 pt-3.5 mt-3">
               <input
                 type="text"
                 value={inputMessage}
                 onChange={(e) => setInputMessage(e.target.value)}
-                placeholder="Type a message..."
-                className="flex-1 bg-zinc-900 border border-zinc-800 rounded-xl px-3.5 py-2 text-xs focus:outline-none focus:border-yellow-500/50"
+                placeholder="Write a message..."
+                className="flex-1 bg-zinc-900 border border-zinc-850 rounded-xl px-3.5 py-2 text-xs text-white focus:outline-none focus:border-zinc-750 placeholder-zinc-600 font-sans"
               />
               <button
                 type="submit"
-                className="w-8.5 h-8.5 rounded-xl bg-yellow-500 hover:bg-yellow-400 text-black flex items-center justify-center transition-colors cursor-pointer"
+                className="w-8.5 h-8.5 rounded-xl bg-white hover:bg-zinc-200 text-black flex items-center justify-center transition-colors cursor-pointer"
               >
-                <Send className="w-4 h-4 text-black" />
+                <Send className="w-3.5 h-3.5 text-black" />
               </button>
             </form>
           </div>
@@ -619,47 +779,59 @@ export function SphereView({ user, config }: SphereViewProps) {
       {stage === 'room-racing' && (
         <div className="flex flex-col gap-6 animate-fadeIn w-full">
           {/* Race tracks progress grid */}
-          <div className="bg-zinc-950 border border-zinc-900 rounded-2xl p-6 flex flex-col gap-6">
+          <div className="bg-[#161617] border border-zinc-800 rounded-[28px] p-6 flex flex-col gap-6 shadow-lg">
             <div className="flex justify-between items-center text-xs font-mono text-zinc-500 border-b border-zinc-900 pb-3">
-              <span className="flex items-center gap-1.5"><Zap className="w-3.5 h-3.5 text-yellow-500 animate-pulse" /> Sphere Room Race</span>
+              <span className="flex items-center gap-1.5"><Zap className="w-3.5 h-3.5 text-white animate-pulse" /> Sphere Speed Race</span>
               <span>Time: <strong className="text-white">{raceElapsed}s</strong></span>
             </div>
 
-            {/* Dynamic multilane race track */}
-            <div className="flex flex-col gap-4 text-left">
-              {players.map((player) => (
-                <div key={player.username} className="space-y-1.5">
-                  <div className="flex justify-between text-xs font-mono">
-                    <span className="font-bold text-white flex items-center gap-1.5">
-                      <img src={player.avatarUrl} alt="Avatar" className="w-5 h-5 rounded-full bg-zinc-900" />
-                      {player.username} {player.username === user.username ? <span className="text-[9px] text-zinc-500">(You)</span> : ''}
-                    </span>
-                    <span className={`${player.username === user.username ? 'text-yellow-500' : 'text-zinc-400'} font-bold`}>
-                      {Math.round(player.progress)}% • {player.wpm} WPM
-                    </span>
-                  </div>
-                  <div className="w-full h-2.5 bg-zinc-900 rounded-full overflow-hidden relative">
+            {/* Premium Multilane Track Layout */}
+            <div className="flex flex-col gap-4 w-full max-w-[800px] mx-auto mt-4 mb-14 select-none">
+              {players.map((player, idx) => {
+                const colors = ['bg-[#00d8f6]', 'bg-amber-400', 'bg-purple-400', 'bg-emerald-400'];
+                const borderColors = ['border-[#00d8f6]', 'border-amber-400', 'border-purple-400', 'border-emerald-400'];
+                const color = colors[idx % colors.length];
+                const borderColor = borderColors[idx % borderColors.length];
+
+                return (
+                  <div key={player.username} className="relative h-6 w-full flex items-center">
+                    {/* The progress track line */}
+                    <div className="absolute left-0 right-0 h-[2px] bg-zinc-800/60 rounded-full" />
                     <div 
-                      className={`h-full rounded-full transition-all duration-300 relative ${
-                        player.username === user.username 
-                          ? 'bg-gradient-to-r from-yellow-600 to-yellow-400 shadow-[0_0_8px_rgba(245,158,11,0.3)]' 
-                          : 'bg-zinc-700'
-                      }`}
+                      className={`absolute left-0 h-[2px] rounded-full transition-all duration-300 ${color}`}
                       style={{ width: `${player.progress}%` }}
+                    />
+                    
+                    {/* Floating Avatar positioned exactly at progress percentage */}
+                    <div 
+                      className="absolute flex items-center gap-1.5 transition-all duration-300"
+                      style={{ 
+                        left: `${player.progress}%`,
+                        transform: 'translateX(-50%)'
+                      }}
                     >
-                      <div className="absolute right-0 top-0 bottom-0 w-2 bg-white animate-pulse" />
+                      <div className="relative group flex flex-col items-center">
+                        <img 
+                          src={player.avatarUrl} 
+                          alt="Avatar" 
+                          className={`w-7 h-7 rounded-full bg-zinc-950 border-2 ${borderColor} shadow-md`} 
+                        />
+                        <span className="absolute -bottom-7 bg-zinc-950/90 text-white text-[8px] px-1 rounded border border-zinc-850 whitespace-nowrap font-mono z-20">
+                          {player.username === user.username ? 'You' : player.username} ({player.wpm} WPM)
+                        </span>
+                      </div>
                     </div>
                   </div>
-                </div>
-              ))}
+                );
+              })}
             </div>
           </div>
 
           {/* Typing Arena widget */}
-          <div className="w-full bg-zinc-950 border border-zinc-900 rounded-2xl">
+          <div className="w-full bg-[#161617] border border-zinc-800 rounded-[28px] overflow-hidden shadow-lg">
             <TypingArena
               key={resetKey}
-              targetText={ROOM_PASSAGE}
+              targetText={roomPassage}
               fontSize={config.fontSize}
               fontFamily={LANGUAGES.find(l => l.id === 'english')?.fonts.find(f => f.id === config.fontId)?.fontFamily || 'monospace'}
               cursorStyle={config.cursorStyle}
@@ -670,8 +842,8 @@ export function SphereView({ user, config }: SphereViewProps) {
               onKeystroke={() => {}}
               onProgress={handleUserProgress}
               resetCounter={resetKey}
-              testMode="quotes"
-              timeLeft={raceElapsed}
+              testMode={createMode === 'govt-exam' ? 'govt-exam' : createMode === 'words' ? 'words' : 'time'}
+              timeLeft={createMode === 'time' ? Math.max(0, createLimit - raceElapsed) : raceElapsed}
               liveWpm={userWpm}
               language="english"
             />
@@ -681,62 +853,347 @@ export function SphereView({ user, config }: SphereViewProps) {
 
       {/* ── STAGE: ROOM RESULTS ── */}
       {stage === 'room-results' && (
-        <div className="flex flex-col gap-6 animate-fadeIn w-full max-w-2xl mx-auto">
-          <div className="bg-zinc-950 border border-zinc-900 rounded-2xl p-6 text-left space-y-6">
-            <h2 className="text-xl font-bold text-white font-mono border-b border-zinc-900 pb-3 flex items-center gap-2">
-              <Award className="w-5 h-5 text-yellow-500 animate-pulse" /> Final Room Standings
-            </h2>
+        <div className="flex flex-col gap-6 animate-fadeIn w-full max-w-[960px] mx-auto py-8">
+          <div className="flex flex-col md:flex-row gap-6 items-stretch justify-center">
+            
+            {/* Left Card: Main detailed user scorecard */}
+            {userRankedRecord && (
+              <div className="relative flex-1 bg-[#161617] border border-zinc-800 rounded-[28px] p-8 flex flex-col justify-between h-[360px] md:h-[400px] shadow-lg text-left">
+                {/* User Identity Header */}
+                <div>
+                  <h2 className="text-xl font-bold text-white font-sans tracking-tight">
+                    {userRankedRecord.username}
+                    <span className="text-zinc-500 font-mono text-[13px] ml-1.5 font-normal">(You)</span>
+                  </h2>
+                  <p className="text-[11px] font-mono text-zinc-500 uppercase tracking-widest mt-1">Typing Speed Standings</p>
+                </div>
 
-            {/* Ranked list of players */}
-            <div className="flex flex-col gap-3">
-              {[...players]
-                .sort((a, b) => b.wpm - a.wpm)
-                .map((player, index) => (
-                  <div 
-                    key={player.username}
-                    className={`flex items-center justify-between p-4 rounded-xl border transition-all ${
-                      player.username === user.username
-                        ? 'border-yellow-500/20 bg-yellow-500/[0.02]'
-                        : 'border-zinc-900 bg-zinc-900/20'
-                    }`}
-                  >
-                    <div className="flex items-center gap-3">
-                      {/* Rank Index badge */}
-                      <span className={`w-6 h-6 rounded-full flex items-center justify-center font-mono font-bold text-xs ${
-                        index === 0 ? 'bg-yellow-500 text-black' : index === 1 ? 'bg-zinc-400 text-zinc-950' : 'bg-amber-800 text-amber-200'
-                      }`}>
-                        {index + 1}
-                      </span>
-                      <img src={player.avatarUrl} alt="Avatar" className="w-8 h-8 rounded-full bg-zinc-900 border border-zinc-800" />
-                      <div>
-                        <p className="text-xs font-bold text-white font-mono">{player.username}</p>
-                        <span className="text-[9px] text-zinc-500 uppercase tracking-widest font-mono">
-                          {player.isHost ? '⚡ Host' : 'Player'}
-                        </span>
-                      </div>
+                {/* Giant Rank badge in top right */}
+                <div className="absolute top-8 right-8 flex flex-col items-end">
+                  <span className="text-6xl font-black text-white/95 font-sans italic tracking-tighter select-none">
+                    #{userRankedRecord.rank}
+                  </span>
+                </div>
+
+                {/* Detailed metrics grid */}
+                <div className="grid grid-cols-4 gap-4 mt-4 select-none">
+                  <div>
+                    <span className="text-3xl font-black text-white font-sans">{userRankedRecord.wpm}</span>
+                    <span className="text-[10px] text-zinc-550 font-bold uppercase tracking-wider block mt-0.5">WPM</span>
+                  </div>
+                  <div>
+                    <span className="text-3xl font-black text-white font-sans">{userAccuracy}%</span>
+                    <span className="text-[10px] text-zinc-550 font-bold uppercase tracking-wider block mt-0.5">Accuracy</span>
+                  </div>
+                  <div>
+                    <span className="text-3xl font-black text-white font-sans">{raceElapsed}s</span>
+                    <span className="text-[10px] text-zinc-550 font-bold uppercase tracking-wider block mt-0.5">Seconds</span>
+                  </div>
+                  <div>
+                    <span className="text-3xl font-black text-white font-sans">{Math.round(userRankedRecord.wpm * 1.15)}</span>
+                    <span className="text-[10px] text-zinc-550 font-bold uppercase tracking-wider block mt-0.5">Raw</span>
+                  </div>
+                </div>
+
+                {/* Characters breakdown list */}
+                <div className="border-t border-zinc-900 pt-5 mt-4">
+                  <span className="text-[10px] font-bold text-zinc-500 uppercase tracking-widest font-mono">Characters Breakdown</span>
+                  <div className="grid grid-cols-4 gap-4 mt-2.5 text-left font-mono">
+                    <div>
+                      <span className="text-white font-bold text-base block">{charStats.correct}</span>
+                      <span className="text-[9.5px] text-zinc-550 uppercase tracking-wider">Correct</span>
                     </div>
-                    
-                    <div className="text-right">
-                      <div className="text-sm font-black text-white font-mono">{player.wpm} <span className="text-[10px] text-zinc-500">WPM</span></div>
-                      <span className="text-[10px] text-zinc-500 font-mono">Finished</span>
+                    <div>
+                      <span className="text-rose-500 font-bold text-base block">{charStats.incorrect}</span>
+                      <span className="text-[9.5px] text-zinc-550 uppercase tracking-wider">Incorrect</span>
+                    </div>
+                    <div>
+                      <span className="text-zinc-400 font-bold text-base block">{charStats.extra}</span>
+                      <span className="text-[9.5px] text-zinc-550 uppercase tracking-wider">Extra</span>
+                    </div>
+                    <div>
+                      <span className="text-zinc-500 font-bold text-base block">{charStats.missed}</span>
+                      <span className="text-[9.5px] text-zinc-550 uppercase tracking-wider">Missed</span>
                     </div>
                   </div>
-                ))}
+                </div>
+              </div>
+            )}
+
+            {/* Right Side: Horizontal row of player vertical cards */}
+            <div className="flex flex-row gap-4 items-stretch">
+              {otherPlayersRanked.map((player) => {
+                const isFirst = player.rank === 1;
+                return (
+                  <div 
+                    key={player.username}
+                    className={`w-[80px] rounded-[28px] p-5 flex flex-col items-center justify-between border ${
+                      isFirst 
+                        ? 'border-amber-500/20 bg-amber-500/[0.01]' 
+                        : 'border-zinc-800 bg-zinc-900/10'
+                    } h-[360px] md:h-[400px] shadow-lg transition-all hover:scale-102`}
+                  >
+                    {/* Avatar at top */}
+                    <img 
+                      src={player.avatarUrl} 
+                      alt="Avatar" 
+                      className={`w-7 h-7 rounded-full bg-zinc-900 border-2 ${
+                        isFirst ? 'border-amber-400' : 'border-zinc-800'
+                      }`} 
+                    />
+                    
+                    {/* Username and Rank written vertically */}
+                    <div 
+                      className="flex-1 flex items-center justify-center py-5 select-none"
+                      style={{ writingMode: 'vertical-rl', transform: 'rotate(180deg)' }}
+                    >
+                      <span className="font-sans text-xs font-black tracking-wide uppercase text-zinc-300">
+                        {player.username} 
+                        <span className={isFirst ? 'text-amber-400 ml-2' : 'text-zinc-500 ml-2'}>
+                          ({player.rank === 1 ? '1st' : player.rank === 2 ? '2nd' : player.rank === 3 ? '3rd' : `${player.rank}th`})
+                        </span>
+                      </span>
+                    </div>
+
+                    {/* Speed indicator at bottom */}
+                    <div className="flex flex-col items-center font-mono">
+                      <span className="text-xs font-bold text-white leading-none">{player.wpm}</span>
+                      <span className="text-[8px] text-zinc-550 font-bold uppercase tracking-wider mt-0.5">WPM</span>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+
+          {/* Results Action Buttons */}
+          <div className="flex justify-center items-center gap-4 mt-8 font-mono">
+            <button
+              onClick={handleExitRoom}
+              className="px-8 py-3 rounded-full border border-zinc-850 hover:bg-zinc-900 text-zinc-400 hover:text-white text-xs font-bold tracking-wider uppercase transition-colors cursor-pointer"
+            >
+              Back to Lobby
+            </button>
+
+            <button
+              onClick={() => setIsShareModalOpen(true)}
+              className="px-8 py-3 rounded-full bg-white text-black font-extrabold text-xs tracking-wider uppercase hover:bg-zinc-200 transition-colors cursor-pointer shadow-md"
+            >
+              Share Results
+            </button>
+          </div>
+        </div>
+      )}
+
+      {/* ── MODAL OVERLAY: CREATE ROOM ── */}
+      {isCreateModalOpen && (
+        <div 
+          className="fixed inset-0 bg-black/60 backdrop-blur-md z-50 flex items-center justify-center p-4 animate-fadeIn"
+          onClick={() => setIsCreateModalOpen(false)}
+        >
+          <div 
+            className="bg-[#0c0d12] border border-zinc-850 rounded-[28px] p-8 w-full max-w-[400px] text-center flex flex-col items-stretch gap-5 shadow-2xl relative"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <button 
+              onClick={() => setIsCreateModalOpen(false)}
+              className="absolute top-4 right-4 w-8 h-8 rounded-full border border-zinc-850 hover:bg-zinc-900 flex items-center justify-center text-zinc-500 hover:text-white transition-all cursor-pointer"
+            >
+              <X className="w-4 h-4" />
+            </button>
+            
+            <div className="space-y-1">
+              <span className="text-[10px] font-bold text-zinc-500 uppercase tracking-widest font-mono block">Sphere Mode Room</span>
+              <h4 className="text-sm font-bold text-white">Create a Custom Room</h4>
             </div>
 
-            <div className="flex justify-between pt-4 border-t border-zinc-900">
+            {/* Form Selector for Mode */}
+            <div className="space-y-1.5 text-left">
+              <label className="text-[10px] font-bold text-zinc-500 uppercase tracking-widest font-mono">Test Mode</label>
+              <select 
+                value={createMode}
+                onChange={(e) => {
+                  const m = e.target.value as any;
+                  setCreateMode(m);
+                  setCreateLimit(m === 'time' ? 60 : m === 'words' ? 25 : 60);
+                }}
+                className="w-full bg-zinc-900/60 border border-zinc-850 rounded-xl px-4 py-2.5 text-xs font-mono text-white focus:outline-none focus:border-zinc-750 cursor-pointer"
+              >
+                <option value="time" className="bg-zinc-950">Time Countdown</option>
+                <option value="words" className="bg-zinc-950">Fixed Words</option>
+                <option value="govt-exam" className="bg-zinc-950">Government Exam Mode</option>
+              </select>
+            </div>
+
+            {/* Form Selector for Parameter Limit */}
+            <div className="space-y-1.5 text-left">
+              <label className="text-[10px] font-bold text-zinc-500 uppercase tracking-widest font-mono">Limit Parameters</label>
+              <select 
+                value={createLimit}
+                onChange={(e) => setCreateLimit(Number(e.target.value))}
+                className="w-full bg-zinc-900/60 border border-zinc-850 rounded-xl px-4 py-2.5 text-xs font-mono text-white focus:outline-none focus:border-zinc-750 cursor-pointer"
+              >
+                {createMode === 'time' && (
+                  <>
+                    <option value="15" className="bg-zinc-950">15 seconds</option>
+                    <option value="30" className="bg-zinc-950">30 seconds</option>
+                    <option value="60" className="bg-zinc-950">60 seconds</option>
+                  </>
+                )}
+                {createMode === 'words' && (
+                  <>
+                    <option value="10" className="bg-zinc-950">10 words</option>
+                    <option value="25" className="bg-zinc-950">25 words</option>
+                    <option value="50" className="bg-zinc-950">50 words</option>
+                  </>
+                )}
+                {createMode === 'govt-exam' && (
+                  <>
+                    <option value="60" className="bg-zinc-950">SSC CHSL Rules preset</option>
+                  </>
+                )}
+              </select>
+            </div>
+
+            <button
+              onClick={() => {
+                setIsCreateModalOpen(false);
+                handleCreateRoom();
+              }}
+              className="w-full py-3 mt-2 rounded-2xl bg-white hover:bg-zinc-200 text-zinc-950 font-extrabold text-xs tracking-wider uppercase transition-colors cursor-pointer"
+            >
+              Create Room
+            </button>
+          </div>
+        </div>
+      )}
+
+      {/* ── MODAL OVERLAY: JOIN ROOM ── */}
+      {isJoinModalOpen && (
+        <div 
+          className="fixed inset-0 bg-black/60 backdrop-blur-md z-50 flex items-center justify-center p-4 animate-fadeIn"
+          onClick={() => setIsJoinModalOpen(false)}
+        >
+          <div 
+            className="bg-[#0c0d12] border border-zinc-850 rounded-[28px] p-8 w-full max-w-[380px] text-center flex flex-col items-center gap-6 shadow-2xl relative"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <button 
+              onClick={() => setIsJoinModalOpen(false)}
+              className="absolute top-4 right-4 w-8 h-8 rounded-full border border-zinc-850 hover:bg-zinc-900 flex items-center justify-center text-zinc-500 hover:text-white transition-all cursor-pointer"
+            >
+              <X className="w-4 h-4" />
+            </button>
+            
+            <div className="space-y-1">
+              <span className="text-[10px] font-bold text-zinc-500 uppercase tracking-widest font-mono block">Sphere Mode Join</span>
+              <h4 className="text-sm font-bold text-white">Enter Sphere Code Below</h4>
+            </div>
+
+            <input
+              type="text"
+              maxLength={6}
+              value={joinCode}
+              onChange={(e) => setJoinCode(e.target.value.toUpperCase())}
+              placeholder="Enter Code"
+              className="w-full bg-zinc-900/60 border border-zinc-850 rounded-2xl px-4 py-3 text-center text-3xl font-black font-mono tracking-[0.2em] text-white placeholder-zinc-800 uppercase focus:outline-none focus:border-zinc-700 transition-all"
+            />
+
+            <button
+              onClick={() => handleJoinRoom(joinCode)}
+              className="w-full py-3 rounded-2xl bg-white hover:bg-zinc-200 text-zinc-950 font-extrabold text-xs tracking-wider uppercase transition-colors cursor-pointer"
+            >
+              Join
+            </button>
+          </div>
+        </div>
+      )}
+
+      {/* ── MODAL OVERLAY: LEAVE ROOM CONFIRMATION ── */}
+      {isLeaveModalOpen && (
+        <div 
+          className="fixed inset-0 bg-black/65 backdrop-blur-md z-50 flex items-center justify-center p-4 animate-fadeIn"
+          onClick={() => setIsLeaveModalOpen(false)}
+        >
+          <div 
+            className="bg-[#0c0d12] border border-zinc-850 rounded-[28px] p-7 w-full max-w-[340px] text-center flex flex-col items-center gap-6 shadow-2xl relative"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="w-10 h-10 rounded-full bg-zinc-900 border border-zinc-800 flex items-center justify-center text-zinc-400">
+              <LogOut className="w-4.5 h-4.5" />
+            </div>
+
+            <div className="space-y-1">
+              <span className="text-[10px] font-bold text-zinc-500 uppercase tracking-widest font-mono block">Leave Room</span>
+              <h4 className="text-sm font-bold text-white">Are you sure to leave this sphere?</h4>
+            </div>
+
+            <div className="flex flex-col gap-2.5 w-full font-mono">
+              <button
+                onClick={() => setIsLeaveModalOpen(false)}
+                className="w-full py-2.5 rounded-xl bg-zinc-900 text-white font-semibold text-xs border border-zinc-850 hover:bg-zinc-800 transition-all cursor-pointer"
+              >
+                Stay in this sphere room
+              </button>
               <button
                 onClick={handleExitRoom}
-                className="px-6 py-2.5 rounded-xl border border-zinc-800 hover:border-zinc-700 bg-zinc-900/50 hover:bg-zinc-900 text-zinc-400 hover:text-white text-xs font-semibold tracking-wide uppercase transition-colors cursor-pointer font-mono"
+                className="w-full py-2.5 rounded-xl bg-red-950/20 hover:bg-red-950/40 text-red-400 text-xs font-semibold border border-red-900/30 transition-all cursor-pointer"
               >
-                Exit Room Lobby
+                Leave this sphere
               </button>
+            </div>
+          </div>
+        </div>
+      )}
 
-              <button
-                onClick={() => setStage('room-lobby')}
-                className="flex items-center gap-1 px-6 py-2.5 rounded-xl bg-yellow-500 hover:bg-yellow-400 text-black font-extrabold text-xs tracking-wider uppercase transition-colors cursor-pointer font-mono"
+      {/* ── MODAL OVERLAY: RESULTS SHARING ── */}
+      {isShareModalOpen && (
+        <div 
+          className="fixed inset-0 bg-black/60 backdrop-blur-md z-50 flex items-center justify-center p-4 animate-fadeIn"
+          onClick={() => setIsShareModalOpen(false)}
+        >
+          <div 
+            className="bg-[#0c0d12] border border-zinc-850 rounded-[28px] p-7 w-full max-w-[380px] text-center flex flex-col items-center gap-6 shadow-2xl relative"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <button 
+              onClick={() => setIsShareModalOpen(false)}
+              className="absolute top-4 right-4 w-8 h-8 rounded-full border border-zinc-850 hover:bg-zinc-900 flex items-center justify-center text-zinc-500 hover:text-white transition-all cursor-pointer"
+            >
+              <X className="w-4 h-4" />
+            </button>
+
+            <div className="space-y-1">
+              <span className="text-[10px] font-bold text-zinc-500 uppercase tracking-widest font-mono block">Share results</span>
+              <h4 className="text-sm font-bold text-white">If you want to live proud, share it with your friends!</h4>
+            </div>
+
+            {/* Social Circle buttons */}
+            <div className="flex items-center justify-center gap-4">
+              <button className="w-10 h-10 rounded-full bg-[#E1306C]/10 border border-[#E1306C]/20 hover:bg-[#E1306C]/20 text-[#E1306C] flex items-center justify-center transition-all cursor-pointer active:scale-90" title="Instagram">
+                <svg className="w-4.5 h-4.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><rect x="2" y="2" width="20" height="20" rx="5" ry="5"></rect><path d="M16 11.37A4 4 0 1 1 12.63 8 4 4 0 0 1 16 11.37z"></path><line x1="17.5" y1="6.5" x2="17.51" y2="6.5"></line></svg>
+              </button>
+              <button className="w-10 h-10 rounded-full bg-[#1877F2]/10 border border-[#1877F2]/20 hover:bg-[#1877F2]/20 text-[#1877F2] flex items-center justify-center transition-all cursor-pointer active:scale-90" title="Facebook">
+                <svg className="w-4.5 h-4.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M18 2h-3a5 5 0 0 0-5 5v3H7v4h3v8h4v-8h3l1-4h-4V7a1 1 0 0 1 1-1h3z"></path></svg>
+              </button>
+              <button className="w-10 h-10 rounded-full bg-[#FF4500]/10 border border-[#FF4500]/20 hover:bg-[#FF4500]/20 text-[#FF4500] flex items-center justify-center transition-all cursor-pointer active:scale-90" title="Reddit">
+                <svg className="w-4.5 h-4.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M12 2a10 10 0 1 0 10 10A10 10 0 0 0 12 2zm1 14.5a3 3 0 0 1-2 0 1 1 0 0 1 0-2 3 3 0 0 1 2 0 1 1 0 0 1 0 2zm.8-6.1a1.2 1.2 0 0 1 .4.9 2 2 0 0 1-1.7 2 2 2 0 0 1-1.7-2 1.2 1.2 0 0 1 .4-.9.8.8 0 0 0 .5-.7 1.2 1.2 0 0 0-1-.6h-.6a1.2 1.2 0 0 0-1 .6.8.8 0 0 0 .5.7 1.2 1.2 0 0 1 .4.9 2 2 0 0 1-1.7 2 2 2 0 0 1-1.7-2 1.2 1.2 0 0 1 .4-.9.8.8 0 0 0 .5-.7c0-.5-.4-.9-.9-.9s-.9.4-.9.9c0 .7.5 1.2 1.2 1.2a2 2 0 0 0 2-2 1.2 1.2 0 0 1 .9-.9h.2a1.2 1.2 0 0 1 .9.9 2 2 0 0 0 2 2c.7 0 1.2-.5 1.2-1.2 0-.5-.4-.9-.9-.9s-.9.4-.9.9a.8.8 0 0 0 .5.7z"></path></svg>
+              </button>
+              <button className="w-10 h-10 rounded-full bg-[#25D366]/10 border border-[#25D366]/20 hover:bg-[#25D366]/20 text-[#25D366] flex items-center justify-center transition-all cursor-pointer active:scale-90" title="WhatsApp">
+                <svg className="w-4.5 h-4.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5z"></path></svg>
+              </button>
+            </div>
+
+            {/* Room Copiable Link */}
+            <div className="w-full flex items-center gap-2 bg-zinc-900 border border-zinc-850 rounded-xl p-2.5 font-mono">
+              <span className="flex-1 text-left text-[10.5px] text-zinc-550 truncate">
+                {window.location.origin}/online-typing-test?room={currentRoomCode}
+              </span>
+              <button 
+                onClick={copyInviteLink}
+                className="bg-white hover:bg-zinc-200 text-black px-3 py-1 rounded-lg text-[10px] font-bold uppercase transition-colors cursor-pointer active:scale-95"
               >
-                Back to Waiting Room
+                Copy
               </button>
             </div>
           </div>
