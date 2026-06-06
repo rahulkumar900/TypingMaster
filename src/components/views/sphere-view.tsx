@@ -6,6 +6,9 @@ import {
 } from 'lucide-react';
 import { TypingArena } from '@/components/typing-arena';
 import { LANGUAGES } from '@/lib/languages';
+import { io, Socket } from 'socket.io-client';
+import { useSearchParams, useRouter } from 'next/navigation';
+import { toast } from 'sonner';
 
 interface SphereViewProps {
   user: { username: string; avatarUrl: string };
@@ -49,6 +52,10 @@ const COMMON_WORDS = [
 const DEFAULT_LOBBY_PASSAGE = "Most of them are based on basic text fields that were modified to better handle specific types of information, like the credit card numbers. Here are just a few examples of input types that are most commonly used throughout UIs we creating.";
 
 export function SphereView({ user, config }: SphereViewProps) {
+  const searchParams = useSearchParams();
+  const inviteCode = searchParams.get('code');
+  const router = useRouter();
+
   const [stage, setStage] = useState<'lobby' | 'room-lobby' | 'room-racing' | 'room-results'>('lobby');
   
   // Lobby State
@@ -88,7 +95,151 @@ export function SphereView({ user, config }: SphereViewProps) {
 
   const raceIntervalRef = useRef<NodeJS.Timeout | null>(null);
   const oppIntervalRef = useRef<NodeJS.Timeout | null>(null);
+  
   const chatScrollRef = useRef<HTMLDivElement | null>(null);
+  const socketRef = useRef<Socket | null>(null);
+
+  useEffect(() => {
+    const token = typeof window !== 'undefined' ? localStorage.getItem('typing_thunder_token') : null;
+    const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'https://typingmaster-bibp.onrender.com';
+    socketRef.current = io(apiUrl, {
+      auth: { token }
+    });
+
+    socketRef.current.on('connect', () => {
+      if (inviteCode) {
+        socketRef.current?.emit('join_sphere_room', { roomCode: inviteCode.toUpperCase().trim(), avatarUrl: user.avatarUrl });
+        window.history.replaceState({}, '', '/sphere');
+      }
+    });
+
+    socketRef.current.on('sphere_room_created', ({ roomCode, roomState }) => {
+      setCurrentRoomCode(roomCode);
+      setIsUserHost(true);
+      setUserReady(true);
+      setStage('room-lobby');
+      setPlayers(roomState.players);
+      if (roomState.targetText) setRoomPassage(roomState.targetText);
+      setChatMessages([{ sender: 'System', avatarUrl: '', text: `Room ${roomCode} created. Share the code to invite friends!`, time: new Date().toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'}) }]);
+    });
+
+    socketRef.current.on('sphere_room_joined', ({ roomState }) => {
+      setCurrentRoomCode(roomState.roomCode);
+      setIsUserHost(false);
+      setUserReady(false);
+      setIsJoinModalOpen(false);
+      setStage('room-lobby');
+      setPlayers(roomState.players);
+      setCreateMode(roomState.mode);
+      setCreateLimit(roomState.limit);
+      if (roomState.targetText) setRoomPassage(roomState.targetText);
+      setChatMessages([{ sender: 'System', avatarUrl: '', text: `Joined Room ${roomState.roomCode}. Waiting for host to start test.`, time: new Date().toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'}) }]);
+    });
+
+    socketRef.current.on('sphere_join_error', ({ error }) => {
+      alert(error);
+    });
+
+    socketRef.current.on('sphere_player_joined', ({ player }) => {
+      setPlayers(prev => [...prev.filter(p => p.username !== player.username), player]);
+      setChatMessages(prev => [...prev, { sender: 'System', avatarUrl: '', text: `${player.username} joined the room.`, time: new Date().toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'}) }]);
+    });
+
+    socketRef.current.on('sphere_player_left', ({ username }) => {
+      setPlayers(prev => prev.filter(p => p.username !== username));
+      setChatMessages(prev => [...prev, { sender: 'System', avatarUrl: '', text: `${username} left the room.`, time: new Date().toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'}) }]);
+    });
+
+    socketRef.current.on('sphere_new_host', ({ username }) => {
+      setPlayers(prev => prev.map(p => p.username === username ? { ...p, isHost: true } : p));
+      if (username === user.username) {
+        setIsUserHost(true);
+        setChatMessages(prev => [...prev, { sender: 'System', avatarUrl: '', text: `You are now the host.`, time: new Date().toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'}) }]);
+      }
+    });
+
+    socketRef.current.on('sphere_chat_message', (msg) => {
+      setChatMessages(prev => [...prev, msg]);
+    });
+
+    socketRef.current.on('sphere_settings_changed', ({ mode, limit, targetText }) => {
+      setCreateMode(mode);
+      setCreateLimit(limit);
+      setRoomPassage(targetText);
+    });
+
+    socketRef.current.on('sphere_player_ready_changed', ({ username, ready }) => {
+      setPlayers(prev => prev.map(p => p.username === username ? { ...p, ready } : p));
+    });
+
+    socketRef.current.on('sphere_countdown_tick', (count) => {
+      setCountdown(count);
+      setPlayers(prev => prev.map(p => ({ ...p, ready: true })));
+    });
+
+    socketRef.current.on('sphere_race_start', () => {
+      setCountdown(null);
+      startRaceLocal();
+    });
+
+    socketRef.current.on('sphere_progress', ({ username, progress, wpm, accuracy }) => {
+      setPlayers(prev => prev.map(p => p.username === username ? { ...p, progress, wpm } : p));
+    });
+
+    socketRef.current.on('player_progress', ({ progress, wpm, accuracy }) => {
+      setUserWpm(wpm);
+      setUserAccuracy(accuracy.toString());
+      setPlayers(prev => prev.map(p => p.username === user.username ? { ...p, progress, wpm } : p));
+    });
+
+    socketRef.current.on('sphere_player_complete', ({ username, wpm, accuracy }) => {
+      setPlayers(prev => prev.map(p => p.username === username ? { ...p, progress: 100, wpm, finished: true } : p));
+      
+      // Auto transition if we are done and someone else finishes, or we see everyone is done
+      setPlayers(current => {
+        const next = current.map(p => p.username === username ? { ...p, progress: 100, wpm, finished: true } : p);
+        if (next.every(p => p.finished)) {
+          setTimeout(() => setStage('room-results'), 1500);
+        }
+        return next;
+      });
+    });
+
+    return () => {
+      if (socketRef.current) socketRef.current.disconnect();
+    };
+  }, [user]);
+
+  const startRaceLocal = () => {
+    setStage('room-racing');
+    setRaceElapsed(0);
+    setResetKey(prev => prev + 1);
+
+    // Set all players progress back to 0
+    setPlayers(prev => prev.map(p => ({ ...p, progress: 0, wpm: 0, finished: false })));
+
+    correctCountRef.current = 0;
+    typedLengthRef.current = 0;
+    startTimeRef.current = Date.now();
+    setCharStats({ correct: 0, incorrect: 0, extra: 0, missed: 0 });
+
+    // Track elapsed time
+    if (raceIntervalRef.current) clearInterval(raceIntervalRef.current);
+    raceIntervalRef.current = setInterval(() => {
+      if (!startTimeRef.current) return;
+      const elapsedSecs = (Date.now() - startTimeRef.current) / 1000;
+      const roundedElapsed = Math.floor(elapsedSecs);
+      setRaceElapsed(roundedElapsed);
+
+      if (createMode === 'time' && roundedElapsed >= createLimit) {
+        if (raceIntervalRef.current) clearInterval(raceIntervalRef.current);
+        setTimeout(() => {
+          setStage('room-results');
+        }, 1500);
+      }
+    }, 1000);
+  };
+
 
   const correctCountRef = useRef(0);
   const typedLengthRef = useRef(0);
@@ -123,316 +274,76 @@ export function SphereView({ user, config }: SphereViewProps) {
   }, [createMode, createLimit]);
 
   const handleCreateRoom = () => {
-    const characters = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
-    let code = '';
-    for (let i = 0; i < 6; i++) {
-      code += characters.charAt(Math.floor(Math.random() * characters.length));
+    if (socketRef.current) {
+      socketRef.current.emit('create_sphere_room', { mode: createMode, limit: createLimit, avatarUrl: user.avatarUrl, targetText: roomPassage });
     }
-
-    setCurrentRoomCode(code);
-    setIsUserHost(true);
-    setUserReady(true);
-    setStage('room-lobby');
-    
-    // Set initial players
-    setPlayers([
-      { username: user.username, avatarUrl: user.avatarUrl, isHost: true, progress: 0, wpm: 0, finished: false, ready: true },
-      { username: 'Apurvaa', avatarUrl: 'https://api.dicebear.com/7.x/bottts/svg?seed=Apurvaa', isHost: false, progress: 0, wpm: 0, finished: false, ready: true },
-      { username: 'tejashhh', avatarUrl: 'https://api.dicebear.com/7.x/bottts/svg?seed=tejashhh', isHost: false, progress: 0, wpm: 0, finished: false, ready: false }
-    ]);
-
-    setChatMessages([
-      { sender: 'System', avatarUrl: '', text: `Room ${code} created. Share the code to invite friends!`, time: new Date().toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'}) },
-      { sender: 'Apurvaa', avatarUrl: 'https://api.dicebear.com/7.x/bottts/svg?seed=Apurvaa', text: "What's up! Ready to drift keys.", time: new Date().toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'}) },
-      { sender: 'tejashhh', avatarUrl: 'https://api.dicebear.com/7.x/bottts/svg?seed=tejashhh', text: "glhf", time: new Date().toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'}) }
-    ]);
-
-    simulateBotChat();
   };
 
   const handleJoinRoom = (code: string) => {
     if (!code || code.trim().length < 3) return;
     const cleanCode = code.toUpperCase().trim();
-    setCurrentRoomCode(cleanCode);
-    setIsUserHost(false);
-    setUserReady(false);
-    setIsJoinModalOpen(false);
-    setStage('room-lobby');
-
-    setPlayers([
-      { username: 'Apurvaa', avatarUrl: 'https://api.dicebear.com/7.x/bottts/svg?seed=Apurvaa', isHost: true, progress: 0, wpm: 0, finished: false, ready: true },
-      { username: user.username, avatarUrl: user.avatarUrl, isHost: false, progress: 0, wpm: 0, finished: false, ready: false },
-      { username: 'tejashhh', avatarUrl: 'https://api.dicebear.com/7.x/bottts/svg?seed=tejashhh', isHost: false, progress: 0, wpm: 0, finished: false, ready: true },
-      { username: 'hrshxp', avatarUrl: 'https://api.dicebear.com/7.x/bottts/svg?seed=hrshxp', isHost: false, progress: 0, wpm: 0, finished: false, ready: true }
-    ]);
-
-    setChatMessages([
-      { sender: 'System', avatarUrl: '', text: `Joined Room ${cleanCode}. Waiting for host to start test.`, time: new Date().toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'}) },
-      { sender: 'Apurvaa', avatarUrl: 'https://api.dicebear.com/7.x/bottts/svg?seed=Apurvaa', text: `Welcome to the room, ${user.username}!`, time: new Date().toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'}), isHost: true }
-    ]);
-
-    simulateBotChat();
-
-    // If joined as guest, simulate the host starting the test after 15 seconds
-    setTimeout(() => {
-      setStage((currentStage) => {
-        if (currentStage === 'room-lobby') {
-          // Trigger the 5s countdown
-          triggerStartCountdown();
-        }
-        return currentStage;
-      });
-    }, 15000);
+    if (socketRef.current) {
+      socketRef.current.emit('join_sphere_room', { roomCode: cleanCode, avatarUrl: user.avatarUrl });
+    }
   };
 
-  // Bot chat simulator
-  const simulateBotChat = () => {
-    const timer = setInterval(() => {
-      setPlayers((currentPlayers) => {
-        if (currentPlayers.length <= 1) return currentPlayers;
-        
-        // Find a random bot (not user)
-        const bots = currentPlayers.filter(p => p.username !== user.username);
-        const randomBot = bots[Math.floor(Math.random() * bots.length)];
-        const randomText = CHAT_RESPONSES[Math.floor(Math.random() * CHAT_RESPONSES.length)];
-
-        setChatMessages(prev => [
-          ...prev,
-          {
-            sender: randomBot.username,
-            avatarUrl: randomBot.avatarUrl,
-            text: randomText,
-            time: new Date().toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'}),
-            isHost: randomBot.isHost
-          }
-        ]);
-        
-        return currentPlayers;
-      });
-    }, 8000);
-
-    return () => clearInterval(timer);
-  };
-
+  
   const handleSendMessage = (e: React.FormEvent) => {
     e.preventDefault();
-    if (!inputMessage.trim()) return;
-
-    setChatMessages(prev => [
-      ...prev,
-      {
-        sender: user.username,
-        avatarUrl: user.avatarUrl,
-        text: inputMessage.trim(),
-        time: new Date().toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})
-      }
-    ]);
-
+    if (!inputMessage.trim() || !socketRef.current) return;
+    socketRef.current.emit('sphere_chat_send', { roomCode: currentRoomCode, text: inputMessage.trim() });
     setInputMessage('');
-
-    // Trigger instant reply from one bot 35% of the time
-    if (Math.random() < 0.35) {
-      setTimeout(() => {
-        setPlayers((curr) => {
-          const bots = curr.filter(p => p.username !== user.username);
-          if (bots.length > 0) {
-            const randomBot = bots[Math.floor(Math.random() * bots.length)];
-            setChatMessages(prev => [
-              ...prev,
-              {
-                sender: randomBot.username,
-                avatarUrl: randomBot.avatarUrl,
-                text: `Awesome, typing is rhythm.`,
-                time: new Date().toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'}),
-                isHost: randomBot.isHost
-              }
-            ]);
-          }
-          return curr;
-        });
-      }, 1500);
-    }
   };
 
   const triggerStartCountdown = () => {
-    let count = 5;
-    setCountdown(count);
-    
-    // Set all players to ready
-    setPlayers(prev => prev.map(p => ({ ...p, ready: true })));
-
-    const interval = setInterval(() => {
-      count--;
-      if (count <= 0) {
-        clearInterval(interval);
-        setCountdown(null);
-        handleStartRace();
-      } else {
-        setCountdown(count);
-      }
-    }, 1000);
+    if (socketRef.current && isUserHost) {
+      socketRef.current.emit('sphere_start_race', { roomCode: currentRoomCode });
+    }
   };
 
-  const handleStartRace = () => {
-    setStage('room-racing');
-    setRaceElapsed(0);
-    setResetKey(prev => prev + 1);
 
-    // Set all players progress back to 0
-    setPlayers(prev => prev.map(p => ({ ...p, progress: 0, wpm: 0, finished: false })));
+  
 
-    correctCountRef.current = 0;
-    typedLengthRef.current = 0;
-    startTimeRef.current = Date.now();
-    setCharStats({ correct: 0, incorrect: 0, extra: 0, missed: 0 });
-
-    // Track elapsed time
-    raceIntervalRef.current = setInterval(() => {
-      if (!startTimeRef.current) return;
-      const elapsedSecs = (Date.now() - startTimeRef.current) / 1000;
-      const roundedElapsed = Math.floor(elapsedSecs);
-      setRaceElapsed(roundedElapsed);
-
-      if (elapsedSecs > 0.5) {
-        const mins = elapsedSecs / 60;
-        const currentWpm = Math.round((correctCountRef.current / 5) / mins);
-        setUserWpm(currentWpm);
-        
-        // Also update player's local list WPM
-        setPlayers(prev => prev.map(p => {
-          if (p.username === user.username) {
-            return { ...p, wpm: currentWpm };
-          }
-          return p;
-        }));
-      }
-
-      if (createMode === 'time' && roundedElapsed >= createLimit) {
-        if (raceIntervalRef.current) clearInterval(raceIntervalRef.current);
-        if (oppIntervalRef.current) clearInterval(oppIntervalRef.current);
-        setTimeout(() => {
-          setStage('room-results');
-        }, 1500);
-      }
-    }, 1000);
-
-    // Track simulated bots progress
-    oppIntervalRef.current = setInterval(() => {
-      setPlayers((currentPlayers) => {
-        const updated = currentPlayers.map((player) => {
-          if (player.username === user.username) return player;
-          if (player.finished) return player;
-
-          // Introduce typing velocity
-          const baseSpeed = player.username === 'Apurvaa' ? 74 : player.username === 'tejashhh' ? 62 : 68;
-          const currentWpm = baseSpeed + Math.round(Math.random() * 8 - 4);
-          const cps = (currentWpm * 5) / 60;
-          const totalChars = roomPassage.length;
-          const incrementalPercentage = (cps / totalChars) * 100;
-          const nextProg = Math.min(100, player.progress + incrementalPercentage);
-          const isDone = nextProg >= 100;
-
-          return {
-            ...player,
-            progress: nextProg,
-            wpm: currentWpm,
-            finished: isDone
-          };
-        });
-
-        // If ANY player has finished, transition to results immediately
-        const hasAnyFinished = updated.some(p => p.finished);
-        if (hasAnyFinished) {
-          if (oppIntervalRef.current) clearInterval(oppIntervalRef.current);
-          if (raceIntervalRef.current) clearInterval(raceIntervalRef.current);
-          setTimeout(() => {
-            setStage('room-results');
-          }, 1500);
-        }
-
-        return updated;
-      });
-    }, 1000);
-  };
-
-  const handleUserProgress = (correctCount: number, typedLength: number) => {
+  const handleUserProgress = (correctCount: number, typedLength: number, typedText: string) => {
     correctCountRef.current = correctCount;
     typedLengthRef.current = typedLength;
 
-    const percentage = Math.min(100, (typedLength / roomPassage.length) * 100);
-    
-    let currentWpm = 0;
-    if (startTimeRef.current) {
-      const elapsedSecs = (Date.now() - startTimeRef.current) / 1000;
-      if (elapsedSecs > 0.5) {
-        const mins = elapsedSecs / 60;
-        currentWpm = Math.round((correctCount / 5) / mins);
-        setUserWpm(currentWpm);
-      } else {
-        currentWpm = Math.round((correctCount / 5) / (0.5 / 60));
-        setUserWpm(currentWpm);
-      }
-      
-      const acc = typedLength > 0 ? ((correctCount / typedLength) * 100).toFixed(2) : '100.00';
-      setUserAccuracy(acc);
-
-      // Track exact counts
-      const errors = Math.max(0, typedLength - correctCount);
-      setCharStats({
-        correct: correctCount,
-        incorrect: Math.round(errors * 0.7),
-        extra: Math.round(errors * 0.3),
-        missed: Math.max(0, roomPassage.length - typedLength)
+    if (socketRef.current && currentRoomCode) {
+      socketRef.current.emit('keystroke', {
+        roomId: `sphere_${currentRoomCode}`,
+        typedText: typedText,
+        isMistake: false
       });
     }
-
-    setPlayers(prev => prev.map(p => {
-      if (p.username === user.username) {
-        return {
-          ...p,
-          progress: percentage,
-          wpm: currentWpm
-        };
-      }
-      return p;
-    }));
   };
 
   const handleUserComplete = () => {
-    setPlayers(prev => prev.map(p => {
-      if (p.username === user.username) {
-        return {
-          ...p,
-          progress: 100,
-          finished: true
-        };
-      }
-      return p;
-    }));
-
-    if (raceIntervalRef.current) clearInterval(raceIntervalRef.current);
-    if (oppIntervalRef.current) clearInterval(oppIntervalRef.current);
-    setTimeout(() => {
-      setStage('room-results');
-    }, 1500);
+    if (socketRef.current && currentRoomCode) {
+      // The backend detects completion automatically via keystrokes when typedLength >= targetLength, 
+      // but we can also set a local completed state if needed.
+    }
   };
 
   const handleExitRoom = () => {
+    if (socketRef.current) {
+      socketRef.current.emit('leave_sphere_room', { roomCode: currentRoomCode });
+    }
     setStage('lobby');
     setCurrentRoomCode('');
     setIsLeaveModalOpen(false);
     setUserReady(false);
     if (raceIntervalRef.current) clearInterval(raceIntervalRef.current);
-    if (oppIntervalRef.current) clearInterval(oppIntervalRef.current);
   };
 
   const copyRoomCode = () => {
     navigator.clipboard.writeText(currentRoomCode);
+    toast.success('Room code copied to clipboard!');
   };
 
   const copyInviteLink = () => {
-    const link = `${window.location.origin}/online-typing-test?room=${currentRoomCode}`;
+    const link = `${window.location.origin}/sphere?code=${currentRoomCode}`;
     navigator.clipboard.writeText(link);
+    toast.success('Invite link copied to clipboard!');
   };
 
   // Rank calculations
@@ -601,8 +512,7 @@ export function SphereView({ user, config }: SphereViewProps) {
                         <button
                           key={m}
                           onClick={() => {
-                            setCreateMode(m);
-                            setCreateLimit(m === 'time' ? 60 : m === 'words' ? 25 : 60);
+                            socketRef.current?.emit('sphere_update_settings', { roomCode: currentRoomCode, mode: m, limit: m === 'time' ? 60 : m === 'words' ? 25 : 60 });
                           }}
                           className={`w-[38px] h-[38px] rounded-full flex items-center justify-center transition-all cursor-pointer ${
                             createMode === m
@@ -621,7 +531,7 @@ export function SphereView({ user, config }: SphereViewProps) {
                       {createMode === 'time' && ([15, 30, 60] as const).map((limit) => (
                         <button
                           key={limit}
-                          onClick={() => setCreateLimit(limit)}
+                          onClick={() => socketRef.current?.emit('sphere_update_settings', { roomCode: currentRoomCode, mode: createMode, limit })}
                           className={`w-[38px] h-[38px] rounded-full flex items-center justify-center transition-all cursor-pointer text-xs font-bold ${
                             createLimit === limit
                               ? 'bg-zinc-800 text-white font-bold'
@@ -634,7 +544,7 @@ export function SphereView({ user, config }: SphereViewProps) {
                       {createMode === 'words' && ([10, 25, 50] as const).map((limit) => (
                         <button
                           key={limit}
-                          onClick={() => setCreateLimit(limit)}
+                          onClick={() => socketRef.current?.emit('sphere_update_settings', { roomCode: currentRoomCode, mode: createMode, limit })}
                           className={`w-[38px] h-[38px] rounded-full flex items-center justify-center transition-all cursor-pointer text-xs font-bold ${
                             createLimit === limit
                               ? 'bg-zinc-800 text-white font-bold'
@@ -786,7 +696,7 @@ export function SphereView({ user, config }: SphereViewProps) {
             </div>
 
             {/* Premium Multilane Track Layout */}
-            <div className="flex flex-col gap-4 w-full max-w-[800px] mx-auto mt-4 mb-14 select-none">
+            <div className="flex flex-col gap-4 w-full max-w-[800px] mx-auto mt-4 mb-14 select-none px-6 sm:px-10">
               {players.map((player, idx) => {
                 const colors = ['bg-[#00d8f6]', 'bg-amber-400', 'bg-purple-400', 'bg-emerald-400'];
                 const borderColors = ['border-[#00d8f6]', 'border-amber-400', 'border-purple-400', 'border-emerald-400'];
@@ -838,9 +748,9 @@ export function SphereView({ user, config }: SphereViewProps) {
               synth={config.synth}
               gameState="running"
               onStart={() => {}}
-              onComplete={handleUserComplete}
+              onComplete={(text) => handleUserComplete(text)}
               onKeystroke={() => {}}
-              onProgress={handleUserProgress}
+              onProgress={(c, l, text) => handleUserProgress(c, l, text)}
               resetCounter={resetKey}
               testMode={createMode === 'govt-exam' ? 'govt-exam' : createMode === 'words' ? 'words' : 'time'}
               timeLeft={createMode === 'time' ? Math.max(0, createLimit - raceElapsed) : raceElapsed}
@@ -1187,7 +1097,7 @@ export function SphereView({ user, config }: SphereViewProps) {
             {/* Room Copiable Link */}
             <div className="w-full flex items-center gap-2 bg-zinc-900 border border-zinc-850 rounded-xl p-2.5 font-mono">
               <span className="flex-1 text-left text-[10.5px] text-zinc-550 truncate">
-                {window.location.origin}/online-typing-test?room={currentRoomCode}
+                {window.location.origin}/sphere?code={currentRoomCode}
               </span>
               <button 
                 onClick={copyInviteLink}

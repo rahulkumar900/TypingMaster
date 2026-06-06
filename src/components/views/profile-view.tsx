@@ -7,6 +7,7 @@ interface ProfileViewProps {
   user: { username: string; avatarUrl: string };
   onUpdateAvatar: (url: string) => void;
   history: any[];
+  onLogout?: () => void;
 }
 
 const AVATAR_SEEDS = ['thunder', 'lightning', 'spark', 'bolt', 'keyboard', 'clack', 'speedy', 'cyber', 'matrix'];
@@ -19,7 +20,7 @@ const INITIAL_MOCK_HISTORY = [
   { id: '5', date: 'May 25, 2026', mode: 'Zen Practice', wpm: 75, accuracy: '98.10', result: 'Solo' }
 ];
 
-export function ProfileView({ user, onUpdateAvatar, history }: ProfileViewProps) {
+export function ProfileView({ user, onUpdateAvatar, history, onLogout }: ProfileViewProps) {
   const [editingAvatar, setEditingAvatar] = useState(false);
   const [matchHistory, setMatchHistory] = useState(INITIAL_MOCK_HISTORY);
 
@@ -116,6 +117,14 @@ export function ProfileView({ user, onUpdateAvatar, history }: ProfileViewProps)
             <span className="text-[10px] text-zinc-500 font-mono uppercase tracking-widest bg-zinc-900 border border-zinc-900 px-3 py-1.5 rounded-full">
               Connected Since: Today
             </span>
+            {onLogout && (
+              <button 
+                onClick={onLogout}
+                className="text-[10px] text-red-400 hover:text-red-300 font-mono uppercase tracking-widest bg-red-500/10 hover:bg-red-500/20 border border-red-500/20 px-4 py-1.5 rounded-full transition-colors cursor-pointer active:scale-95 shadow-sm"
+              >
+                Logout
+              </button>
+            )}
           </div>
 
           {/* Edit Avatar seeds dropdown */}

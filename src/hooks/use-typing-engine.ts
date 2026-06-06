@@ -29,6 +29,8 @@ export function useTypingEngine(config: any) {
   const [accuracy, setAccuracy] = useState<string>('100.00');
   const [rawAccuracy, setRawAccuracy] = useState<number>(100);
   const [liveWpm, setLiveWpm] = useState<number>(0);
+  const [typedLength, setTypedLength] = useState<number>(0);
+
 
   // Missed Keys tracking state
   const [missedKeys, setMissedKeys] = useState<Record<string, number>>({});
@@ -55,6 +57,19 @@ export function useTypingEngine(config: any) {
 
   // Load History Table
   useEffect(() => {
+    const loadLocalHistory = () => {
+      if (typeof window !== 'undefined') {
+        const savedHist = localStorage.getItem('centerville_test_history');
+        if (savedHist) {
+          try {
+            setTestHistory(JSON.parse(savedHist));
+          } catch (e) {
+            console.error("Failed to load run history", e);
+          }
+        }
+      }
+    };
+
     if (token) {
       const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'https://typingmaster-bibp.onrender.com';
       fetch(`${apiUrl}/api/stats`, {
@@ -63,10 +78,17 @@ export function useTypingEngine(config: any) {
         }
       })
       .then(res => {
-        if (!res.ok) throw new Error('Failed to fetch stats from DB');
+        if (!res.ok) {
+          console.warn('Failed to fetch stats from DB. Status:', res.status);
+          return null;
+        }
         return res.json();
       })
       .then(data => {
+        if (!data || !Array.isArray(data)) {
+          loadLocalHistory();
+          return;
+        }
         const mappedHistory: TestRecord[] = data.map((item: any) => ({
           id: item.id.toString(),
           date: new Date(item.date).toLocaleDateString(undefined, { month: 'short', day: 'numeric', year: 'numeric', hour: '2-digit', minute: '2-digit' }),
@@ -83,19 +105,11 @@ export function useTypingEngine(config: any) {
         setTestHistory(mappedHistory);
       })
       .catch(err => {
-        console.error('Failed to sync history with database API:', err);
+        console.warn('Failed to sync history with database API, falling back to local history:', err);
+        loadLocalHistory();
       });
     } else {
-      if (typeof window !== 'undefined') {
-        const savedHist = localStorage.getItem('centerville_test_history');
-        if (savedHist) {
-          try {
-            setTestHistory(JSON.parse(savedHist));
-          } catch (e) {
-            console.error("Failed to load run history", e);
-          }
-        }
-      }
+      loadLocalHistory();
     }
   }, [token]);
 
@@ -227,6 +241,7 @@ export function useTypingEngine(config: any) {
     timerStartedAtRef.current = null;
 
     setGameState('idle');
+    setTypedLength(0);
     setTimeLeft(config.testMode === 'time' ? config.testTimeLimit : 0);
     setWpm(0);
     setRawWpm(0);
@@ -411,14 +426,19 @@ export function useTypingEngine(config: any) {
         })
       })
       .then(res => {
-        if (!res.ok) throw new Error('Failed to save stats to server');
+        if (!res.ok) {
+          console.warn('Failed to save stats to server. Status:', res.status);
+          return null;
+        }
         return res.json();
       })
       .then(savedItem => {
-        console.log('Saved stats to server:', savedItem);
+        if (savedItem) {
+          console.log('Saved stats to server:', savedItem);
+        }
       })
       .catch(err => {
-        console.error('Failed to save stats to server:', err);
+        console.warn('Failed to save stats to server:', err);
       });
     }
 
@@ -464,6 +484,7 @@ export function useTypingEngine(config: any) {
   const handleProgress = (correctCount: number, typedLength: number, typedValue?: string) => {
     correctCountRef.current = correctCount;
     typedLengthRef.current = typedLength;
+    setTypedLength(typedLength);
     if (typedValue !== undefined) typedTextRef.current = typedValue;
     if (timerStartedAtRef.current) {
       const elapsed = (Date.now() - timerStartedAtRef.current) / 1000;
@@ -529,6 +550,7 @@ export function useTypingEngine(config: any) {
     targetText, author, title,
     gameState, timeLeft, resetCounter,
     wpm, rawWpm, accuracy, rawAccuracy, liveWpm,
+    typedLength,
     missedKeys, wpmHistory, rawWpmHistory, timeHistory,
     testHistory, setTestHistory, examScore,
     resetTest, startTest, completeTest, handleProgress, loadMoreZenWords, handleKeystroke, handleClearHistory,

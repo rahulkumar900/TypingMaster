@@ -1,5 +1,10 @@
-import { TypingApp } from '@/components/typing-app';
+import { AppLayout } from '@/components/layout/app-layout';
+import { SpeedTestView } from '@/components/views/speed-test-view';
 
 export default function Home() {
-  return <TypingApp initialTab="test" />;
+  return (
+    <AppLayout>
+      <SpeedTestView />
+    </AppLayout>
+  );
 }

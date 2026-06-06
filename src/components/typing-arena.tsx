@@ -525,7 +525,7 @@ export const TypingArena: React.FC<TypingArenaProps> = ({
             onCompositionUpdate={handleCompositionUpdate}
             onCompositionEnd={handleCompositionEnd}
             className="w-full flex-1 p-4 rounded-xl border border-[var(--border-active)] bg-[var(--bg-panel)] text-slate-100 font-mono resize-none focus:outline-none focus:border-[var(--accent-color)] focus:ring-1 focus:ring-[var(--accent-color)]/30 transition-all duration-200"
-            style={{ fontSize: `${fontSize - 2}px`, fontFamily: fontFamily || 'inherit' }}
+            style={{ fontSize: `min(${fontSize - 2}px, 5.5vw)`, fontFamily: fontFamily || 'inherit' }}
             placeholder="Start typing the passage here..."
             spellCheck="false"
             autoComplete="off"
@@ -563,7 +563,7 @@ export const TypingArena: React.FC<TypingArenaProps> = ({
     <section 
       ref={containerRef}
       onClick={focusInput}
-      className={`widget flex flex-col justify-between p-4 md:p-9 relative bg-transparent border-none shadow-none transition-all duration-300 w-full ${isFocused ? 'cursor-text' : 'cursor-pointer'}`}
+      className={`widget flex flex-col justify-between py-2 sm:py-4 px-2 sm:px-4 md:px-8 relative bg-transparent border-none shadow-none transition-all duration-300 w-full ${isFocused ? 'cursor-text' : 'cursor-pointer'}`}
       id="widget-typing-arena"
     >
       <div className="relative w-full overflow-hidden flex-1">
@@ -600,7 +600,7 @@ export const TypingArena: React.FC<TypingArenaProps> = ({
         <div 
           ref={wordsDisplayRef}
           className="words-container relative flex flex-wrap align-start text-[var(--text-muted)] font-mono select-none overflow-hidden leading-[1.8] tracking-[0.02em]"
-          style={{ fontSize: `${fontSize}px`, height: '6.3em' }}
+          style={{ fontSize: `min(${fontSize}px, 6vw)`, height: '6.3em' }}
         >
           <div 
             ref={caretRef}

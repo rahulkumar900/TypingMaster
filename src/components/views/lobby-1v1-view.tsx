@@ -6,6 +6,8 @@ import { TypingArena } from '@/components/typing-arena';
 import { useTypingEngine } from '@/hooks/use-typing-engine';
 import { LANGUAGES } from '@/lib/languages';
 import { io, Socket } from 'socket.io-client';
+import { useParams, useRouter } from 'next/navigation';
+import { toast } from 'sonner';
 
 const InstagramIcon = (props: React.SVGProps<SVGSVGElement>) => (
   <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" {...props}>
@@ -58,7 +60,12 @@ interface Lobby1v1ViewProps {
 const MATCH_PASSAGE = "The storm clouds rolled in over the horizon, flashing brilliant arches of lightning that lit up the typing arena. Speed and precision are the only shields in this thunderous duel. Keep your hands relaxed, find your keycap rhythm, and strike like a bolt from the blue.";
 
 export function Lobby1v1View({ user, config }: Lobby1v1ViewProps) {
-  const [stage, setStage] = useState<'lobby' | 'searching' | 'found' | 'countdown' | 'racing' | 'results'>('lobby');
+  const params = useParams();
+  const initialRoomId = params?.roomId as string | undefined;
+
+  const [stage, setStage] = useState<'lobby' | 'searching' | 'found' | 'countdown' | 'racing' | 'results'>(
+    initialRoomId ? 'searching' : 'lobby'
+  );
   const [searchTimer, setSearchTimer] = useState(0);
   const [opponent, setOpponent] = useState<{ username: string; avatarUrl: string } | null>(null);
   const [countdown, setCountdown] = useState(3);
@@ -109,7 +116,9 @@ export function Lobby1v1View({ user, config }: Lobby1v1ViewProps) {
 
     socket.on('connect', () => {
       console.log('Connected to multiplayer server');
-      if (stageRef.current === 'searching') {
+      if (initialRoomId) {
+        socket.emit('reconnect_room', { roomId: initialRoomId });
+      } else if (stageRef.current === 'searching') {
         socket.emit('join_queue', { avatarUrl: user.avatarUrl });
       }
     });
@@ -121,6 +130,7 @@ export function Lobby1v1View({ user, config }: Lobby1v1ViewProps) {
         setTargetText(targetText);
       }
       setStage('found');
+      window.history.pushState(null, '', `/play-1vs1/${roomId}`);
     });
 
     socket.on('countdown_tick', (tick) => {
@@ -175,10 +185,52 @@ export function Lobby1v1View({ user, config }: Lobby1v1ViewProps) {
       }, 1500);
     });
 
+    socket.on('opponent_disconnected', () => {
+      toast.warning('Opponent disconnected. Waiting for reconnection...');
+    });
+
+    socket.on('opponent_reconnected', () => {
+      toast.success('Opponent reconnected!');
+    });
+
     socket.on('opponent_left', ({ reason }) => {
-      alert(reason || 'Opponent left the match.');
-      setStage('lobby');
+      if (['racing', 'results', 'countdown', 'found'].includes(stageRef.current)) {
+        toast.info(reason || 'Opponent left the match. You win by forfeit!');
+        setRaceWinner('user');
+        setStage('results');
+      } else {
+        toast.info(reason || 'Opponent left the match.');
+        setStage('lobby');
+        window.history.pushState(null, '', '/play-1vs1');
+      }
       if (raceIntervalRef.current) clearInterval(raceIntervalRef.current);
+    });
+
+    socket.on('reconnect_success', ({ 
+      roomId: reconnectedRoomId, targetText, opponent: oppData, 
+      userProgress, oppProgress, userWpm: uWpmVal, oppWpm: oWpmVal, userAccuracy: uAccVal, oppAccuracy: oAccVal,
+      stage: serverStage 
+    }) => {
+      setRoomId(reconnectedRoomId);
+      setOpponent(oppData);
+      setTargetText(targetText);
+      setUserProgress(userProgress);
+      setOppProgress(oppProgress);
+      setUserWpm(uWpmVal);
+      setOppWpm(oWpmVal);
+      if (uAccVal) setUserAccuracy(uAccVal);
+      if (oAccVal) setOppAccuracy(oAccVal);
+      setStage(serverStage);
+      toast.success('Successfully reconnected to the match!');
+      if (serverStage === 'racing') {
+        startRace();
+      }
+    });
+
+    socket.on('reconnect_failed', () => {
+      toast.error('Failed to reconnect to room. Returning to lobby.');
+      setStage('lobby');
+      window.history.pushState(null, '', '/play-1vs1');
     });
 
     return () => {
@@ -261,6 +313,9 @@ export function Lobby1v1View({ user, config }: Lobby1v1ViewProps) {
     }
     setStage('lobby');
     setSearchTimer(0);
+    if (initialRoomId) {
+      window.history.pushState(null, '', '/play-1vs1');
+    }
   };
 
   const handleFindMatch = () => {
@@ -277,6 +332,7 @@ export function Lobby1v1View({ user, config }: Lobby1v1ViewProps) {
       }
       setStage('lobby');
       if (raceIntervalRef.current) clearInterval(raceIntervalRef.current);
+      window.history.pushState(null, '', '/play-1vs1');
     }
   };
 
@@ -325,7 +381,9 @@ export function Lobby1v1View({ user, config }: Lobby1v1ViewProps) {
                       <Search className="w-5 h-5 animate-spin" />
                     </div>
                   </div>
-                  <span className="text-[11px] text-[var(--text-muted-alt)] font-semibold uppercase tracking-wider font-mono animate-pulse">Searching...</span>
+                  <span className="text-[11px] text-[var(--text-muted-alt)] font-semibold uppercase tracking-wider font-mono animate-pulse">
+                    {initialRoomId ? 'Reconnecting...' : 'Searching...'}
+                  </span>
                 </div>
               ) : opponent ? (
                 <>
@@ -358,14 +416,16 @@ export function Lobby1v1View({ user, config }: Lobby1v1ViewProps) {
 
             {stage === 'searching' && (
               <div className="flex flex-col items-center gap-3">
-                <span className="text-xs text-[var(--text-muted-alt)] font-semibold font-mono bg-[var(--bg-widget)] border border-[var(--border-subtle)] px-3 py-1 rounded-full">
-                  Queue Time: {searchTimer}s
-                </span>
+                {!initialRoomId && (
+                  <span className="text-xs text-[var(--text-muted-alt)] font-semibold font-mono bg-[var(--bg-widget)] border border-[var(--border-subtle)] px-3 py-1 rounded-full">
+                    Queue Time: {searchTimer}s
+                  </span>
+                )}
                 <button
                   onClick={handleCancelSearch}
                   className="px-6 py-2 bg-[var(--bg-panel)] hover:bg-[var(--bg-hover)] border border-[var(--border-subtle)] text-[var(--text-main)] text-[11px] font-bold uppercase tracking-wider rounded-full transition-all cursor-pointer active:scale-95 shadow-sm"
                 >
-                  Cancel Matchmaking
+                  {initialRoomId ? 'Return to Lobby' : 'Cancel Matchmaking'}
                 </button>
               </div>
             )}
@@ -399,7 +459,8 @@ export function Lobby1v1View({ user, config }: Lobby1v1ViewProps) {
             </div>
 
             {/* Single horizontal progress line containing both racing avatars */}
-            <div className="relative pt-8 pb-4 select-none max-w-[800px] w-[95%] mx-auto">
+            <div className="w-full max-w-[800px] mx-auto px-6 sm:px-10 select-none">
+            <div className="relative pt-8 pb-4 w-full">
               {/* Main track line */}
               <div className="w-full h-[4px] bg-zinc-800 rounded-full relative overflow-hidden">
                 {/* Visual fill line up to the leader's position */}
@@ -454,6 +515,7 @@ export function Lobby1v1View({ user, config }: Lobby1v1ViewProps) {
                   {opponent.username} ({oppWpm} WPM)
                 </span>
               </div>
+            </div>
             </div>
           </div>
 
@@ -591,7 +653,7 @@ export function Lobby1v1View({ user, config }: Lobby1v1ViewProps) {
                 {/* Character breakdowns */}
                 <div className="border-t border-[var(--border-subtle)] pt-4">
                   <span className="text-[10px] text-[var(--text-muted)] uppercase font-bold tracking-wider font-mono">Characters</span>
-                  <div className="grid grid-cols-4 gap-2 mt-2 font-mono text-center">
+                  <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 mt-2 font-mono text-center">
                     <div className="bg-[var(--bg-widget)] border border-[var(--border-subtle)] rounded-xl p-2 flex flex-col">
                       <span className="text-[9px] text-[var(--text-muted)]">Correct</span>
                       <span className="text-base font-bold text-[var(--text-main)] mt-0.5">{String(charsCorrect).padStart(2, '0')}</span>
@@ -669,7 +731,10 @@ export function Lobby1v1View({ user, config }: Lobby1v1ViewProps) {
                 <span>Find New Match</span>
               </button>
               <button
-                onClick={() => setStage('lobby')}
+                onClick={() => {
+                  setStage('lobby');
+                  window.history.pushState(null, '', '/play-1vs1');
+                }}
                 className="flex items-center gap-2 px-6 py-3.5 rounded-full border border-[var(--border-subtle)] bg-[var(--bg-panel)] text-[var(--text-main)] hover:bg-[var(--bg-hover)] font-bold text-xs uppercase tracking-wide transition-all duration-300 cursor-pointer active:scale-95"
               >
                 <ChevronLeft className="w-3.5 h-3.5" />

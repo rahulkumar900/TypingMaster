@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import "./globals.css";
 import { AuthProvider } from "@/context/auth-context";
+import { ConfigProvider } from "@/context/config-context";
 import { Toaster } from "sonner";
 
 
@@ -81,8 +82,10 @@ export default function RootLayout({
       </head>
       <body className="h-full transition-colors duration-500 overflow-x-hidden">
         <AuthProvider>
-          {children}
-          <Toaster theme="dark" position="top-right" richColors />
+          <ConfigProvider>
+            {children}
+            <Toaster theme="dark" position="top-right" richColors />
+          </ConfigProvider>
         </AuthProvider>
       </body>
     </html>

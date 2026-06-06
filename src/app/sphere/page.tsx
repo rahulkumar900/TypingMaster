@@ -1,5 +1,5 @@
 import { Metadata } from 'next';
-import { TypingApp } from '@/components/typing-app';
+import SphereClient from './sphere-client';
 
 export const metadata: Metadata = {
   title: 'Sphere Rooms | Custom Private Typing Rooms',
@@ -9,12 +9,12 @@ export const metadata: Metadata = {
   },
 };
 
+import { Suspense } from 'react';
+
 export default function SpherePage() {
   return (
-    <TypingApp 
-      initialTab="sphere"
-      seoTitle="Sphere Multiplayer Typing Rooms"
-      seoDescription="Welcome to Sphere Mode. Create custom private typing rooms for you and your friends, chat, customize presets, and compete in multiplayer typing races."
-    />
+    <Suspense fallback={<div className="min-h-screen bg-[#0c0d12] flex items-center justify-center"><div className="w-8 h-8 rounded-full border-2 border-amber-500 border-t-transparent animate-spin"></div></div>}>
+      <SphereClient />
+    </Suspense>
   );
 }

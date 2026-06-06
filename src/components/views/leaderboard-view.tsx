@@ -60,10 +60,18 @@ export function LeaderboardView({ user }: LeaderboardViewProps) {
     const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'https://typingmaster-bibp.onrender.com';
     fetch(`${apiUrl}/api/leaderboard`)
       .then(res => {
-        if (!res.ok) throw new Error('Failed to fetch ratings data');
+        if (!res.ok) {
+          console.warn('Failed to fetch ratings data. Status:', res.status);
+          return null;
+        }
         return res.json();
       })
       .then(data => {
+        if (!data) {
+          setLeaderboardData(MOCK_LEADERBOARDS[filter]);
+          setIsLoading(false);
+          return;
+        }
         const realEntries: LeaderboardEntry[] = data.map((item: any, idx: number) => ({
           rank: idx + 1,
           username: item.username,
@@ -94,7 +102,7 @@ export function LeaderboardView({ user }: LeaderboardViewProps) {
         setIsLoading(false);
       })
       .catch(err => {
-        console.error('Error fetching real ratings, falling back to mock data:', err);
+        console.warn('Error fetching real ratings, falling back to mock data:', err);
         setLeaderboardData(MOCK_LEADERBOARDS[filter]);
         setIsLoading(false);
       });
