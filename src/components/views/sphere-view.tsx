@@ -748,9 +748,9 @@ export function SphereView({ user, config }: SphereViewProps) {
               synth={config.synth}
               gameState="running"
               onStart={() => {}}
-              onComplete={(text) => handleUserComplete(text)}
+              onComplete={handleUserComplete}
               onKeystroke={() => {}}
-              onProgress={(c, l, text) => handleUserProgress(c, l, text)}
+              onProgress={(c, l, text) => handleUserProgress(c, l, text || '')}
               resetCounter={resetKey}
               testMode={createMode === 'govt-exam' ? 'govt-exam' : createMode === 'words' ? 'words' : 'time'}
               timeLeft={createMode === 'time' ? Math.max(0, createLimit - raceElapsed) : raceElapsed}
