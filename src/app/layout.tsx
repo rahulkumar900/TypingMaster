@@ -37,27 +37,6 @@ const jsonLd = {
       "applicationCategory": "EducationalApplication",
       "operatingSystem": "Any",
       "description": "A free online typing test to measure words per minute (WPM) and typing accuracy."
-    },
-    {
-      "@type": "FAQPage",
-      "mainEntity": [
-        {
-          "@type": "Question",
-          "name": "What is a good typing speed (WPM)?",
-          "acceptedAnswer": {
-            "@type": "Answer",
-            "text": "An average typing speed is around 40 WPM. Speeds above 60 WPM are considered good for most administrative jobs, while speeds over 90 WPM are excellent."
-          }
-        },
-        {
-          "@type": "Question",
-          "name": "How is WPM calculated?",
-          "acceptedAnswer": {
-            "@type": "Answer",
-            "text": "WPM (Words Per Minute) is calculated by dividing the total number of characters typed by 5 (the standard length of a word) and then dividing by the time in minutes."
-          }
-        }
-      ]
     }
   ]
 };
