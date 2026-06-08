@@ -111,27 +111,30 @@ export function SphereView({ user, config, initialRoomId }: SphereViewProps) {
       }
     });
 
-    socketRef.current.on('sphere_room_created', ({ roomCode, roomState }) => {
-      setCurrentRoomCode(roomCode);
-      setIsUserHost(true);
-      setUserReady(true);
-      setStage('room-lobby');
-      setPlayers(roomState.players);
-      if (roomState.targetText) setRoomPassage(roomState.targetText);
-      setChatMessages([{ sender: 'System', avatarUrl: '', text: `Room ${roomCode} created. Share the code to invite friends!`, time: new Date().toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'}) }]);
+    socketRef.current.on('sphere_room_created', ({ roomCode }) => {
+      router.push(`/sphere/${roomCode}`);
     });
 
     socketRef.current.on('sphere_room_joined', ({ roomState }) => {
       setCurrentRoomCode(roomState.roomCode);
-      setIsUserHost(false);
-      setUserReady(false);
+      
+      const me = roomState.players.find((p: any) => p.username === user.username);
+      if (me && me.isHost) {
+        setIsUserHost(true);
+        setUserReady(true);
+        setChatMessages([{ sender: 'System', avatarUrl: '', text: `Room ${roomState.roomCode} created. Share the link to invite friends!`, time: new Date().toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'}) }]);
+      } else {
+        setIsUserHost(false);
+        setUserReady(false);
+        setChatMessages([{ sender: 'System', avatarUrl: '', text: `Joined Room ${roomState.roomCode}. Waiting for host to start test.`, time: new Date().toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'}) }]);
+      }
+
       setIsJoinModalOpen(false);
       setStage('room-lobby');
       setPlayers(roomState.players);
       setCreateMode(roomState.mode);
       setCreateLimit(roomState.limit);
       if (roomState.targetText) setRoomPassage(roomState.targetText);
-      setChatMessages([{ sender: 'System', avatarUrl: '', text: `Joined Room ${roomState.roomCode}. Waiting for host to start test.`, time: new Date().toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'}) }]);
     });
 
     socketRef.current.on('sphere_join_error', ({ error }) => {

@@ -769,23 +769,6 @@ io.on('connection', (socket) => {
     const roomId = `sphere_${roomCode}`;
     const initialText = targetText || MATCH_PASSAGES[Math.floor(Math.random() * MATCH_PASSAGES.length)];
 
-    const player = {
-      socketId: socket.id,
-      user: socket.user,
-      avatarUrl: avatarUrl || `https://api.dicebear.com/7.x/bottts/svg?seed=${socket.user.username}`,
-      isHost: true,
-      progress: 0,
-      wpm: 0,
-      accuracy: 100,
-      typedText: '',
-      correctCount: 0,
-      totalKeystrokes: 0,
-      incorrectKeystrokes: 0,
-      complete: false,
-      ready: true,
-      disconnected: false
-    };
-
     const roomState = {
       roomId,
       roomCode,
@@ -794,31 +777,15 @@ io.on('connection', (socket) => {
       targetText: initialText,
       startTime: null,
       isSphere: true,
-      players: [player]
+      players: []
     };
 
     activeRooms.set(roomId, roomState);
-    socket.join(roomId);
-
+    // Don't join the socket room yet, let the client redirect and call join_sphere_room
+    
     socket.emit('sphere_room_created', {
       roomCode,
-      roomState: {
-        roomId,
-        roomCode,
-        mode,
-        limit,
-        targetText: initialText,
-        startTime: null,
-        players: roomState.players.map(p => ({
-          username: p.user.username,
-          avatarUrl: p.avatarUrl,
-          isHost: p.isHost,
-          progress: p.progress,
-          wpm: p.wpm,
-          ready: p.ready,
-          finished: p.complete
-        }))
-      }
+      roomState
     });
   });
 
