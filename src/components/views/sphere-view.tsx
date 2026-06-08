@@ -13,6 +13,7 @@ import { toast } from 'sonner';
 interface SphereViewProps {
   user: { username: string; avatarUrl: string };
   config: any;
+  initialRoomId?: string;
 }
 
 interface Message {
@@ -51,9 +52,7 @@ const COMMON_WORDS = [
 
 const DEFAULT_LOBBY_PASSAGE = "Most of them are based on basic text fields that were modified to better handle specific types of information, like the credit card numbers. Here are just a few examples of input types that are most commonly used throughout UIs we creating.";
 
-export function SphereView({ user, config }: SphereViewProps) {
-  const searchParams = useSearchParams();
-  const inviteCode = searchParams.get('code');
+export function SphereView({ user, config, initialRoomId }: SphereViewProps) {
   const router = useRouter();
 
   const [stage, setStage] = useState<'lobby' | 'room-lobby' | 'room-racing' | 'room-results'>('lobby');
@@ -107,9 +106,8 @@ export function SphereView({ user, config }: SphereViewProps) {
     });
 
     socketRef.current.on('connect', () => {
-      if (inviteCode) {
-        socketRef.current?.emit('join_sphere_room', { roomCode: inviteCode.toUpperCase().trim(), avatarUrl: user.avatarUrl });
-        window.history.replaceState({}, '', '/sphere');
+      if (initialRoomId) {
+        socketRef.current?.emit('join_sphere_room', { roomCode: initialRoomId.toUpperCase().trim(), avatarUrl: user.avatarUrl });
       }
     });
 
@@ -143,11 +141,13 @@ export function SphereView({ user, config }: SphereViewProps) {
     socketRef.current.on('sphere_player_joined', ({ player }) => {
       setPlayers(prev => [...prev.filter(p => p.username !== player.username), player]);
       setChatMessages(prev => [...prev, { sender: 'System', avatarUrl: '', text: `${player.username} joined the room.`, time: new Date().toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'}) }]);
+      toast.success(`${player.username} joined the room!`);
     });
 
     socketRef.current.on('sphere_player_left', ({ username }) => {
       setPlayers(prev => prev.filter(p => p.username !== username));
       setChatMessages(prev => [...prev, { sender: 'System', avatarUrl: '', text: `${username} left the room.`, time: new Date().toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'}) }]);
+      toast.info(`${username} left the room.`);
     });
 
     socketRef.current.on('sphere_new_host', ({ username }) => {
@@ -193,11 +193,9 @@ export function SphereView({ user, config }: SphereViewProps) {
     });
 
     socketRef.current.on('sphere_player_complete', ({ username, wpm, accuracy }) => {
-      setPlayers(prev => prev.map(p => p.username === username ? { ...p, progress: 100, wpm, finished: true } : p));
-      
-      // Auto transition if we are done and someone else finishes, or we see everyone is done
       setPlayers(current => {
-        const next = current.map(p => p.username === username ? { ...p, progress: 100, wpm, finished: true } : p);
+        const nextRank = Math.max(0, ...current.map(p => p.rank || 0)) + 1;
+        const next = current.map(p => p.username === username ? { ...p, progress: 100, wpm, finished: true, rank: nextRank } : p);
         if (next.every(p => p.finished)) {
           setTimeout(() => setStage('room-results'), 1500);
         }
@@ -341,15 +339,20 @@ export function SphereView({ user, config }: SphereViewProps) {
   };
 
   const copyInviteLink = () => {
-    const link = `${window.location.origin}/sphere?code=${currentRoomCode}`;
+    const link = `${window.location.origin}/sphere/${currentRoomCode}`;
     navigator.clipboard.writeText(link);
     toast.success('Invite link copied to clipboard!');
   };
 
-  // Rank calculations
+  // Rank calculations: Sort by assigned rank first, then by WPM for those who didn't finish
   const rankedPlayers = [...players]
-    .sort((a, b) => b.wpm - a.wpm)
-    .map((p, idx) => ({ ...p, rank: idx + 1 }));
+    .sort((a, b) => {
+      if (a.rank && b.rank) return a.rank - b.rank;
+      if (a.rank) return -1;
+      if (b.rank) return 1;
+      return b.wpm - a.wpm;
+    })
+    .map((p, idx) => ({ ...p, rank: p.rank || idx + 1 }));
 
   const userRankedRecord = rankedPlayers.find(p => p.username === user.username);
   const otherPlayersRanked = rankedPlayers.filter(p => p.username !== user.username);
@@ -602,13 +605,22 @@ export function SphereView({ user, config }: SphereViewProps) {
                 {isUserHost ? (
                   <button
                     onClick={triggerStartCountdown}
-                    className="px-7 py-2.5 rounded-full bg-white text-black font-semibold text-xs uppercase tracking-wider hover:bg-zinc-200 transition-colors cursor-pointer active:scale-95 shadow-md"
+                    disabled={!players.filter(p => !p.isHost).every(p => p.ready)}
+                    className={`px-7 py-2.5 rounded-full font-semibold text-xs uppercase tracking-wider transition-colors cursor-pointer active:scale-95 shadow-md ${
+                      players.filter(p => !p.isHost).every(p => p.ready)
+                        ? 'bg-white text-black hover:bg-zinc-200'
+                        : 'bg-zinc-800 text-zinc-500 cursor-not-allowed'
+                    }`}
+                    title={!players.filter(p => !p.isHost).every(p => p.ready) ? 'Waiting for players to be ready' : 'Start Race'}
                   >
                     Start
                   </button>
                 ) : (
                   <button
                     onClick={() => {
+                      if (socketRef.current) {
+                        socketRef.current.emit('sphere_toggle_ready', { roomCode: currentRoomCode });
+                      }
                       const nextReady = !userReady;
                       setUserReady(nextReady);
                       setPlayers(prev => prev.map(p => p.username === user.username ? { ...p, ready: nextReady } : p));
@@ -1097,7 +1109,7 @@ export function SphereView({ user, config }: SphereViewProps) {
             {/* Room Copiable Link */}
             <div className="w-full flex items-center gap-2 bg-zinc-900 border border-zinc-850 rounded-xl p-2.5 font-mono">
               <span className="flex-1 text-left text-[10.5px] text-zinc-550 truncate">
-                {window.location.origin}/sphere?code={currentRoomCode}
+                {window.location.origin}/sphere/{currentRoomCode}
               </span>
               <button 
                 onClick={copyInviteLink}
