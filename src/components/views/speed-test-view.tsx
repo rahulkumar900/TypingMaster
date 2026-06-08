@@ -337,7 +337,7 @@ export function SpeedTestView() {
         <div className="flex flex-col items-center flex-1 animate-fadeIn w-full min-h-0 py-8">
           
           {/* Progress Track */}
-          <div className="w-full max-w-[800px] mx-auto mb-auto select-none shrink-0">
+          <div className="w-full max-w-[800px] mx-auto mb-auto select-none shrink-0 px-6 sm:px-0">
             <div className="relative w-full">
             {/* The floating user card */}
             <div 
