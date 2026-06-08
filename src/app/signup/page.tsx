@@ -52,7 +52,7 @@ export default function SignUpPage() {
     <AuthLayout
       title="Sign Up"
       subtitle="Sign Up to test your typing speed with your companions."
-      illustrationText="Compete with your friends in a"
+      illustrationText="Compete with your friends in a typing race"
       illustrationSubtext="Assess and improve your typing speed with our interactive typing tests. Receive instant feedback and track your progress over time."
     >
       <div className="absolute top-8 right-8 text-sm text-[#a1a1aa]">
