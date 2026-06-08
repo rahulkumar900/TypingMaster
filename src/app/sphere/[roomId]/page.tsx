@@ -8,10 +8,11 @@ export const metadata: Metadata = {
 
 import { Suspense } from 'react';
 
-export default function SphereRoomPage({ params }: { params: { roomId: string } }) {
+export default async function SphereRoomPage({ params }: { params: Promise<{ roomId: string }> }) {
+  const resolvedParams = await params;
   return (
     <Suspense fallback={<div className="min-h-screen bg-[#0c0d12] flex items-center justify-center"><div className="w-8 h-8 rounded-full border-2 border-[var(--accent-color)] border-t-transparent animate-spin"></div></div>}>
-      <SphereClient roomId={params.roomId} />
+      <SphereClient roomId={resolvedParams.roomId} />
     </Suspense>
   );
 }
