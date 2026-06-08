@@ -1,4 +1,6 @@
-import React from 'react';
+'use client';
+
+import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { Shield } from 'lucide-react';
 
@@ -11,6 +13,23 @@ interface AuthLayoutProps {
 }
 
 export function AuthLayout({ children, title, subtitle, illustrationText, illustrationSubtext }: AuthLayoutProps) {
+  const [displayedText, setDisplayedText] = useState('');
+
+  useEffect(() => {
+    if (!illustrationText) return;
+    setDisplayedText(''); // reset
+    let i = 0;
+    const interval = setInterval(() => {
+      setDisplayedText(illustrationText.slice(0, i + 1));
+      i++;
+      if (i >= illustrationText.length) {
+        clearInterval(interval);
+      }
+    }, 50); // Typing speed
+
+    return () => clearInterval(interval);
+  }, [illustrationText]);
+
   return (
     <div className="min-h-screen w-full flex flex-col md:flex-row bg-[#121212] font-sans selection:bg-yellow-500/30">
       {/* Left Side: Brand & Illustration */}
@@ -30,7 +49,7 @@ export function AuthLayout({ children, title, subtitle, illustrationText, illust
           {illustrationText ? (
             <>
               <h1 className="text-4xl md:text-5xl font-semibold text-white leading-tight tracking-tight mb-6">
-                {illustrationText} <span className="inline-block animate-pulse">|</span>
+                {displayedText} <span className="inline-block animate-pulse">|</span>
               </h1>
               <p className="text-[#a1a1aa] leading-relaxed text-sm">
                 {illustrationSubtext}
