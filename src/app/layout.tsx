@@ -6,15 +6,13 @@ import { Toaster } from "sonner";
 
 
 export const metadata: Metadata = {
+  metadataBase: new URL("https://centerville-typing.vercel.app"),
   title: "Typing Test & WPM Speed Test | Centerville",
   description: "Test your typing speed (WPM) and accuracy with our beautiful, minimalist typing test. Features Zen mode, Government Exam mode, and Weak Key drills.",
   keywords: "typing test, wpm test, typing speed test, keyboard test, words per minute, online typing practice, government typing test",
   authors: [{ name: "Centerville" }],
   category: "productivity",
   robots: { index: true, follow: true },
-  alternates: {
-    canonical: "https://centerville-typing.vercel.app", // Adjust domain when deploying
-  },
   openGraph: {
     title: "Typing Test & WPM Speed Test | Centerville",
     description: "Check your typing speed (WPM) and accuracy online for free.",

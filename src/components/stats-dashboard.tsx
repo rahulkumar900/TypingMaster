@@ -2,7 +2,12 @@
 
 import React from 'react';
 import { X, Trophy, Activity, Calendar, FileText, CheckCircle, Keyboard, RefreshCw } from 'lucide-react';
-import { WpmChart } from './wpm-chart';
+import dynamic from 'next/dynamic';
+
+const WpmChart = dynamic(() => import('./wpm-chart').then(mod => mod.WpmChart), {
+  ssr: false,
+  loading: () => <div className="flex items-center justify-center h-full text-[var(--text-muted-alt)] text-[12.5px] font-mono">Loading Chart...</div>
+});
 
 export interface TestRecord {
   id: string;

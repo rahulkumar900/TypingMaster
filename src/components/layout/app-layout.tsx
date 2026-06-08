@@ -7,6 +7,7 @@ import { useAuth } from '@/context/auth-context';
 import { useConfig } from '@/context/config-context';
 import { SettingsPanel } from '@/components/settings-panel';
 import { StatsDashboard, TestRecord } from '@/components/stats-dashboard';
+import { GlobalFooter } from '@/components/layout/footer';
 import { Mail, Shield, Lock, DollarSign, Settings, Trophy, Globe, X, Check } from 'lucide-react';
 
 const TwitterIcon = (props: React.SVGProps<SVGSVGElement>) => (
@@ -51,6 +52,7 @@ interface AppLayoutProps {
   seoDescription?: string;
   hideHeaderAndFooterDuringRace?: boolean;
   isRacing?: boolean;
+  seoContent?: React.ReactNode;
 }
 
 export function AppLayout({
@@ -58,7 +60,8 @@ export function AppLayout({
   seoTitle,
   seoDescription,
   hideHeaderAndFooterDuringRace = false,
-  isRacing = false
+  isRacing = false,
+  seoContent
 }: AppLayoutProps) {
   const pathname = usePathname();
   const { user: currentUser, logout, token } = useAuth();
@@ -162,14 +165,14 @@ export function AppLayout({
   const shouldHideHeaderFooter = hideHeaderAndFooterDuringRace && isRacing;
 
   return (
-    <div className="min-h-screen bg-[var(--bg-body)] text-[var(--text-main)] transition-colors duration-500 relative flex flex-col justify-between items-center overflow-x-hidden font-sans">
+    <div className="min-h-[100dvh] bg-[var(--bg-body)] text-[var(--text-main)] transition-colors duration-500 relative flex flex-col items-center font-sans">
       
       {/* Background gradients */}
       <div className="absolute top-0 left-1/4 w-[500px] h-[500px] bg-[var(--accent-color)]/2 rounded-full blur-[120px] pointer-events-none select-none z-0" />
-      <div className="absolute bottom-10 right-1/4 w-[400px] h-[400px] bg-white/1 rounded-full blur-[100px] pointer-events-none select-none z-0" />
+      <div className="fixed bottom-10 right-1/4 w-[400px] h-[400px] bg-white/1 rounded-full blur-[100px] pointer-events-none select-none z-0" />
 
-      {/* Main Wrapper */}
-      <div className="w-full max-w-[1380px] p-4 sm:p-6 md:p-8 flex flex-col justify-between flex-grow z-10 min-h-screen overflow-hidden">
+      {/* Main Wrapper (100dvh to exactly fit typing app) */}
+      <div className="w-full max-w-[1380px] p-4 sm:p-6 md:p-8 flex flex-col justify-between z-10 min-h-[100dvh]">
         
         {/* Shared Global Header */}
         <header 
@@ -246,7 +249,7 @@ export function AppLayout({
 
         {/* Footer controls & Links */}
         <footer 
-          className={`flex flex-wrap items-center justify-center gap-6 mt-16 text-[var(--text-muted-alt)] text-xs select-none transition-all duration-500 border-t border-[var(--border-subtle)] pt-6 ${
+          className={`flex flex-wrap items-center justify-center gap-6 mt-8 md:mt-auto text-[var(--text-muted-alt)] text-xs select-none transition-all duration-500 border-t border-[var(--border-subtle)] pt-6 pb-2 ${
             shouldHideHeaderFooter
               ? 'opacity-0 pointer-events-none mt-0 h-0 overflow-hidden py-0 border-none' 
               : 'opacity-100'
@@ -304,38 +307,17 @@ export function AppLayout({
 
       </div>
 
-      {/* Shared SEO block rendered below app layout */}
-      <section 
-        className={`w-full max-w-[1380px] mx-auto px-6 md:px-8 mb-12 text-left font-sans transition-all duration-500 ${
-          shouldHideHeaderFooter 
-            ? 'hidden' 
-            : 'block opacity-100'
-        }`}
-      >
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-12 p-8 rounded-2xl bg-[var(--bg-panel)] border border-[var(--border-subtle)] shadow-sm">
-          <article>
-            <h2 className="text-lg font-bold text-[var(--text-main)] mb-3">{seoTitle || "About this Typing Test"}</h2>
-            <p className="text-[13px] text-[var(--text-muted)] leading-relaxed mb-4">
-              {seoDescription || "TypingThunder is a premium, minimalist typing speed test designed to help you improve your words per minute (WPM) and accuracy. Whether you are practicing for a government typing exam, learning to touch type, or just warming up your fingers for coding, our tool provides real-time feedback and detailed analytics."}
-            </p>
-            <h3 className="text-[14px] font-semibold text-[var(--text-main)] mt-6 mb-2">What is a good WPM?</h3>
-            <p className="text-[13px] text-[var(--text-muted)] leading-relaxed">
-              An average typing speed is around 40 WPM. Speeds above 60 WPM are considered good for most administrative or data entry jobs. If you can type over 90 WPM, you are considered a fast typist, and speeds over 120 WPM are exceptional. Use our Ghost Pacer feature to constantly push your average up!
-            </p>
-          </article>
-          
-          <article>
-            <h2 className="text-lg font-bold text-[var(--text-main)] mb-3 font-sans">Why accuracy matters</h2>
-            <p className="text-[13px] text-[var(--text-muted)] leading-relaxed mb-4">
-              Speed means nothing without accuracy. Typing 100 WPM with 80% accuracy is often slower in actual workflows than typing 70 WPM with 100% accuracy, because correcting errors takes significant time. Focus on accuracy first, and the speed will develop naturally over time.
-            </p>
-            <h3 className="text-[14px] font-semibold text-[var(--text-main)] mt-6 mb-2">How WPM is calculated</h3>
-            <p className="text-[13px] text-[var(--text-muted)] leading-relaxed">
-              WPM stands for Words Per Minute. It is calculated by taking the number of characters typed correctly, dividing that number by 5 (which is the standard word length in English, including spaces), and then dividing by the time in minutes.
-            </p>
-          </article>
+      {/* Dynamic SEO Content Rendered Below the Fold */}
+      {seoContent && (
+        <div className={`w-full max-w-[1380px] px-4 sm:px-6 md:px-8 pb-12 z-10 transition-all duration-500 ${
+          shouldHideHeaderFooter ? 'hidden' : 'block opacity-100'
+        }`}>
+          {seoContent}
         </div>
-      </section>
+      )}
+
+      {/* Global SEO Footer */}
+      {!shouldHideHeaderFooter && <GlobalFooter />}
 
       {/* Shared settings overlay panel */}
       <SettingsPanel

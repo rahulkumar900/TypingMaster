@@ -1,6 +1,7 @@
 'use client';
 
 import React, { useState, useEffect, useRef } from 'react';
+import Image from 'next/image';
 import { User, Trophy, Search, Swords, Play, RefreshCw, Zap, Award, BarChart2, X, ChevronLeft, Share2 } from 'lucide-react';
 import { TypingArena } from '@/components/typing-arena';
 import { useTypingEngine } from '@/hooks/use-typing-engine';
@@ -8,6 +9,7 @@ import { LANGUAGES } from '@/lib/languages';
 import { io, Socket } from 'socket.io-client';
 import { useParams, useRouter } from 'next/navigation';
 import { toast } from 'sonner';
+import { Modal } from '@/components/ui/modal';
 
 const InstagramIcon = (props: React.SVGProps<SVGSVGElement>) => (
   <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" {...props}>
@@ -38,8 +40,8 @@ const WhatsappIcon = (props: React.SVGProps<SVGSVGElement>) => (
 const renderAvatar = (url: string, sizeClass = "w-6 h-6") => {
   if (url && !url.includes('seed=Lakshayyyy') && !url.includes('seed=default')) {
     return (
-      <div className={`${sizeClass} rounded-full border border-zinc-700 flex items-center justify-center text-zinc-500 overflow-hidden bg-zinc-900`}>
-        <img src={url} alt="Avatar" className="w-full h-full object-cover animate-fadeIn" />
+      <div className={`${sizeClass} rounded-full border border-zinc-700 flex items-center justify-center text-zinc-500 overflow-hidden bg-zinc-900 relative`}>
+        <Image src={url} alt="Avatar" fill sizes="(max-width: 768px) 100vw, 33vw" className="object-cover animate-fadeIn" />
       </div>
     );
   }
@@ -751,61 +753,49 @@ export function Lobby1v1View({ user, config }: Lobby1v1ViewProps) {
             </div>
 
             {/* Share Modal Overlay */}
-            {isShareModalOpen && (
-              <div 
-                className="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center p-4 animate-fadeIn"
-                onClick={() => setIsShareModalOpen(false)}
-              >
-                <div 
-                  className="bg-[#18181c] border border-zinc-800 rounded-2xl p-6 w-full max-w-[380px] shadow-2xl relative text-left animate-slideIn"
-                  onClick={(e) => e.stopPropagation()}
-                >
-                  <button 
-                    onClick={() => setIsShareModalOpen(false)}
-                    className="absolute top-4 right-4 text-zinc-500 hover:text-white transition-colors cursor-pointer"
-                  >
-                    <X className="w-4 h-4" />
-                  </button>
-                  <h3 className="text-base font-bold text-white font-sans">Share your results</h3>
-                  <p className="text-[11px] text-zinc-500 mt-0.5">If you want to save your result, share it with your friends</p>
-                  
-                  {/* Icons row */}
-                  <div className="flex items-center justify-between gap-3 mt-6 mb-6">
-                    <button className="w-11 h-11 rounded-full flex items-center justify-center text-white bg-gradient-to-tr from-yellow-500 via-pink-500 to-purple-600 transition-all hover:scale-105 active:scale-95 shadow-md cursor-pointer" title="Share on Instagram">
-                      <InstagramIcon className="w-5 h-5" />
-                    </button>
-                    <button className="w-11 h-11 rounded-full flex items-center justify-center text-white bg-[#1877f2] transition-all hover:scale-105 active:scale-95 shadow-md cursor-pointer" title="Share on Facebook">
-                      <FacebookIcon className="w-5 h-5" />
-                    </button>
-                    <button className="w-11 h-11 rounded-full flex items-center justify-center text-white bg-[#ff4500] transition-all hover:scale-105 active:scale-95 shadow-md cursor-pointer" title="Share on Reddit">
-                      <RedditIcon className="w-5 h-5" />
-                    </button>
-                    <button className="w-11 h-11 rounded-full flex items-center justify-center text-white bg-[#25d366] transition-all hover:scale-105 active:scale-95 shadow-md cursor-pointer" title="Share on WhatsApp">
-                      <WhatsappIcon className="w-5 h-5" />
-                    </button>
-                  </div>
+            <Modal
+              isOpen={isShareModalOpen}
+              onClose={() => setIsShareModalOpen(false)}
+              title="Share your results"
+              subtitle="Share"
+            >
+              <p className="text-[11px] text-zinc-500 mt-0.5">If you want to save your result, share it with your friends</p>
+              
+              {/* Icons row */}
+              <div className="flex items-center justify-between gap-3 mt-6 mb-6">
+                <button className="w-11 h-11 rounded-full flex items-center justify-center text-white bg-gradient-to-tr from-yellow-500 via-pink-500 to-purple-600 transition-all hover:scale-105 active:scale-95 shadow-md cursor-pointer" title="Share on Instagram">
+                  <InstagramIcon className="w-5 h-5" />
+                </button>
+                <button className="w-11 h-11 rounded-full flex items-center justify-center text-white bg-[#1877f2] transition-all hover:scale-105 active:scale-95 shadow-md cursor-pointer" title="Share on Facebook">
+                  <FacebookIcon className="w-5 h-5" />
+                </button>
+                <button className="w-11 h-11 rounded-full flex items-center justify-center text-white bg-[#ff4500] transition-all hover:scale-105 active:scale-95 shadow-md cursor-pointer" title="Share on Reddit">
+                  <RedditIcon className="w-5 h-5" />
+                </button>
+                <button className="w-11 h-11 rounded-full flex items-center justify-center text-white bg-[#25d366] transition-all hover:scale-105 active:scale-95 shadow-md cursor-pointer" title="Share on WhatsApp">
+                  <WhatsappIcon className="w-5 h-5" />
+                </button>
+              </div>
 
-                  {/* Link field */}
-                  <div className="space-y-1">
-                    <span className="text-[9px] text-zinc-500 uppercase font-bold tracking-wider">Shareable link</span>
-                    <div className="flex gap-2">
-                      <input 
-                        type="text" 
-                        readOnly 
-                        value={shareLink} 
-                        className="flex-1 bg-zinc-900 border border-zinc-800 rounded-xl px-3 py-2 text-[11px] text-zinc-300 font-mono focus:outline-none"
-                      />
-                      <button 
-                        onClick={handleCopyLink}
-                        className="px-3.5 py-2 bg-[var(--accent-color)] hover:opacity-90 text-[var(--bg-body)] rounded-xl text-xs font-extrabold transition-all cursor-pointer active:scale-95 shrink-0"
-                      >
-                        {copied ? 'Copied' : 'Copy'}
-                      </button>
-                    </div>
-                  </div>
+              {/* Link field */}
+              <div className="space-y-1 w-full text-left">
+                <span className="text-[9px] text-zinc-500 uppercase font-bold tracking-wider">Shareable link</span>
+                <div className="flex gap-2 w-full">
+                  <input 
+                    type="text" 
+                    readOnly 
+                    value={shareLink} 
+                    className="flex-1 min-w-0 bg-zinc-900 border border-zinc-800 rounded-xl px-3 py-2 text-[11px] text-zinc-300 font-mono focus:outline-none"
+                  />
+                  <button 
+                    onClick={handleCopyLink}
+                    className="px-3.5 py-2 bg-[var(--accent-color)] hover:opacity-90 text-[var(--bg-body)] rounded-xl text-xs font-extrabold transition-all cursor-pointer active:scale-95 shrink-0"
+                  >
+                    {copied ? 'Copied' : 'Copy'}
+                  </button>
                 </div>
               </div>
-            )}
+            </Modal>
           </div>
         );
       })()}

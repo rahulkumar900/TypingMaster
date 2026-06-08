@@ -3,7 +3,7 @@
 import React, { useRef, useEffect, useState } from 'react';
 import { Keyboard } from 'lucide-react';
 import { TypingAudioSynthesizer } from '@/lib/synth';
-import { HindiTransliterator, needsTransliteration } from '@/lib/transliterate';
+import { TransliteratorEngine, createTransliterator, needsTransliteration } from '@/lib/transliterate';
 
 interface TypingArenaProps {
   targetText: string;
@@ -64,8 +64,12 @@ export const TypingArena: React.FC<TypingArenaProps> = ({
   const startTimeRef = useRef<number | null>(null);
   const isComposingRef = useRef(false); // tracks IME composition state
   // Phonetic transliteration engine (used when OS IME is not available)
-  const transliteratorRef = useRef<HindiTransliterator>(new HindiTransliterator());
+  const transliteratorRef = useRef<TransliteratorEngine | null>(createTransliterator(language));
   const usePhonetic = needsTransliteration(language);
+
+  useEffect(() => {
+    transliteratorRef.current = createTransliterator(language);
+  }, [language]);
 
   // Focus textarea
   const focusInput = () => {
@@ -79,7 +83,7 @@ export const TypingArena: React.FC<TypingArenaProps> = ({
     typedValRef.current = '';
     setTypedVal('');
     startTimeRef.current = gameState === 'running' ? Date.now() : null;
-    transliteratorRef.current.reset(); // reset phonetic transliteration state
+    transliteratorRef.current?.reset(); // reset phonetic transliteration state
     if (textareaRef.current) {
       textareaRef.current.value = '';
     }
@@ -260,7 +264,7 @@ export const TypingArena: React.FC<TypingArenaProps> = ({
       if (key === 'Backspace') {
         if (disableBackspace) { synth?.playClick('error'); return; }
         synth?.playClick('backspace');
-        const newOutput = transliteratorRef.current.processKey('Backspace');
+        const newOutput = transliteratorRef.current?.processKey('Backspace') || '';
         if (textareaRef.current) textareaRef.current.value = newOutput;
         processInput(newOutput);
         return;
@@ -268,7 +272,7 @@ export const TypingArena: React.FC<TypingArenaProps> = ({
 
       if (key === ' ') {
         synth?.playClick('space');
-        const newOutput = transliteratorRef.current.processKey(' ');
+        const newOutput = transliteratorRef.current?.processKey(' ') || '';
         if (textareaRef.current) textareaRef.current.value = newOutput;
         processInput(newOutput);
         onKeystroke(false);
@@ -277,7 +281,7 @@ export const TypingArena: React.FC<TypingArenaProps> = ({
 
       if (key.length === 1) {
         synth?.playClick('char');
-        const newOutput = transliteratorRef.current.processKey(key);
+        const newOutput = transliteratorRef.current?.processKey(key) || '';
         if (textareaRef.current) textareaRef.current.value = newOutput;
         processInput(newOutput);
         onKeystroke(false);

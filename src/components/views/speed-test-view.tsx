@@ -1,6 +1,7 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
+import Image from 'next/image';
 import { useConfig } from '@/context/config-context';
 import { useAuth } from '@/context/auth-context';
 import { useTypingEngine } from '@/hooks/use-typing-engine';
@@ -11,8 +12,8 @@ import { ChevronLeft, ChevronRight, Share2, RefreshCw, Clock, FileText, BookOpen
 const renderAvatar = (url: string, sizeClass = "w-6 h-6") => {
   if (url && !url.includes('seed=Lakshayyyy') && !url.includes('seed=default')) {
     return (
-      <div className={`${sizeClass} rounded-full border border-zinc-700 flex items-center justify-center text-zinc-500 overflow-hidden bg-zinc-900`}>
-        <img src={url} alt="Avatar" className="w-full h-full object-cover" />
+      <div className={`${sizeClass} rounded-full border border-zinc-700 flex items-center justify-center text-zinc-500 overflow-hidden bg-zinc-900 relative`}>
+        <Image src={url} alt="Avatar" fill sizes="48px" className="object-cover" />
       </div>
     );
   }
@@ -397,7 +398,7 @@ export function SpeedTestView() {
           </div>
 
           {/* Centered Typing Arena */}
-          <div className="w-full shrink-0 flex flex-col justify-center my-16 min-h-[160px] relative">
+          <div className="w-full shrink-0 flex flex-col justify-center my-8 md:my-10 min-h-[160px] relative">
             <TypingArena
               targetText={targetText}
               author={author}

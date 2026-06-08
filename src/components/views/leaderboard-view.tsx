@@ -1,6 +1,7 @@
 'use client';
 
 import React, { useState } from 'react';
+import Image from 'next/image';
 import { Award, Zap, Trophy, Shield, Calendar, Clock, Globe } from 'lucide-react';
 
 interface LeaderboardViewProps {
@@ -173,7 +174,7 @@ export function LeaderboardView({ user }: LeaderboardViewProps) {
           <div className="bg-zinc-950 border border-zinc-900 rounded-2xl p-6 relative flex flex-col items-center justify-end h-[280px] order-2 md:order-1 transition-all hover:border-zinc-800 shadow-[0_4px_30px_rgba(0,0,0,0.4)]">
             <div className="absolute top-4 right-4 text-xs font-black font-mono text-zinc-500">#2</div>
             <div className="w-16 h-16 rounded-full border-2 border-zinc-400 bg-zinc-900 overflow-hidden flex items-center justify-center mb-4">
-              <img src={podium2nd.avatarUrl} alt="Avatar" className="w-full h-full object-cover" />
+              <Image src={podium2nd.avatarUrl} alt="Avatar" width={64} height={64} className="w-full h-full object-cover" />
             </div>
             <h4 className="font-bold text-white text-sm font-mono truncate max-w-[150px]">{podium2nd.username}</h4>
             <div className="mt-2.5 space-y-1">
@@ -196,7 +197,7 @@ export function LeaderboardView({ user }: LeaderboardViewProps) {
             <div className="absolute top-4 right-4 text-xs font-black font-mono text-yellow-500">#1</div>
             
             <div className="w-20 h-20 rounded-full border-2 border-yellow-500 bg-zinc-900 overflow-hidden flex items-center justify-center mb-4 shadow-[0_0_15px_rgba(245,158,11,0.2)]">
-              <img src={podium1st.avatarUrl} alt="Avatar" className="w-full h-full object-cover" />
+              <Image src={podium1st.avatarUrl} alt="Avatar" width={80} height={80} className="w-full h-full object-cover" />
             </div>
             <h4 className="font-bold text-white text-base font-mono truncate max-w-[170px]">{podium1st.username}</h4>
             <div className="mt-3 space-y-1">
@@ -214,7 +215,7 @@ export function LeaderboardView({ user }: LeaderboardViewProps) {
           <div className="bg-zinc-950 border border-zinc-900 rounded-2xl p-6 relative flex flex-col items-center justify-end h-[240px] order-3 transition-all hover:border-zinc-800 shadow-[0_4px_30px_rgba(0,0,0,0.4)]">
             <div className="absolute top-4 right-4 text-xs font-black font-mono text-amber-800">#3</div>
             <div className="w-14 h-14 rounded-full border-2 border-amber-800 bg-zinc-900 overflow-hidden flex items-center justify-center mb-4">
-              <img src={podium3rd.avatarUrl} alt="Avatar" className="w-full h-full object-cover" />
+              <Image src={podium3rd.avatarUrl} alt="Avatar" width={56} height={56} className="w-full h-full object-cover" />
             </div>
             <h4 className="font-bold text-white text-sm font-mono truncate max-w-[150px]">{podium3rd.username}</h4>
             <div className="mt-2 space-y-1">
@@ -253,7 +254,7 @@ export function LeaderboardView({ user }: LeaderboardViewProps) {
                 >
                   <td className="py-3.5 px-4 font-black text-zinc-400">#{player.rank}</td>
                   <td className="py-3.5 px-4 flex items-center gap-2.5">
-                    <img src={player.avatarUrl} alt="Avatar" className="w-6.5 h-6.5 rounded-full bg-zinc-900 border border-zinc-800" />
+                    <Image src={player.avatarUrl} alt="Avatar" width={26} height={26} className="w-6.5 h-6.5 rounded-full bg-zinc-900 border border-zinc-800" />
                     <span className="font-bold text-white hover:text-yellow-500 cursor-pointer truncate max-w-[160px]">{player.username}</span>
                   </td>
                   <td className="py-3.5 px-4 text-right font-bold text-white">{player.avgWpm} WPM</td>

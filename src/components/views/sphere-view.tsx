@@ -1,5 +1,6 @@
 'use client';
 import React, { useState, useEffect, useRef } from 'react';
+import Image from 'next/image';
 import { 
   Users, Plus, MessageSquare, Send, Zap, Shield, Play, LogOut, Award, Clipboard, Check,
   LogIn, Clock, BookOpen, Sparkles, Sliders, Settings, AlertTriangle, Keyboard, Globe, X, Share2, CornerDownLeft
@@ -9,6 +10,7 @@ import { LANGUAGES } from '@/lib/languages';
 import { io, Socket } from 'socket.io-client';
 import { useSearchParams, useRouter } from 'next/navigation';
 import { toast } from 'sonner';
+import { Modal } from '@/components/ui/modal';
 
 interface SphereViewProps {
   user: { username: string; avatarUrl: string };
@@ -485,11 +487,9 @@ export function SphereView({ user, config, initialRoomId }: SphereViewProps) {
                 <div className="absolute left-0 top-1/2 -translate-y-1/2 flex items-center -space-x-2.5 pl-2">
                   {players.map((player) => (
                     <div key={player.username} className="relative group">
-                      <img 
-                        src={player.avatarUrl} 
-                        alt="Avatar" 
-                        className={`w-7 h-7 rounded-full bg-zinc-900 border-2 ${player.ready ? 'border-emerald-400' : 'border-zinc-800'} transition-all`} 
-                      />
+                      <div className={`w-7 h-7 relative rounded-full bg-zinc-900 border-2 ${player.ready ? 'border-emerald-400' : 'border-zinc-800'} transition-all`}>
+                        <Image fill sizes="(max-width: 768px) 100vw, 33vw" src={player.avatarUrl} alt="Avatar" className="object-cover rounded-full" />
+                      </div>
                       <span className="absolute -bottom-8 left-1/2 -translate-x-1/2 bg-zinc-950/90 text-white text-[9px] px-1.5 py-0.5 rounded border border-zinc-800 hidden group-hover:block whitespace-nowrap font-mono z-20">
                         {player.username} ({player.ready ? 'Ready' : 'Waiting'})
                       </span>
@@ -660,7 +660,9 @@ export function SphereView({ user, config, initialRoomId }: SphereViewProps) {
                   }`}
                 >
                   {msg.sender !== 'System' && (
-                    <img src={msg.avatarUrl} alt="Avatar" className="w-6.5 h-6.5 rounded-full bg-zinc-900 border border-zinc-800" />
+                    <div className="w-6.5 h-6.5 relative rounded-full overflow-hidden bg-zinc-900 border border-zinc-800">
+                      <Image fill sizes="26px" src={msg.avatarUrl} alt="Avatar" className="object-cover" />
+                    </div>
                   )}
                   <div className="flex-1 min-w-0">
                     {msg.sender !== 'System' && (
@@ -736,11 +738,9 @@ export function SphereView({ user, config, initialRoomId }: SphereViewProps) {
                       }}
                     >
                       <div className="relative group flex flex-col items-center">
-                        <img 
-                          src={player.avatarUrl} 
-                          alt="Avatar" 
-                          className={`w-7 h-7 rounded-full bg-zinc-950 border-2 ${borderColor} shadow-md`} 
-                        />
+                        <div className={`w-7 h-7 relative rounded-full bg-zinc-950 border-2 ${borderColor} shadow-md`}>
+                          <Image fill sizes="32px" src={player.avatarUrl} alt="Avatar" className="object-cover rounded-full" />
+                        </div>
                         <span className="absolute -bottom-7 bg-zinc-950/90 text-white text-[8px] px-1 rounded border border-zinc-850 whitespace-nowrap font-mono z-20">
                           {player.username === user.username ? 'You' : player.username} ({player.wpm} WPM)
                         </span>
@@ -859,13 +859,9 @@ export function SphereView({ user, config, initialRoomId }: SphereViewProps) {
                     } h-[360px] md:h-[400px] shadow-lg transition-all hover:scale-102`}
                   >
                     {/* Avatar at top */}
-                    <img 
-                      src={player.avatarUrl} 
-                      alt="Avatar" 
-                      className={`w-7 h-7 rounded-full bg-zinc-900 border-2 ${
-                        isFirst ? 'border-amber-400' : 'border-zinc-800'
-                      }`} 
-                    />
+                    <div className={`w-7 h-7 relative rounded-full bg-zinc-900 border-2 ${isFirst ? 'border-amber-400' : 'border-zinc-800'}`}>
+                      <Image fill sizes="48px" src={player.avatarUrl} alt="Avatar" className="object-cover rounded-full" />
+                    </div>
                     
                     {/* Username and Rank written vertically */}
                     <div 
@@ -911,219 +907,155 @@ export function SphereView({ user, config, initialRoomId }: SphereViewProps) {
       )}
 
       {/* ── MODAL OVERLAY: CREATE ROOM ── */}
-      {isCreateModalOpen && (
-        <div 
-          className="fixed inset-0 bg-black/60 backdrop-blur-md z-50 flex items-center justify-center p-4 animate-fadeIn"
-          onClick={() => setIsCreateModalOpen(false)}
-        >
-          <div 
-            className="bg-[#0c0d12] border border-zinc-850 rounded-[28px] p-8 w-full max-w-[400px] text-center flex flex-col items-stretch gap-5 shadow-2xl relative"
-            onClick={(e) => e.stopPropagation()}
+      <Modal
+        isOpen={isCreateModalOpen}
+        onClose={() => setIsCreateModalOpen(false)}
+        title="Create a Custom Room"
+        subtitle="Sphere Mode Room"
+      >
+        {/* Form Selector for Mode */}
+        <div className="space-y-1.5 text-left w-full">
+          <label className="text-[10px] font-bold text-zinc-500 uppercase tracking-widest font-mono">Test Mode</label>
+          <select 
+            value={createMode}
+            onChange={(e) => {
+              const m = e.target.value as any;
+              setCreateMode(m);
+              setCreateLimit(m === 'time' ? 60 : m === 'words' ? 25 : 60);
+            }}
+            className="w-full bg-zinc-900/60 border border-zinc-850 rounded-xl px-4 py-2.5 text-xs font-mono text-white focus:outline-none focus:border-zinc-750 cursor-pointer"
           >
-            <button 
-              onClick={() => setIsCreateModalOpen(false)}
-              className="absolute top-4 right-4 w-8 h-8 rounded-full border border-zinc-850 hover:bg-zinc-900 flex items-center justify-center text-zinc-500 hover:text-white transition-all cursor-pointer"
-            >
-              <X className="w-4 h-4" />
-            </button>
-            
-            <div className="space-y-1">
-              <span className="text-[10px] font-bold text-zinc-500 uppercase tracking-widest font-mono block">Sphere Mode Room</span>
-              <h4 className="text-sm font-bold text-white">Create a Custom Room</h4>
-            </div>
-
-            {/* Form Selector for Mode */}
-            <div className="space-y-1.5 text-left">
-              <label className="text-[10px] font-bold text-zinc-500 uppercase tracking-widest font-mono">Test Mode</label>
-              <select 
-                value={createMode}
-                onChange={(e) => {
-                  const m = e.target.value as any;
-                  setCreateMode(m);
-                  setCreateLimit(m === 'time' ? 60 : m === 'words' ? 25 : 60);
-                }}
-                className="w-full bg-zinc-900/60 border border-zinc-850 rounded-xl px-4 py-2.5 text-xs font-mono text-white focus:outline-none focus:border-zinc-750 cursor-pointer"
-              >
-                <option value="time" className="bg-zinc-950">Time Countdown</option>
-                <option value="words" className="bg-zinc-950">Fixed Words</option>
-                <option value="govt-exam" className="bg-zinc-950">Government Exam Mode</option>
-              </select>
-            </div>
-
-            {/* Form Selector for Parameter Limit */}
-            <div className="space-y-1.5 text-left">
-              <label className="text-[10px] font-bold text-zinc-500 uppercase tracking-widest font-mono">Limit Parameters</label>
-              <select 
-                value={createLimit}
-                onChange={(e) => setCreateLimit(Number(e.target.value))}
-                className="w-full bg-zinc-900/60 border border-zinc-850 rounded-xl px-4 py-2.5 text-xs font-mono text-white focus:outline-none focus:border-zinc-750 cursor-pointer"
-              >
-                {createMode === 'time' && (
-                  <>
-                    <option value="15" className="bg-zinc-950">15 seconds</option>
-                    <option value="30" className="bg-zinc-950">30 seconds</option>
-                    <option value="60" className="bg-zinc-950">60 seconds</option>
-                  </>
-                )}
-                {createMode === 'words' && (
-                  <>
-                    <option value="10" className="bg-zinc-950">10 words</option>
-                    <option value="25" className="bg-zinc-950">25 words</option>
-                    <option value="50" className="bg-zinc-950">50 words</option>
-                  </>
-                )}
-                {createMode === 'govt-exam' && (
-                  <>
-                    <option value="60" className="bg-zinc-950">SSC CHSL Rules preset</option>
-                  </>
-                )}
-              </select>
-            </div>
-
-            <button
-              onClick={() => {
-                setIsCreateModalOpen(false);
-                handleCreateRoom();
-              }}
-              className="w-full py-3 mt-2 rounded-2xl bg-white hover:bg-zinc-200 text-zinc-950 font-extrabold text-xs tracking-wider uppercase transition-colors cursor-pointer"
-            >
-              Create Room
-            </button>
-          </div>
+            <option value="time" className="bg-zinc-950">Time Countdown</option>
+            <option value="words" className="bg-zinc-950">Fixed Words</option>
+            <option value="govt-exam" className="bg-zinc-950">Government Exam Mode</option>
+          </select>
         </div>
-      )}
+
+        {/* Form Selector for Parameter Limit */}
+        <div className="space-y-1.5 text-left w-full">
+          <label className="text-[10px] font-bold text-zinc-500 uppercase tracking-widest font-mono">Limit Parameters</label>
+          <select 
+            value={createLimit}
+            onChange={(e) => setCreateLimit(Number(e.target.value))}
+            className="w-full bg-zinc-900/60 border border-zinc-850 rounded-xl px-4 py-2.5 text-xs font-mono text-white focus:outline-none focus:border-zinc-750 cursor-pointer"
+          >
+            {createMode === 'time' && (
+              <>
+                <option value="15" className="bg-zinc-950">15 seconds</option>
+                <option value="30" className="bg-zinc-950">30 seconds</option>
+                <option value="60" className="bg-zinc-950">60 seconds</option>
+              </>
+            )}
+            {createMode === 'words' && (
+              <>
+                <option value="10" className="bg-zinc-950">10 words</option>
+                <option value="25" className="bg-zinc-950">25 words</option>
+                <option value="50" className="bg-zinc-950">50 words</option>
+              </>
+            )}
+            {createMode === 'govt-exam' && (
+              <>
+                <option value="60" className="bg-zinc-950">SSC CHSL Rules preset</option>
+              </>
+            )}
+          </select>
+        </div>
+
+        <button
+          onClick={() => {
+            setIsCreateModalOpen(false);
+            handleCreateRoom();
+          }}
+          className="w-full py-3 mt-2 rounded-2xl bg-white hover:bg-zinc-200 text-zinc-950 font-extrabold text-xs tracking-wider uppercase transition-colors cursor-pointer"
+        >
+          Create Room
+        </button>
+      </Modal>
 
       {/* ── MODAL OVERLAY: JOIN ROOM ── */}
-      {isJoinModalOpen && (
-        <div 
-          className="fixed inset-0 bg-black/60 backdrop-blur-md z-50 flex items-center justify-center p-4 animate-fadeIn"
-          onClick={() => setIsJoinModalOpen(false)}
+      <Modal
+        isOpen={isJoinModalOpen}
+        onClose={() => setIsJoinModalOpen(false)}
+        title="Enter Sphere Code Below"
+        subtitle="Sphere Mode Join"
+      >
+        <input
+          type="text"
+          maxLength={6}
+          value={joinCode}
+          onChange={(e) => setJoinCode(e.target.value.toUpperCase())}
+          placeholder="Enter Code"
+          className="w-full bg-zinc-900/60 border border-zinc-850 rounded-2xl px-4 py-3 text-center text-3xl font-black font-mono tracking-[0.2em] text-white placeholder-zinc-800 uppercase focus:outline-none focus:border-zinc-700 transition-all"
+        />
+
+        <button
+          onClick={() => handleJoinRoom(joinCode)}
+          className="w-full py-3 rounded-2xl bg-white hover:bg-zinc-200 text-zinc-950 font-extrabold text-xs tracking-wider uppercase transition-colors cursor-pointer"
         >
-          <div 
-            className="bg-[#0c0d12] border border-zinc-850 rounded-[28px] p-8 w-full max-w-[380px] text-center flex flex-col items-center gap-6 shadow-2xl relative"
-            onClick={(e) => e.stopPropagation()}
-          >
-            <button 
-              onClick={() => setIsJoinModalOpen(false)}
-              className="absolute top-4 right-4 w-8 h-8 rounded-full border border-zinc-850 hover:bg-zinc-900 flex items-center justify-center text-zinc-500 hover:text-white transition-all cursor-pointer"
-            >
-              <X className="w-4 h-4" />
-            </button>
-            
-            <div className="space-y-1">
-              <span className="text-[10px] font-bold text-zinc-500 uppercase tracking-widest font-mono block">Sphere Mode Join</span>
-              <h4 className="text-sm font-bold text-white">Enter Sphere Code Below</h4>
-            </div>
-
-            <input
-              type="text"
-              maxLength={6}
-              value={joinCode}
-              onChange={(e) => setJoinCode(e.target.value.toUpperCase())}
-              placeholder="Enter Code"
-              className="w-full bg-zinc-900/60 border border-zinc-850 rounded-2xl px-4 py-3 text-center text-3xl font-black font-mono tracking-[0.2em] text-white placeholder-zinc-800 uppercase focus:outline-none focus:border-zinc-700 transition-all"
-            />
-
-            <button
-              onClick={() => handleJoinRoom(joinCode)}
-              className="w-full py-3 rounded-2xl bg-white hover:bg-zinc-200 text-zinc-950 font-extrabold text-xs tracking-wider uppercase transition-colors cursor-pointer"
-            >
-              Join
-            </button>
-          </div>
-        </div>
-      )}
+          Join
+        </button>
+      </Modal>
 
       {/* ── MODAL OVERLAY: LEAVE ROOM CONFIRMATION ── */}
-      {isLeaveModalOpen && (
-        <div 
-          className="fixed inset-0 bg-black/65 backdrop-blur-md z-50 flex items-center justify-center p-4 animate-fadeIn"
-          onClick={() => setIsLeaveModalOpen(false)}
-        >
-          <div 
-            className="bg-[#0c0d12] border border-zinc-850 rounded-[28px] p-7 w-full max-w-[340px] text-center flex flex-col items-center gap-6 shadow-2xl relative"
-            onClick={(e) => e.stopPropagation()}
+      <Modal
+        isOpen={isLeaveModalOpen}
+        onClose={() => setIsLeaveModalOpen(false)}
+        title="Are you sure to leave this sphere?"
+        subtitle="Leave Room"
+        icon={<LogOut className="w-4.5 h-4.5" />}
+      >
+        <div className="flex flex-col gap-2.5 w-full font-mono">
+          <button
+            onClick={() => setIsLeaveModalOpen(false)}
+            className="w-full py-2.5 rounded-xl bg-zinc-900 text-white font-semibold text-xs border border-zinc-850 hover:bg-zinc-800 transition-all cursor-pointer"
           >
-            <div className="w-10 h-10 rounded-full bg-zinc-900 border border-zinc-800 flex items-center justify-center text-zinc-400">
-              <LogOut className="w-4.5 h-4.5" />
-            </div>
-
-            <div className="space-y-1">
-              <span className="text-[10px] font-bold text-zinc-500 uppercase tracking-widest font-mono block">Leave Room</span>
-              <h4 className="text-sm font-bold text-white">Are you sure to leave this sphere?</h4>
-            </div>
-
-            <div className="flex flex-col gap-2.5 w-full font-mono">
-              <button
-                onClick={() => setIsLeaveModalOpen(false)}
-                className="w-full py-2.5 rounded-xl bg-zinc-900 text-white font-semibold text-xs border border-zinc-850 hover:bg-zinc-800 transition-all cursor-pointer"
-              >
-                Stay in this sphere room
-              </button>
-              <button
-                onClick={handleExitRoom}
-                className="w-full py-2.5 rounded-xl bg-red-950/20 hover:bg-red-950/40 text-red-400 text-xs font-semibold border border-red-900/30 transition-all cursor-pointer"
-              >
-                Leave this sphere
-              </button>
-            </div>
-          </div>
+            Stay in this sphere room
+          </button>
+          <button
+            onClick={handleExitRoom}
+            className="w-full py-2.5 rounded-xl bg-red-950/20 hover:bg-red-950/40 text-red-400 text-xs font-semibold border border-red-900/30 transition-all cursor-pointer"
+          >
+            Leave this sphere
+          </button>
         </div>
-      )}
+      </Modal>
 
       {/* ── MODAL OVERLAY: RESULTS SHARING ── */}
-      {isShareModalOpen && (
-        <div 
-          className="fixed inset-0 bg-black/60 backdrop-blur-md z-50 flex items-center justify-center p-4 animate-fadeIn"
-          onClick={() => setIsShareModalOpen(false)}
-        >
-          <div 
-            className="bg-[#0c0d12] border border-zinc-850 rounded-[28px] p-7 w-full max-w-[380px] text-center flex flex-col items-center gap-6 shadow-2xl relative"
-            onClick={(e) => e.stopPropagation()}
-          >
-            <button 
-              onClick={() => setIsShareModalOpen(false)}
-              className="absolute top-4 right-4 w-8 h-8 rounded-full border border-zinc-850 hover:bg-zinc-900 flex items-center justify-center text-zinc-500 hover:text-white transition-all cursor-pointer"
-            >
-              <X className="w-4 h-4" />
-            </button>
-
-            <div className="space-y-1">
-              <span className="text-[10px] font-bold text-zinc-500 uppercase tracking-widest font-mono block">Share results</span>
-              <h4 className="text-sm font-bold text-white">If you want to live proud, share it with your friends!</h4>
-            </div>
-
-            {/* Social Circle buttons */}
-            <div className="flex items-center justify-center gap-4">
-              <button className="w-10 h-10 rounded-full bg-[#E1306C]/10 border border-[#E1306C]/20 hover:bg-[#E1306C]/20 text-[#E1306C] flex items-center justify-center transition-all cursor-pointer active:scale-90" title="Instagram">
-                <svg className="w-4.5 h-4.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><rect x="2" y="2" width="20" height="20" rx="5" ry="5"></rect><path d="M16 11.37A4 4 0 1 1 12.63 8 4 4 0 0 1 16 11.37z"></path><line x1="17.5" y1="6.5" x2="17.51" y2="6.5"></line></svg>
-              </button>
-              <button className="w-10 h-10 rounded-full bg-[#1877F2]/10 border border-[#1877F2]/20 hover:bg-[#1877F2]/20 text-[#1877F2] flex items-center justify-center transition-all cursor-pointer active:scale-90" title="Facebook">
-                <svg className="w-4.5 h-4.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M18 2h-3a5 5 0 0 0-5 5v3H7v4h3v8h4v-8h3l1-4h-4V7a1 1 0 0 1 1-1h3z"></path></svg>
-              </button>
-              <button className="w-10 h-10 rounded-full bg-[#FF4500]/10 border border-[#FF4500]/20 hover:bg-[#FF4500]/20 text-[#FF4500] flex items-center justify-center transition-all cursor-pointer active:scale-90" title="Reddit">
-                <svg className="w-4.5 h-4.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M12 2a10 10 0 1 0 10 10A10 10 0 0 0 12 2zm1 14.5a3 3 0 0 1-2 0 1 1 0 0 1 0-2 3 3 0 0 1 2 0 1 1 0 0 1 0 2zm.8-6.1a1.2 1.2 0 0 1 .4.9 2 2 0 0 1-1.7 2 2 2 0 0 1-1.7-2 1.2 1.2 0 0 1 .4-.9.8.8 0 0 0 .5-.7 1.2 1.2 0 0 0-1-.6h-.6a1.2 1.2 0 0 0-1 .6.8.8 0 0 0 .5.7 1.2 1.2 0 0 1 .4.9 2 2 0 0 1-1.7 2 2 2 0 0 1-1.7-2 1.2 1.2 0 0 1 .4-.9.8.8 0 0 0 .5-.7c0-.5-.4-.9-.9-.9s-.9.4-.9.9c0 .7.5 1.2 1.2 1.2a2 2 0 0 0 2-2 1.2 1.2 0 0 1 .9-.9h.2a1.2 1.2 0 0 1 .9.9 2 2 0 0 0 2 2c.7 0 1.2-.5 1.2-1.2 0-.5-.4-.9-.9-.9s-.9.4-.9.9a.8.8 0 0 0 .5.7z"></path></svg>
-              </button>
-              <button className="w-10 h-10 rounded-full bg-[#25D366]/10 border border-[#25D366]/20 hover:bg-[#25D366]/20 text-[#25D366] flex items-center justify-center transition-all cursor-pointer active:scale-90" title="WhatsApp">
-                <svg className="w-4.5 h-4.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5z"></path></svg>
-              </button>
-            </div>
-
-            {/* Room Copiable Link */}
-            <div className="w-full flex items-center gap-2 bg-zinc-900 border border-zinc-850 rounded-xl p-2.5 font-mono">
-              <span className="flex-1 text-left text-[10.5px] text-zinc-550 truncate">
-                {window.location.origin}/sphere/{currentRoomCode}
-              </span>
-              <button 
-                onClick={copyInviteLink}
-                className="bg-white hover:bg-zinc-200 text-black px-3 py-1 rounded-lg text-[10px] font-bold uppercase transition-colors cursor-pointer active:scale-95"
-              >
-                Copy
-              </button>
-            </div>
-          </div>
+      <Modal
+        isOpen={isShareModalOpen}
+        onClose={() => setIsShareModalOpen(false)}
+        title="If you want to live proud, share it with your friends!"
+        subtitle="Share results"
+      >
+        {/* Social Circle buttons */}
+        <div className="flex items-center justify-center gap-4">
+          <button className="w-10 h-10 rounded-full bg-[#E1306C]/10 border border-[#E1306C]/20 hover:bg-[#E1306C]/20 text-[#E1306C] flex items-center justify-center transition-all cursor-pointer active:scale-90" title="Instagram">
+            <svg className="w-4.5 h-4.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><rect x="2" y="2" width="20" height="20" rx="5" ry="5"></rect><path d="M16 11.37A4 4 0 1 1 12.63 8 4 4 0 0 1 16 11.37z"></path><line x1="17.5" y1="6.5" x2="17.51" y2="6.5"></line></svg>
+          </button>
+          <button className="w-10 h-10 rounded-full bg-[#1877F2]/10 border border-[#1877F2]/20 hover:bg-[#1877F2]/20 text-[#1877F2] flex items-center justify-center transition-all cursor-pointer active:scale-90" title="Facebook">
+            <svg className="w-4.5 h-4.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M18 2h-3a5 5 0 0 0-5 5v3H7v4h3v8h4v-8h3l1-4h-4V7a1 1 0 0 1 1-1h3z"></path></svg>
+          </button>
+          <button className="w-10 h-10 rounded-full bg-[#FF4500]/10 border border-[#FF4500]/20 hover:bg-[#FF4500]/20 text-[#FF4500] flex items-center justify-center transition-all cursor-pointer active:scale-90" title="Reddit">
+            <svg className="w-4.5 h-4.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M12 2a10 10 0 1 0 10 10A10 10 0 0 0 12 2zm1 14.5a3 3 0 0 1-2 0 1 1 0 0 1 0-2 3 3 0 0 1 2 0 1 1 0 0 1 0 2zm.8-6.1a1.2 1.2 0 0 1 .4.9 2 2 0 0 1-1.7 2 2 2 0 0 1-1.7-2 1.2 1.2 0 0 1 .4-.9.8.8 0 0 0 .5-.7 1.2 1.2 0 0 0-1-.6h-.6a1.2 1.2 0 0 0-1 .6.8.8 0 0 0 .5.7 1.2 1.2 0 0 1 .4.9 2 2 0 0 1-1.7 2 2 2 0 0 1-1.7-2 1.2 1.2 0 0 1 .4-.9.8.8 0 0 0 .5-.7c0-.5-.4-.9-.9-.9s-.9.4-.9.9c0 .7.5 1.2 1.2 1.2a2 2 0 0 0 2-2 1.2 1.2 0 0 1 .9-.9h.2a1.2 1.2 0 0 1 .9.9 2 2 0 0 0 2 2c.7 0 1.2-.5 1.2-1.2 0-.5-.4-.9-.9-.9s-.9.4-.9.9a.8.8 0 0 0 .5.7z"></path></svg>
+          </button>
+          <button className="w-10 h-10 rounded-full bg-[#25D366]/10 border border-[#25D366]/20 hover:bg-[#25D366]/20 text-[#25D366] flex items-center justify-center transition-all cursor-pointer active:scale-90" title="WhatsApp">
+            <svg className="w-4.5 h-4.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5z"></path></svg>
+          </button>
         </div>
-      )}
+
+        {/* Room Copiable Link */}
+        <div className="w-full flex items-center gap-2 bg-zinc-900 border border-zinc-850 rounded-xl p-2.5 font-mono">
+          <span className="flex-1 text-left text-[10.5px] text-zinc-550 truncate">
+            {window.location.origin}/sphere/{currentRoomCode}
+          </span>
+          <button 
+            onClick={copyInviteLink}
+            className="bg-white hover:bg-zinc-200 text-black px-3 py-1 rounded-lg text-[10px] font-bold uppercase transition-colors cursor-pointer active:scale-95"
+          >
+            Copy
+          </button>
+        </div>
+      </Modal>
 
     </div>
   );

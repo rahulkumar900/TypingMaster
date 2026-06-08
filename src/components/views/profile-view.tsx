@@ -1,6 +1,7 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
+import Image from 'next/image';
 import { User, Trophy, BarChart2, Shield, Calendar, Edit2, Check, Clock, BookOpen, AlertTriangle } from 'lucide-react';
 
 interface ProfileViewProps {
@@ -95,7 +96,7 @@ export function ProfileView({ user, onUpdateAvatar, history, onLogout }: Profile
         {/* Avatar Display with Hover edit */}
         <div className="relative group">
           <div className="w-24 h-24 rounded-full border-2 border-yellow-500 bg-zinc-900 overflow-hidden flex items-center justify-center shadow-[0_0_20px_rgba(245,158,11,0.15)]">
-            <img src={user.avatarUrl} alt="Avatar" className="w-full h-full object-cover" />
+            <Image src={user.avatarUrl} alt="Avatar" width={96} height={96} className="w-full h-full object-cover" />
           </div>
           <button
             onClick={() => setEditingAvatar(!editingAvatar)}
