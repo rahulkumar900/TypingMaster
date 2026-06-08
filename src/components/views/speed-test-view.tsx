@@ -128,22 +128,22 @@ export function SpeedTestView() {
               </div>
 
               {/* Floating progress line at 100% */}
-              <div className="w-full relative select-none mt-2">
-                <div className="absolute -top-12 right-0 flex flex-col items-center">
+              <div className="w-full relative select-none mt-2 px-4 sm:px-0">
+                <div className="absolute -top-12 right-4 sm:right-0 sm:translate-x-1/2 flex flex-col items-center w-16">
                   {renderAvatar(currentUser?.avatarUrl || '', "w-7 h-7")}
-                  <span className="text-[10.5px] text-zinc-400 mt-1.5 font-medium tracking-tight">
-                    {currentUser?.username || 'Lakshayyyy'}
+                  <span className="text-[10.5px] text-zinc-400 mt-1.5 font-medium tracking-tight truncate w-full text-center">
+                    {currentUser?.username || 'Guest'}
                   </span>
                 </div>
                 <div className="relative pt-6">
                   <div className="w-full h-[2px] bg-white rounded-full" />
                   {/* Start Dot */}
-                  <div className="absolute left-0 top-[21px] flex flex-col items-center">
+                  <div className="absolute left-4 sm:left-0 top-[21px] sm:-translate-x-1/2 flex flex-col items-center w-12">
                     <div className="w-2 h-2 rounded-full bg-white" />
                     <span className="text-[10px] text-zinc-500 mt-2">Start</span>
                   </div>
                   {/* End Dot */}
-                  <div className="absolute right-0 top-[21px] flex flex-col items-center">
+                  <div className="absolute right-4 sm:right-0 top-[21px] sm:translate-x-1/2 flex flex-col items-center w-12">
                     <div className="w-2 h-2 rounded-full bg-white" />
                     <span className="text-[10px] text-zinc-500 mt-2">End</span>
                   </div>
@@ -151,7 +151,7 @@ export function SpeedTestView() {
               </div>
 
               {/* Mockup Quote display with styled mistakes */}
-              <div className="text-[24px] text-zinc-600 font-mono text-left leading-relaxed max-w-[800px] mt-4 select-none break-words">
+              <div className="text-[18px] sm:text-[24px] px-4 sm:px-0 text-zinc-600 font-mono text-left leading-relaxed max-w-[800px] mt-4 select-none break-words">
                 {targetText.split(' ').slice(0, 30).map((word, wordIdx) => {
                   const isBasedWord = word.toLowerCase().includes('based');
                   const isOnWord = word.toLowerCase() === 'on';
@@ -187,20 +187,20 @@ export function SpeedTestView() {
               </div>
 
               {/* Big three stats row */}
-              <div className="flex flex-row justify-center items-baseline gap-[60px] md:gap-[90px] font-sans mt-4">
+              <div className="flex flex-wrap justify-center items-baseline gap-6 sm:gap-[60px] md:gap-[90px] font-sans mt-4 px-4">
                 <div className="flex flex-col items-start">
-                  <span className="text-[14px] text-zinc-500 uppercase tracking-widest">WPM</span>
-                  <span className="text-[64px] font-extrabold text-[#d1d0c5] leading-none mt-1 font-sans">{wpm}</span>
+                  <span className="text-[12px] sm:text-[14px] text-zinc-500 uppercase tracking-widest">WPM</span>
+                  <span className="text-[48px] sm:text-[64px] font-extrabold text-[#d1d0c5] leading-none mt-1 font-sans">{wpm}</span>
                 </div>
                 <div className="flex flex-col items-start">
-                  <span className="text-[14px] text-zinc-500 uppercase tracking-widest">Accuracy</span>
-                  <span className="text-[64px] font-extrabold text-[#d1d0c5] leading-none mt-1 font-sans">
+                  <span className="text-[12px] sm:text-[14px] text-zinc-500 uppercase tracking-widest">Accuracy</span>
+                  <span className="text-[48px] sm:text-[64px] font-extrabold text-[#d1d0c5] leading-none mt-1 font-sans">
                     {Math.round(parseFloat(accuracy))}%
                   </span>
                 </div>
                 <div className="flex flex-col items-start">
-                  <span className="text-[14px] text-zinc-500 uppercase tracking-widest">Seconds</span>
-                  <span className="text-[64px] font-extrabold text-[#d1d0c5] leading-none mt-1 font-sans">
+                  <span className="text-[12px] sm:text-[14px] text-zinc-500 uppercase tracking-widest">Seconds</span>
+                  <span className="text-[48px] sm:text-[64px] font-extrabold text-[#d1d0c5] leading-none mt-1 font-sans">
                     {testMode === 'time' ? testTimeLimit : timeLeft}
                   </span>
                 </div>
@@ -242,54 +242,54 @@ export function SpeedTestView() {
             /* Detailed Scorecard View */
             <div className="flex flex-col items-center justify-center w-full max-w-[960px] gap-10">
               {/* Big three + raw metrics row */}
-              <div className="flex flex-wrap justify-center items-baseline gap-6 md:gap-[90px] font-sans">
+              <div className="flex flex-wrap justify-center items-baseline gap-6 sm:gap-[60px] md:gap-[90px] font-sans px-4">
                 <div className="flex flex-col items-start">
-                  <span className="text-[14px] text-zinc-500 uppercase tracking-widest">WPM</span>
-                  <span className="text-4xl sm:text-5xl md:text-[64px] font-extrabold text-[#d1d0c5] leading-none mt-1 font-sans">{wpm}</span>
+                  <span className="text-[12px] sm:text-[14px] text-zinc-500 uppercase tracking-widest">WPM</span>
+                  <span className="text-[48px] sm:text-5xl md:text-[64px] font-extrabold text-[#d1d0c5] leading-none mt-1 font-sans">{wpm}</span>
                 </div>
                 <div className="flex flex-col items-start">
-                  <span className="text-[14px] text-zinc-500 uppercase tracking-widest">Accuracy</span>
-                  <span className="text-4xl sm:text-5xl md:text-[64px] font-extrabold text-[#d1d0c5] leading-none mt-1 font-sans">
+                  <span className="text-[12px] sm:text-[14px] text-zinc-500 uppercase tracking-widest">Accuracy</span>
+                  <span className="text-[48px] sm:text-5xl md:text-[64px] font-extrabold text-[#d1d0c5] leading-none mt-1 font-sans">
                     {Math.round(parseFloat(accuracy))}%
                   </span>
                 </div>
                 <div className="flex flex-col items-start">
-                  <span className="text-[14px] text-zinc-500 uppercase tracking-widest">Seconds</span>
-                  <span className="text-4xl sm:text-5xl md:text-[64px] font-extrabold text-[#d1d0c5] leading-none mt-1 font-sans">
+                  <span className="text-[12px] sm:text-[14px] text-zinc-500 uppercase tracking-widest">Seconds</span>
+                  <span className="text-[48px] sm:text-5xl md:text-[64px] font-extrabold text-[#d1d0c5] leading-none mt-1 font-sans">
                     {testMode === 'time' ? testTimeLimit : timeLeft}
                   </span>
                 </div>
                 <div className="flex flex-col items-start">
-                  <span className="text-[14px] text-zinc-500 uppercase tracking-widest">Raw</span>
-                  <span className="text-4xl sm:text-5xl md:text-[64px] font-extrabold text-[#d1d0c5] leading-none mt-1 font-sans">{rawWpm}</span>
+                  <span className="text-[12px] sm:text-[14px] text-zinc-500 uppercase tracking-widest">Raw</span>
+                  <span className="text-[48px] sm:text-5xl md:text-[64px] font-extrabold text-[#d1d0c5] leading-none mt-1 font-sans">{rawWpm}</span>
                 </div>
               </div>
 
               {/* Character Breakdown Section */}
-              <div className="w-full flex flex-col items-start max-w-[800px] mt-6">
-                <h4 className="text-[16px] text-zinc-400 font-bold uppercase tracking-wider mb-4 font-sans">Characters</h4>
-                <div className="flex flex-wrap flex-row justify-between items-baseline w-full gap-6 md:gap-[90px] font-sans">
+              <div className="w-full flex flex-col items-center sm:items-start max-w-[800px] mt-8 sm:mt-6 px-4">
+                <h4 className="text-[14px] sm:text-[16px] text-zinc-400 font-bold uppercase tracking-wider mb-4 font-sans">Characters</h4>
+                <div className="flex flex-wrap flex-row justify-center sm:justify-between items-baseline w-full gap-6 sm:gap-[60px] md:gap-[90px] font-sans">
                   <div className="flex flex-col items-start">
-                    <span className="text-[14px] text-zinc-500 uppercase tracking-widest">Correct</span>
-                    <span className="text-4xl sm:text-5xl md:text-[64px] font-extrabold text-[#d1d0c5] leading-none mt-1 font-sans">
+                    <span className="text-[12px] sm:text-[14px] text-zinc-500 uppercase tracking-widest">Correct</span>
+                    <span className="text-[32px] sm:text-5xl md:text-[64px] font-extrabold text-[#d1d0c5] leading-none mt-1 font-sans">
                       {getCharacterStats().correct}
                     </span>
                   </div>
                   <div className="flex flex-col items-start">
-                    <span className="text-[14px] text-zinc-500 uppercase tracking-widest">Incorrect</span>
-                    <span className="text-4xl sm:text-5xl md:text-[64px] font-extrabold text-[#d1d0c5] leading-none mt-1 font-sans">
+                    <span className="text-[12px] sm:text-[14px] text-zinc-500 uppercase tracking-widest">Incorrect</span>
+                    <span className="text-[32px] sm:text-5xl md:text-[64px] font-extrabold text-[#d1d0c5] leading-none mt-1 font-sans">
                       {getCharacterStats().incorrect}
                     </span>
                   </div>
                   <div className="flex flex-col items-start">
-                    <span className="text-[14px] text-zinc-500 uppercase tracking-widest">Extra</span>
-                    <span className="text-4xl sm:text-5xl md:text-[64px] font-extrabold text-[#d1d0c5] leading-none mt-1 font-sans">
+                    <span className="text-[12px] sm:text-[14px] text-zinc-500 uppercase tracking-widest">Extra</span>
+                    <span className="text-[32px] sm:text-5xl md:text-[64px] font-extrabold text-[#d1d0c5] leading-none mt-1 font-sans">
                       {getCharacterStats().extra}
                     </span>
                   </div>
                   <div className="flex flex-col items-start">
-                    <span className="text-[14px] text-zinc-500 uppercase tracking-widest">Missed</span>
-                    <span className="text-4xl sm:text-5xl md:text-[64px] font-extrabold text-[#d1d0c5] leading-none mt-1 font-sans">
+                    <span className="text-[12px] sm:text-[14px] text-zinc-500 uppercase tracking-widest">Missed</span>
+                    <span className="text-[32px] sm:text-5xl md:text-[64px] font-extrabold text-[#d1d0c5] leading-none mt-1 font-sans">
                       {getCharacterStats().missed}
                     </span>
                   </div>
@@ -341,15 +341,15 @@ export function SpeedTestView() {
             <div className="relative w-full">
             {/* The floating user card */}
             <div 
-              className="absolute -top-8 flex flex-col items-center transition-all duration-150 ease-out z-10"
+              className="absolute -top-8 flex flex-col items-center transition-all duration-150 ease-out z-10 w-16"
               style={{ 
                 left: `${targetText.length > 0 ? Math.min(100, Math.max(0, (typedLength / targetText.length) * 100)) : 0}%`,
                 transform: 'translateX(-50%)'
               }}
             >
               {renderAvatar(currentUser?.avatarUrl || '', "w-6 h-6 sm:w-7 sm:h-7")}
-              <span className="text-[10.5px] text-zinc-400 mt-1.5 font-sans font-medium tracking-tight">
-                {currentUser?.username || 'Lakshayyyy'}
+              <span className="text-[10.5px] text-zinc-400 mt-1.5 font-sans font-medium tracking-tight truncate w-full text-center">
+                {currentUser?.username || 'Guest'}
               </span>
             </div>
 
