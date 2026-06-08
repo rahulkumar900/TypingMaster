@@ -165,7 +165,7 @@ export function AppLayout({
   const shouldHideHeaderFooter = hideHeaderAndFooterDuringRace && isRacing;
 
   return (
-    <div className="min-h-[100dvh] bg-[var(--bg-body)] text-[var(--text-main)] transition-colors duration-500 relative flex flex-col items-center font-sans">
+    <div className="min-h-[100dvh] bg-[var(--bg-body)] text-[var(--text-main)] transition-colors duration-500 relative flex flex-col items-center font-sans overflow-x-hidden w-full">
       
       {/* Background gradients */}
       <div className="absolute top-0 left-1/4 w-[500px] h-[500px] bg-[var(--accent-color)]/2 rounded-full blur-[120px] pointer-events-none select-none z-0" />

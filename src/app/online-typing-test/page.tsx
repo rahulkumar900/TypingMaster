@@ -25,27 +25,6 @@ const jsonLd = {
         "price": "0",
         "priceCurrency": "USD"
       }
-    },
-    {
-      "@type": "FAQPage",
-      "mainEntity": [
-        {
-          "@type": "Question",
-          "name": "Are online typing tests accurate?",
-          "acceptedAnswer": {
-            "@type": "Answer",
-            "text": "Yes, our online typing test uses high-precision timing to accurately measure your keystrokes down to the millisecond, providing a highly accurate WPM calculation."
-          }
-        },
-        {
-          "@type": "Question",
-          "name": "Is this online typing test free?",
-          "acceptedAnswer": {
-            "@type": "Answer",
-            "text": "Absolutely! TypingThunder is a 100% free online typing test platform. You can take as many tests as you like without downloading any software."
-          }
-        }
-      ]
     }
   ]
 };
