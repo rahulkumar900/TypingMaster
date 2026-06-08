@@ -383,13 +383,13 @@ export function SpeedTestView() {
               </div>
               
               {/* Start Dot */}
-              <div className="absolute left-0 top-[21px] flex flex-col items-center">
+              <div className="absolute left-0 top-[21px] -translate-x-1/2 flex flex-col items-center w-12">
                 <div className="w-2 h-2 rounded-full bg-zinc-600 border border-zinc-900" />
                 <span className="text-[10px] text-zinc-500 mt-2 font-sans">Start</span>
               </div>
 
               {/* End Dot */}
-              <div className="absolute right-0 top-[21px] flex flex-col items-center">
+              <div className="absolute right-0 top-[21px] translate-x-1/2 flex flex-col items-center w-12">
                 <div className="w-2 h-2 rounded-full bg-zinc-600 border border-zinc-900" />
                 <span className="text-[10px] text-zinc-500 mt-2 font-sans">End</span>
               </div>
