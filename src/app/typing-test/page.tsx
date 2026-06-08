@@ -8,7 +8,7 @@ export const metadata: Metadata = {
   title: 'Typing Test | Check WPM and Accuracy',
   description: 'A beautiful, minimalist typing test that tracks your words per minute and error rate. Practice typing in 14 regional languages with our free tool.',
   alternates: {
-    canonical: 'https://centerville-typing.vercel.app/typing-test',
+    canonical: 'https://typingthunder.com/typing-test',
   },
 };
 
@@ -17,7 +17,7 @@ const jsonLd = {
   "@graph": [
     {
       "@type": "SoftwareApplication",
-      "name": "Centerville Typing Test",
+      "name": "TypingThunder Typing Test",
       "applicationCategory": "EducationalApplication",
       "operatingSystem": "Any",
       "offers": {

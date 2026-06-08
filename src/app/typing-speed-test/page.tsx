@@ -8,7 +8,7 @@ export const metadata: Metadata = {
   title: 'Typing Speed Test | Calculate Your True WPM',
   description: 'Our typing speed test accurately calculates your gross and net Words Per Minute (WPM). Build lightning-fast keyboard speed with targeted practice modes.',
   alternates: {
-    canonical: 'https://centerville-typing.vercel.app/typing-speed-test',
+    canonical: 'https://typingthunder.com/typing-speed-test',
   },
 };
 
@@ -17,7 +17,7 @@ const jsonLd = {
   "@graph": [
     {
       "@type": "SoftwareApplication",
-      "name": "Centerville Typing Speed Test",
+      "name": "TypingThunder Typing Speed Test",
       "applicationCategory": "EducationalApplication",
       "operatingSystem": "Any",
       "offers": {
@@ -59,7 +59,7 @@ export default function TypingSpeedTestPage() {
       />
       <AppLayout 
         seoTitle="Typing Speed Test"
-        seoDescription="Welcome to the Centerville Typing Speed Test. We calculate your true WPM (Words Per Minute) using strict error penalties so you know exactly how fast your fingers fly across the keyboard."
+        seoDescription="Welcome to the TypingThunder Typing Speed Test. We calculate your true WPM (Words Per Minute) using strict error penalties so you know exactly how fast your fingers fly across the keyboard."
         seoContent={
           <>
             <SeoContentSection title="Understanding Your Typing Speed Test Results">

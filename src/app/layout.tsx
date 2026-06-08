@@ -6,23 +6,23 @@ import { Toaster } from "sonner";
 
 
 export const metadata: Metadata = {
-  metadataBase: new URL("https://centerville-typing.vercel.app"),
-  title: "Typing Test & WPM Speed Test | Centerville",
+  metadataBase: new URL("https://typingthunder.com"),
+  title: "Typing Test & WPM Speed Test | TypingThunder",
   description: "Test your typing speed (WPM) and accuracy with our beautiful, minimalist typing test. Features Zen mode, Government Exam mode, and Weak Key drills.",
   keywords: "typing test, wpm test, typing speed test, keyboard test, words per minute, online typing practice, government typing test",
-  authors: [{ name: "Centerville" }],
+  authors: [{ name: "TypingThunder" }],
   category: "productivity",
   robots: { index: true, follow: true },
   openGraph: {
-    title: "Typing Test & WPM Speed Test | Centerville",
+    title: "Typing Test & WPM Speed Test | TypingThunder",
     description: "Check your typing speed (WPM) and accuracy online for free.",
-    url: "https://centerville-typing.vercel.app",
-    siteName: "Centerville Typing Test",
+    url: "https://typingthunder.com",
+    siteName: "TypingThunder Typing Test",
     type: "website",
   },
   twitter: {
     card: "summary_large_image",
-    title: "Typing Test & WPM Speed Test | Centerville",
+    title: "Typing Test & WPM Speed Test | TypingThunder",
     description: "Check your typing speed (WPM) and accuracy online for free.",
   },
 };
@@ -32,8 +32,8 @@ const jsonLd = {
   "@graph": [
     {
       "@type": "WebApplication",
-      "name": "Centerville Typing Test",
-      "url": "https://centerville-typing.vercel.app",
+      "name": "TypingThunder Typing Test",
+      "url": "https://typingthunder.com",
       "applicationCategory": "EducationalApplication",
       "operatingSystem": "Any",
       "description": "A free online typing test to measure words per minute (WPM) and typing accuracy."

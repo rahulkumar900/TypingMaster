@@ -3,10 +3,10 @@ import Link from 'next/link';
 import { AppLayout } from '@/components/layout/app-layout';
 
 export const metadata: Metadata = {
-  title: 'Typing Tips & Blog | Centerville',
+  title: 'Typing Tips & Blog | TypingThunder',
   description: 'Read the latest tips, tricks, and guides on how to improve your typing speed and accuracy. Learn about mechanical keyboards, ergonomic posture, and touch typing.',
   alternates: {
-    canonical: 'https://centerville-typing.vercel.app/blog',
+    canonical: 'https://typingthunder.com/blog',
   },
 };
 
@@ -35,7 +35,7 @@ export default function BlogIndex() {
   return (
     <AppLayout>
       <div className="w-full max-w-4xl mx-auto py-12">
-        <h1 className="text-4xl font-extrabold text-white mb-4">Centerville Blog</h1>
+        <h1 className="text-4xl font-extrabold text-white mb-4">TypingThunder Blog</h1>
         <p className="text-[14px] text-[var(--text-muted)] mb-12">
           Insights, guides, and typing science to help you reach your maximum potential.
         </p>

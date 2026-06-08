@@ -59,7 +59,7 @@ export function useTypingEngine(config: any) {
   useEffect(() => {
     const loadLocalHistory = () => {
       if (typeof window !== 'undefined') {
-        const savedHist = localStorage.getItem('centerville_test_history');
+        const savedHist = localStorage.getItem('typingthunder_test_history');
         if (savedHist) {
           try {
             setTestHistory(JSON.parse(savedHist));
@@ -275,7 +275,7 @@ export function useTypingEngine(config: any) {
 
   const handleClearHistory = () => {
     setTestHistory([]);
-    localStorage.removeItem('centerville_test_history');
+    localStorage.removeItem('typingthunder_test_history');
   };
 
   const calculateMetrics = (elapsed: number) => {
@@ -444,7 +444,7 @@ export function useTypingEngine(config: any) {
 
     setTestHistory(prev => {
       const updated = [newRecord, ...prev];
-      localStorage.setItem('centerville_test_history', JSON.stringify(updated));
+      localStorage.setItem('typingthunder_test_history', JSON.stringify(updated));
       return updated;
     });
   };

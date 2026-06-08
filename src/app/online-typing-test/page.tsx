@@ -8,7 +8,7 @@ export const metadata: Metadata = {
   title: 'Online Typing Test | Check Your WPM Free',
   description: 'Take our free online typing test to measure your words per minute (WPM). Get real-time feedback and detailed analytics to improve your typing speed online.',
   alternates: {
-    canonical: 'https://centerville-typing.vercel.app/online-typing-test',
+    canonical: 'https://typingthunder.com/online-typing-test',
   },
 };
 
@@ -17,7 +17,7 @@ const jsonLd = {
   "@graph": [
     {
       "@type": "SoftwareApplication",
-      "name": "Centerville Online Typing Test",
+      "name": "TypingThunder Online Typing Test",
       "applicationCategory": "EducationalApplication",
       "operatingSystem": "Browser",
       "offers": {
@@ -42,7 +42,7 @@ const jsonLd = {
           "name": "Is this online typing test free?",
           "acceptedAnswer": {
             "@type": "Answer",
-            "text": "Absolutely! Centerville is a 100% free online typing test platform. You can take as many tests as you like without downloading any software."
+            "text": "Absolutely! TypingThunder is a 100% free online typing test platform. You can take as many tests as you like without downloading any software."
           }
         }
       ]
@@ -59,12 +59,12 @@ export default function OnlineTypingTestPage() {
       />
       <AppLayout 
         seoTitle="Online Typing Test"
-        seoDescription="Centerville is a premium, free online typing test designed to help you check your words per minute (WPM) and accuracy online in real-time. Practice today to improve your typing mechanics."
+        seoDescription="TypingThunder is a premium, free online typing test designed to help you check your words per minute (WPM) and accuracy online in real-time. Practice today to improve your typing mechanics."
         seoContent={
           <>
             <SeoContentSection title="Take a Free Online Typing Test">
               <p>
-                Welcome to the internet's most fluid and responsive <strong>online typing test</strong>. Forget about downloading clunky software or dealing with ad-ridden platforms. Centerville runs entirely in your browser, allowing you to test your typing skills from any device, anywhere in the world.
+                Welcome to the internet's most fluid and responsive <strong>online typing test</strong>. Forget about downloading clunky software or dealing with ad-ridden platforms. TypingThunder runs entirely in your browser, allowing you to test your typing skills from any device, anywhere in the world.
               </p>
               <h3>Benefits of Testing Online</h3>
               <p>

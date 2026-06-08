@@ -83,7 +83,7 @@ export function ConfigProvider({ children }: { children: React.ReactNode }) {
   // Hydrate configurations on mount
   useEffect(() => {
     if (typeof window !== 'undefined') {
-      const saved = localStorage.getItem('centerville_settings_react_v2');
+      const saved = localStorage.getItem('typingthunder_settings_react_v2');
       if (saved) {
         try {
           const config = JSON.parse(saved);
@@ -120,7 +120,7 @@ export function ConfigProvider({ children }: { children: React.ReactNode }) {
   const saveConfig = (updated: Record<string, any>) => {
     let currentConfig = {};
     if (typeof window !== 'undefined') {
-      const saved = localStorage.getItem('centerville_settings_react_v2');
+      const saved = localStorage.getItem('typingthunder_settings_react_v2');
       if (saved) {
         try {
           currentConfig = JSON.parse(saved);
@@ -152,7 +152,7 @@ export function ConfigProvider({ children }: { children: React.ReactNode }) {
       ...updated
     };
     if (typeof window !== 'undefined') {
-      localStorage.setItem('centerville_settings_react_v2', JSON.stringify(configObj));
+      localStorage.setItem('typingthunder_settings_react_v2', JSON.stringify(configObj));
     }
   };
 

@@ -6,9 +6,9 @@ import { InternalLinks } from '@/components/seo/internal-links';
 
 export const metadata: Metadata = {
   title: 'Typing Practice | Improve Typing Accuracy',
-  description: 'Daily typing practice is the best way to improve your WPM. Drill your weak keys and practice typing efficiently with Centerville.',
+  description: 'Daily typing practice is the best way to improve your WPM. Drill your weak keys and practice typing efficiently with TypingThunder.',
   alternates: {
-    canonical: 'https://centerville-typing.vercel.app/typing-practice',
+    canonical: 'https://typingthunder.com/typing-practice',
   },
 };
 
@@ -17,7 +17,7 @@ const jsonLd = {
   "@graph": [
     {
       "@type": "SoftwareApplication",
-      "name": "Centerville Typing Practice",
+      "name": "TypingThunder Typing Practice",
       "applicationCategory": "EducationalApplication",
       "operatingSystem": "Browser",
       "offers": {

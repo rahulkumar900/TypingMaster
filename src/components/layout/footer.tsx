@@ -32,7 +32,7 @@ export function GlobalFooter() {
               <svg className="w-6 h-6 text-white group-hover:text-[var(--accent-color)] transition-colors" viewBox="0 0 24 24" fill="currentColor">
                 <path d="M19 9h-6l2-7H5L3 15h6l-2 7 12-13z" />
               </svg>
-              <span className="text-xl font-bold tracking-tight text-white">Centerville</span>
+              <span className="text-xl font-bold tracking-tight text-white">TypingThunder</span>
             </Link>
             <p className="text-[13px] text-[var(--text-muted)] leading-relaxed mb-6">
               The premier online typing speed test platform. Practice, compete, and improve your words per minute (WPM) with advanced analytics.
@@ -68,7 +68,7 @@ export function GlobalFooter() {
               <li><Link href="/blog" className="text-[13px] text-[var(--text-muted)] hover:text-[var(--accent-color)] transition-colors">Blog</Link></li>
               <li><Link href="/ratings" className="text-[13px] text-[var(--text-muted)] hover:text-[var(--accent-color)] transition-colors">Leaderboards</Link></li>
               <li><Link href="/profile" className="text-[13px] text-[var(--text-muted)] hover:text-[var(--accent-color)] transition-colors">User Profiles</Link></li>
-              <li><a href="mailto:support@centerville.com" className="text-[13px] text-[var(--text-muted)] hover:text-[var(--accent-color)] transition-colors">Contact Support</a></li>
+              <li><a href="mailto:support@typingthunder.com" className="text-[13px] text-[var(--text-muted)] hover:text-[var(--accent-color)] transition-colors">Contact Support</a></li>
             </ul>
           </div>
 
@@ -85,7 +85,7 @@ export function GlobalFooter() {
 
         <div className="pt-8 border-t border-[var(--border-subtle)] flex flex-col md:flex-row items-center justify-between gap-4">
           <p className="text-xs text-[var(--text-muted-alt)]">
-            © {new Date().getFullYear()} Centerville Typing. All rights reserved.
+            © {new Date().getFullYear()} TypingThunder Typing. All rights reserved.
           </p>
           <div className="flex items-center gap-2">
             <span className="w-2 h-2 rounded-full bg-green-500 animate-pulse"></span>

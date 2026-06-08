@@ -1,7 +1,7 @@
 import { MetadataRoute } from 'next';
 
 export default function sitemap(): MetadataRoute.Sitemap {
-  const baseUrl = 'https://centerville-typing.vercel.app'; // Update when deploying to production
+  const baseUrl = 'https://typingthunder.com'; // Update when deploying to production
   
   return [
     {

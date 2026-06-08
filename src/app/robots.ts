@@ -6,6 +6,6 @@ export default function robots(): MetadataRoute.Robots {
       userAgent: '*',
       allow: '/',
     },
-    sitemap: 'https://centerville-typing.vercel.app/sitemap.xml',
+    sitemap: 'https://typingthunder.com/sitemap.xml',
   };
 }

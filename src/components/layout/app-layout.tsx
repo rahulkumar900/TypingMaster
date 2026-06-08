@@ -123,7 +123,7 @@ export function AppLayout({
 
       const loadLocalHistory = () => {
         if (typeof window !== 'undefined') {
-          const saved = localStorage.getItem('centerville_test_history');
+          const saved = localStorage.getItem('typingthunder_test_history');
           if (saved) {
             try {
               setDashboardHistory(JSON.parse(saved));
@@ -139,7 +139,7 @@ export function AppLayout({
   const handleClearHistory = () => {
     setDashboardHistory([]);
     if (typeof window !== 'undefined') {
-      localStorage.removeItem('centerville_test_history');
+      localStorage.removeItem('typingthunder_test_history');
     }
   };
 

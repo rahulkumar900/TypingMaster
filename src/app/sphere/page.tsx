@@ -5,7 +5,7 @@ export const metadata: Metadata = {
   title: 'Sphere Rooms | Custom Private Typing Rooms',
   description: 'Create private custom typing rooms, invite friends to join via share code, chat in real-time, and run multitrack speed races.',
   alternates: {
-    canonical: 'https://centerville-typing.vercel.app/sphere',
+    canonical: 'https://typingthunder.com/sphere',
   },
 };
 

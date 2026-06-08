@@ -48,10 +48,10 @@ export async function generateMetadata(props: { params: Promise<{ slug: string }
   }
 
   return {
-    title: `${post.title} | Centerville Blog`,
+    title: `${post.title} | TypingThunder Blog`,
     description: post.content.substring(0, 150) + '...',
     alternates: {
-      canonical: `https://centerville-typing.vercel.app/blog/${params.slug}`,
+      canonical: `https://typingthunder.com/blog/${params.slug}`,
     },
   };
 }
@@ -71,7 +71,7 @@ export default async function BlogPost(props: { params: Promise<{ slug: string }
     "datePublished": new Date(post.date).toISOString(),
     "author": {
       "@type": "Organization",
-      "name": "Centerville"
+      "name": "TypingThunder"
     }
   };
 
