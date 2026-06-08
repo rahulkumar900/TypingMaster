@@ -51,7 +51,8 @@ export default function LoginPage() {
     <AuthLayout
       title="Login"
       subtitle="Login to test your typing speed with your companions."
-      illustrationText="Compete with your friends in a typing race"
+      illustrationText="Compete with your friends in a "
+      illustrationDynamicWords={["typing race.", "speed test.", "typing battle."]}
       illustrationSubtext="Assess and improve your typing speed with our interactive typing tests. Receive instant feedback and track your progress over time."
     >
       <div className="absolute top-8 right-8 text-sm text-[#a1a1aa]">

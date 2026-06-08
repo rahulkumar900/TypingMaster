@@ -9,26 +9,52 @@ interface AuthLayoutProps {
   title: string;
   subtitle: string;
   illustrationText?: string;
+  illustrationDynamicWords?: string[];
   illustrationSubtext?: string;
 }
 
-export function AuthLayout({ children, title, subtitle, illustrationText, illustrationSubtext }: AuthLayoutProps) {
+export function AuthLayout({ children, title, subtitle, illustrationText, illustrationDynamicWords, illustrationSubtext }: AuthLayoutProps) {
   const [displayedText, setDisplayedText] = useState('');
+  const [wordIndex, setWordIndex] = useState(0);
+  const [isDeleting, setIsDeleting] = useState(false);
 
   useEffect(() => {
     if (!illustrationText) return;
-    setDisplayedText(''); // reset
-    let i = 0;
-    const interval = setInterval(() => {
-      setDisplayedText(illustrationText.slice(0, i + 1));
-      i++;
-      if (i >= illustrationText.length) {
-        clearInterval(interval);
-      }
-    }, 50); // Typing speed
+    
+    // If no dynamic words, just type the illustration text once
+    if (!illustrationDynamicWords || illustrationDynamicWords.length === 0) {
+      let i = 0;
+      const interval = setInterval(() => {
+        setDisplayedText(illustrationText.slice(0, i + 1));
+        i++;
+        if (i >= illustrationText.length) clearInterval(interval);
+      }, 50);
+      return () => clearInterval(interval);
+    }
 
-    return () => clearInterval(interval);
-  }, [illustrationText]);
+    // Rotating typewriter effect
+    const currentWord = illustrationDynamicWords[wordIndex];
+    let timeoutId: NodeJS.Timeout;
+
+    if (isDeleting) {
+      timeoutId = setTimeout(() => {
+        setDisplayedText(currentWord.substring(0, displayedText.length - 1));
+        if (displayedText.length === 0) {
+          setIsDeleting(false);
+          setWordIndex((prev) => (prev + 1) % illustrationDynamicWords.length);
+        }
+      }, 30); // Deleting speed
+    } else {
+      timeoutId = setTimeout(() => {
+        setDisplayedText(currentWord.substring(0, displayedText.length + 1));
+        if (displayedText.length === currentWord.length) {
+          timeoutId = setTimeout(() => setIsDeleting(true), 1500); // Pause before deleting
+        }
+      }, 80); // Typing speed
+    }
+
+    return () => clearTimeout(timeoutId);
+  }, [displayedText, isDeleting, wordIndex, illustrationText, illustrationDynamicWords]);
 
   return (
     <div className="min-h-screen w-full flex flex-col md:flex-row bg-[#121212] font-sans selection:bg-yellow-500/30">
@@ -49,7 +75,12 @@ export function AuthLayout({ children, title, subtitle, illustrationText, illust
           {illustrationText ? (
             <>
               <h1 className="text-4xl md:text-5xl font-semibold text-white leading-tight tracking-tight mb-6">
-                {displayedText} <span className="inline-block animate-pulse">|</span>
+                {illustrationText}
+                {illustrationDynamicWords && illustrationDynamicWords.length > 0 && (
+                  <span className="text-[var(--accent-color)]">{displayedText}</span>
+                )}
+                {!illustrationDynamicWords && displayedText}
+                <span className="inline-block animate-pulse text-white">|</span>
               </h1>
               <p className="text-[#a1a1aa] leading-relaxed text-sm">
                 {illustrationSubtext}
