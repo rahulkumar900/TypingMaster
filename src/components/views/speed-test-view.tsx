@@ -207,23 +207,23 @@ export function SpeedTestView() {
               </div>
 
               {/* Simple Controls row */}
-              <div className="flex items-center justify-center gap-12 mt-6">
+              <div className="flex items-center justify-center gap-6 sm:gap-12 mt-6">
                 <button 
                   onClick={() => setShowDetailed(true)}
-                  className="w-[108px] h-[56px] rounded-[30px] border border-[var(--border-active)] hover:border-[var(--accent-color)] bg-[var(--bg-widget)]/60 hover:bg-[var(--accent-color)]/10 shadow-[0_4px_12px_rgba(0,0,0,0.15)] flex items-center justify-center transition-all duration-300 text-[var(--text-muted)] hover:text-[var(--accent-color)] cursor-pointer active:scale-95"
+                  className="w-[80px] h-[48px] sm:w-[108px] sm:h-[56px] rounded-[30px] border border-[var(--border-active)] hover:border-[var(--accent-color)] bg-[var(--bg-widget)]/60 hover:bg-[var(--accent-color)]/10 shadow-[0_4px_12px_rgba(0,0,0,0.15)] flex items-center justify-center transition-all duration-300 text-[var(--text-muted)] hover:text-[var(--accent-color)] cursor-pointer active:scale-95"
                   title="Show Detailed Results"
                 >
                   <ChevronRight className="w-5 h-5" />
                 </button>
                 <button 
                   onClick={resetTest}
-                  className="w-[108px] h-[56px] rounded-[30px] border border-[var(--border-active)] hover:border-[var(--accent-color)] bg-[var(--bg-widget)]/60 hover:bg-[var(--accent-color)]/10 shadow-[0_4px_12px_rgba(0,0,0,0.15)] flex items-center justify-center transition-all duration-300 text-[var(--text-muted)] hover:text-[var(--accent-color)] cursor-pointer active:scale-95"
+                  className="w-[80px] h-[48px] sm:w-[108px] sm:h-[56px] rounded-[30px] border border-[var(--border-active)] hover:border-[var(--accent-color)] bg-[var(--bg-widget)]/60 hover:bg-[var(--accent-color)]/10 shadow-[0_4px_12px_rgba(0,0,0,0.15)] flex items-center justify-center transition-all duration-300 text-[var(--text-muted)] hover:text-[var(--accent-color)] cursor-pointer active:scale-95"
                   title="Restart Test"
                 >
                   <RefreshCw className="w-5 h-5" />
                 </button>
                 <button 
-                  className="w-[108px] h-[56px] rounded-[30px] border border-[var(--border-active)] hover:border-[var(--accent-color)] bg-[var(--bg-widget)]/60 hover:bg-[var(--accent-color)]/10 shadow-[0_4px_12px_rgba(0,0,0,0.15)] flex items-center justify-center transition-all duration-300 text-[var(--text-muted)] hover:text-[var(--accent-color)] cursor-pointer active:scale-95"
+                  className="w-[80px] h-[48px] sm:w-[108px] sm:h-[56px] rounded-[30px] border border-[var(--border-active)] hover:border-[var(--accent-color)] bg-[var(--bg-widget)]/60 hover:bg-[var(--accent-color)]/10 shadow-[0_4px_12px_rgba(0,0,0,0.15)] flex items-center justify-center transition-all duration-300 text-[var(--text-muted)] hover:text-[var(--accent-color)] cursor-pointer active:scale-95"
                   title="Share Results"
                 >
                   <Share2 className="w-5 h-5" />
@@ -297,23 +297,23 @@ export function SpeedTestView() {
               </div>
 
               {/* Simple Controls row */}
-              <div className="flex items-center justify-center gap-12 mt-6">
+              <div className="flex items-center justify-center gap-6 sm:gap-12 mt-6">
                 <button 
                   onClick={() => setShowDetailed(false)}
-                  className="w-[108px] h-[56px] rounded-[30px] border border-[var(--border-active)] hover:border-[var(--accent-color)] bg-[var(--bg-widget)]/60 hover:bg-[var(--accent-color)]/10 shadow-[0_4px_12px_rgba(0,0,0,0.15)] flex items-center justify-center transition-all duration-300 text-[var(--text-muted)] hover:text-[var(--accent-color)] cursor-pointer active:scale-95"
+                  className="w-[80px] h-[48px] sm:w-[108px] sm:h-[56px] rounded-[30px] border border-[var(--border-active)] hover:border-[var(--accent-color)] bg-[var(--bg-widget)]/60 hover:bg-[var(--accent-color)]/10 shadow-[0_4px_12px_rgba(0,0,0,0.15)] flex items-center justify-center transition-all duration-300 text-[var(--text-muted)] hover:text-[var(--accent-color)] cursor-pointer active:scale-95"
                   title="Back to Simple Results"
                 >
                   <ChevronLeft className="w-5 h-5" />
                 </button>
                 <button 
                   onClick={resetTest}
-                  className="w-[108px] h-[56px] rounded-[30px] border border-[var(--border-active)] hover:border-[var(--accent-color)] bg-[var(--bg-widget)]/60 hover:bg-[var(--accent-color)]/10 shadow-[0_4px_12px_rgba(0,0,0,0.15)] flex items-center justify-center transition-all duration-300 text-[var(--text-muted)] hover:text-[var(--accent-color)] cursor-pointer active:scale-95"
+                  className="w-[80px] h-[48px] sm:w-[108px] sm:h-[56px] rounded-[30px] border border-[var(--border-active)] hover:border-[var(--accent-color)] bg-[var(--bg-widget)]/60 hover:bg-[var(--accent-color)]/10 shadow-[0_4px_12px_rgba(0,0,0,0.15)] flex items-center justify-center transition-all duration-300 text-[var(--text-muted)] hover:text-[var(--accent-color)] cursor-pointer active:scale-95"
                   title="Restart Test"
                 >
                   <RefreshCw className="w-5 h-5" />
                 </button>
                 <button 
-                  className="w-[108px] h-[56px] rounded-[30px] border border-[var(--border-active)] hover:border-[var(--accent-color)] bg-[var(--bg-widget)]/60 hover:bg-[var(--accent-color)]/10 shadow-[0_4px_12px_rgba(0,0,0,0.15)] flex items-center justify-center transition-all duration-300 text-[var(--text-muted)] hover:text-[var(--accent-color)] cursor-pointer active:scale-95"
+                  className="w-[80px] h-[48px] sm:w-[108px] sm:h-[56px] rounded-[30px] border border-[var(--border-active)] hover:border-[var(--accent-color)] bg-[var(--bg-widget)]/60 hover:bg-[var(--accent-color)]/10 shadow-[0_4px_12px_rgba(0,0,0,0.15)] flex items-center justify-center transition-all duration-300 text-[var(--text-muted)] hover:text-[var(--accent-color)] cursor-pointer active:scale-95"
                   title="Share Results"
                 >
                   <Share2 className="w-5 h-5" />
