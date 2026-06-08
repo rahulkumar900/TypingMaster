@@ -755,11 +755,11 @@ export function SphereView({ user, config, initialRoomId }: SphereViewProps) {
           {/* Typing Arena widget */}
           <div className="w-full bg-[#161617] border border-zinc-800 rounded-[28px] overflow-hidden shadow-lg">
             <TypingArena
-              key={resetKey}
               targetText={roomPassage}
               fontSize={config.fontSize}
               fontFamily={LANGUAGES.find(l => l.id === 'english')?.fonts.find(f => f.id === config.fontId)?.fontFamily || 'monospace'}
               cursorStyle={config.cursorStyle}
+              strictMode={true}
               synth={config.synth}
               gameState="running"
               onStart={() => {}}

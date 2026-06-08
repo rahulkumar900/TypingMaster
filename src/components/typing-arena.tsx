@@ -26,6 +26,7 @@ interface TypingArenaProps {
   liveWpm?: number;
   ghostWpm?: number;
   language?: string;  // e.g. 'hindi', 'english'
+  strictMode?: boolean; // If true, completely blocks incorrect keystrokes. Default false.
 }
 
 export const TypingArena: React.FC<TypingArenaProps> = ({
@@ -49,6 +50,7 @@ export const TypingArena: React.FC<TypingArenaProps> = ({
   liveWpm,
   ghostWpm = 0,
   language = 'english',
+  strictMode = false,
 }) => {
   // typedVal is used for caret positioning (derived from actual textarea DOM value)
   const [typedVal, setTypedVal] = useState('');
@@ -291,15 +293,18 @@ export const TypingArena: React.FC<TypingArenaProps> = ({
     if (e.key.length === 1 && !e.ctrlKey && !e.metaKey && !e.altKey) {
       const expectedChar = targetChars[currentLength];
       if (expectedChar && e.key !== expectedChar) {
-        e.preventDefault();
-        synth?.playClick('error');
-        onKeystroke(true, expectedChar);
-        return;
+        if (strictMode) {
+          e.preventDefault();
+          synth?.playClick('error');
+          onKeystroke(true, expectedChar);
+        }
+        return; // Don't play success sounds for errors. Let processInput handle error sounds if not in strictMode.
       }
     }
 
     if (e.key === ' ') {
       synth?.playClick('space');
+      onKeystroke(false); // Make sure space counts as a keystroke
     } else if (e.key === 'Backspace') {
       if (disableBackspace) {
         e.preventDefault();

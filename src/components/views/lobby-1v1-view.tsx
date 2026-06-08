@@ -527,6 +527,7 @@ export function Lobby1v1View({ user, config }: Lobby1v1ViewProps) {
               fontSize={config.fontSize}
               fontFamily={LANGUAGES.find(l => l.id === 'english')?.fonts.find(f => f.id === config.fontId)?.fontFamily || 'monospace'}
               cursorStyle={config.cursorStyle}
+              strictMode={true}
               synth={config.synth}
               gameState={stage === 'racing' ? 'running' : 'completed'}
               onStart={() => {}}
