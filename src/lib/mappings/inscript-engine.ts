@@ -8,19 +8,27 @@ export class InscriptTransliterator implements TransliteratorEngine {
     this.map = map;
   }
 
-  reset(): void { this.rawBuffer = []; }
-  getOutput(): string { return this.rawBuffer.join(''); }
+  reset(): void {
+    this.rawBuffer = [];
+  }
+
+  getOutput(): string {
+    return this.rawBuffer.join('');
+  }
   
   processKey(key: string): string {
     if (key === 'Backspace') {
       this.rawBuffer.pop();
     } else if (key.length === 1) {
-      if (this.map[key] !== undefined) {
-        this.rawBuffer.push(this.map[key]);
+      const mapped = this.map[key];
+      if (mapped !== undefined) {
+        // Explode strings (like "য়") into separate codepoint entries
+        // This ensures uniform backspace execution across explicit & implicit keys
+        this.rawBuffer.push(...Array.from(mapped));
       } else {
         this.rawBuffer.push(key);
       }
     }
-    return this.rawBuffer.join('');
+    return this.getOutput();
   }
 }

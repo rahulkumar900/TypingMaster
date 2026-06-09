@@ -52,6 +52,22 @@ const MATRAS = new Set<string>([
   "‚", "k", "h", "q", "w", "`", "s", "S", "a", "¡", "%", "W", "·", "~"
 ]);
 
+// Create an array of pairs sorted by string length descending 
+// This ensures that multi-character matches (like "Q+Z") are matched before single characters ("Q")
+const TRANSLATION_PAIRS = ARRAY_ONE.map((source, index) => ({
+  source,
+  target: ARRAY_TWO[index]
+})).sort((a, b) => b.source.length - a.source.length);
+
+// Generate a combined RegExp pattern escaping special regex characters
+const KRUTIDEV_REGEX = new RegExp(
+  TRANSLATION_PAIRS.map(p => p.source.replace(/[-\/\\^$*+?.()|[\]{}]/g, '\\$&')).join('|'),
+  'g'
+);
+
+// Map for ultra-fast loop lookups
+const KRUTIDEV_LOOKUP_MAP = new Map(TRANSLATION_PAIRS.map(p => [p.source, p.target]));
+
 export function krutidevToUnicode(text: string): string {
   if (!text) return '';
 
@@ -85,11 +101,8 @@ export function krutidevToUnicode(text: string): string {
 
   s = s.split("\uFFFF").join("");
 
-  for (let i = 0; i < ARRAY_ONE.length; i++) {
-    s = s.split(ARRAY_ONE[i]).join(ARRAY_TWO[i]);
-  }
-
-  return s;
+  // O(N) linear time replacement engine instead of O(M * N)
+  return s.replace(KRUTIDEV_REGEX, (matched) => KRUTIDEV_LOOKUP_MAP.get(matched) ?? matched);
 }
 
 export class KrutidevTransliterator implements TransliteratorEngine {
