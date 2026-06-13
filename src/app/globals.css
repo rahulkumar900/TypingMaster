@@ -2,6 +2,21 @@
 @import "tw-animate-css";
 @import "shadcn/tailwind.css";
 
+@font-face {
+  font-family: 'Annapurna SIL';
+  src: url('/fonts/AnnapurnaSIL-Regular.ttf') format('truetype');
+  font-weight: normal;
+  font-style: normal;
+}
+
+@font-face {
+  font-family: 'Kruti Dev 010';
+  /* Attempt local system fonts for Kruti Dev */
+  src: local('Kruti Dev 010'), local('Krutidev 010'), local('DevLys 010');
+  font-weight: normal;
+  font-style: normal;
+}
+
 @theme inline {
   --font-sans: var(--font-outfit), sans-serif;
   --font-mono: var(--font-space-mono), monospace;
@@ -14,6 +29,7 @@
 :root {
   /* Offline font fallbacks definition */
   --font-outfit: "Outfit", system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+  --font-space-mono: "Space Mono", ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
   --font-space-mono: "Space Mono", ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
 
   /* Dynamic CSS Variables driven by themes */

@@ -1,0 +1,126 @@
+{
+  "system": {
+    "fileVersion": "7.0",
+    "keymanDeveloperVersion": "18.0.235"
+  },
+  "options": {
+    "readmeFile": "readme.htm",
+    "licenseFile": "LICENSE.md",
+    "welcomeFile": "welcome.htm"
+  },
+  "info": {
+    "copyright": {
+      "description": "© SIL Global"
+    },
+    "name": {
+      "description": "Remington GAIL (SIL)"
+    },
+    "description": {
+      "description": "<p>This keyboard is an implementation of the Remington-GAIL typewriter\nlayout for inputting Unicode-compliant Devanagari. The layout was\ndesigned for Hindi input, but may suffice for other Devanagari script\nbased languages. It faithfully implements the default and Shift keys of\nthe legacy Remington-GAIL layout on a standard QWERTY keyboard. It also\nprovides a number of additional characters from the APS Saral layout\nusing the AltGr (Right Alt) and AltGR+Shift key modifiers.</p>"
+    },
+    "version": {
+      "description": "1.1"
+    }
+  },
+  "files": [
+    {
+      "name": "remington_gail.kmx",
+      "description": ""
+    },
+    {
+      "name": "remington_gail.js",
+      "description": ""
+    },
+    {
+      "name": "remington_gail.kvk",
+      "description": ""
+    },
+    {
+      "name": "readme.htm",
+      "description": ""
+    },
+    {
+      "name": "LayoutU_.png",
+      "description": ""
+    },
+    {
+      "name": "LayoutU_RA.png",
+      "description": ""
+    },
+    {
+      "name": "LayoutU_S.png",
+      "description": ""
+    },
+    {
+      "name": "welcome.htm",
+      "description": ""
+    },
+    {
+      "name": "LayoutU_SRA.png",
+      "description": ""
+    },
+    {
+      "name": "zwj.bmp",
+      "description": ""
+    },
+    {
+      "name": "zwnj.bmp",
+      "description": ""
+    },
+    {
+      "name": "AnnapurnaSIL_README.txt",
+      "description": ""
+    },
+    {
+      "name": "AnnapurnaSIL-Bold.ttf",
+      "description": ""
+    },
+    {
+      "name": "AnnapurnaSIL-Regular.ttf",
+      "description": ""
+    },
+    {
+      "name": "FONTLOG.txt",
+      "description": ""
+    },
+    {
+      "name": "OFL.txt",
+      "description": ""
+    },
+    {
+      "name": "OFL-FAQ.txt",
+      "description": ""
+    },
+    {
+      "name": "removed-glyph-q-key.png",
+      "description": ""
+    },
+    {
+      "name": "LICENSE.md",
+      "description": ""
+    },
+    {
+      "name": "kmp.inf",
+      "description": ""
+    },
+    {
+      "name": "kmp.json",
+      "description": ""
+    }
+  ],
+  "keyboards": [
+    {
+      "displayFont": "AnnapurnaSIL-Regular.ttf",
+      "oskFont": "AnnapurnaSIL-Regular.ttf",
+      "name": "Remington GAIL (SIL)",
+      "id": "remington_gail",
+      "version": "1.1",
+      "languages": [
+        {
+          "name": "Hindi",
+          "id": "hi"
+        }
+      ]
+    }
+  ]
+}

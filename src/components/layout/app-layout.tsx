@@ -324,6 +324,11 @@ export function AppLayout({
         isOpen={isSettingsOpen}
         onClose={() => setIsSettingsOpen(false)}
         languageId={config.languageId}
+        layoutId={config.layoutId}
+        onLayoutIdChange={(lId) => {
+          config.setLayoutId(lId);
+          config.saveConfig({ layoutId: lId });
+        }}
         fontId={config.fontId}
         onFontIdChange={(fId) => {
           config.setFontId(fId);

@@ -526,6 +526,7 @@ export function Lobby1v1View({ user, config }: Lobby1v1ViewProps) {
             <TypingArena
               key={resetKey}
               targetText={targetText}
+              layoutId={config.layoutId as any}
               fontSize={config.fontSize}
               fontFamily={LANGUAGES.find(l => l.id === 'english')?.fonts.find(f => f.id === config.fontId)?.fontFamily || 'monospace'}
               cursorStyle={config.cursorStyle}
@@ -547,7 +548,6 @@ export function Lobby1v1View({ user, config }: Lobby1v1ViewProps) {
               testMode="quotes"
               timeLeft={raceElapsed}
               liveWpm={userWpm}
-              language="english"
             />
           </div>
         </div>

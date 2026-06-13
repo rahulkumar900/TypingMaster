@@ -1,13 +1,14 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo, useCallback } from 'react';
 import Image from 'next/image';
 import { useConfig } from '@/context/config-context';
 import { useAuth } from '@/context/auth-context';
 import { useTypingEngine } from '@/hooks/use-typing-engine';
 import { LANGUAGES } from '@/lib/languages';
 import { TypingArena } from '@/components/typing-arena';
-import { ChevronLeft, ChevronRight, Share2, RefreshCw, Clock, FileText, BookOpen, Sparkles, Settings, AlertTriangle, Keyboard, Globe, X, Check, Ghost, Sliders } from 'lucide-react';
+import { ChevronLeft, ChevronRight, Share2, RefreshCw, Clock, FileText, BookOpen, Sparkles, Settings, AlertTriangle, Keyboard, Globe, X, Check, Ghost, Sliders, ChevronRight as ChevronRightIcon } from 'lucide-react';
+import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
 
 const renderAvatar = (url: string, sizeClass = "w-6 h-6") => {
   if (url && !url.includes('seed=Lakshayyyy') && !url.includes('seed=default')) {
@@ -43,10 +44,12 @@ export function SpeedTestView() {
   const [isCustomTextOpen, setIsCustomTextOpen] = useState(false);
   const [customTextInput, setCustomTextInput] = useState('');
   const [showDetailed, setShowDetailed] = useState(false);
+  const [isCustomizationModalOpen, setIsCustomizationModalOpen] = useState(false);
 
   // Extract config values
   const {
     languageId, setLanguageId,
+    layoutId, setLayoutId,
     fontId, setFontId,
     cursorStyle,
     fontSize,
@@ -55,7 +58,9 @@ export function SpeedTestView() {
     testTimeLimit, setTestTimeLimit,
     wordLimit, setWordLimit,
     customText, setCustomText,
-    disableBackspace,
+    disableBackspace, setDisableBackspace,
+    strictMode, setStrictMode,
+    showKeyboard, setShowKeyboard,
     govtExamType, setGovtExamType,
     suddenDeath,
     ghostWpm,
@@ -74,7 +79,8 @@ export function SpeedTestView() {
     gameState, timeLeft, resetCounter,
     wpm, rawWpm, accuracy,
     typedLength,
-    resetTest, startTest, completeTest, handleProgress, handleKeystroke,
+    wpmHistory, rawWpmHistory, timeHistory,
+    resetTest, startTest, completeTest, handleProgress, handleKeystroke, loadMoreZenWords,
     getCharacterStats
   } = engine;
 
@@ -98,6 +104,25 @@ export function SpeedTestView() {
     }
   }, [gameState]);
 
+
+  // Generate Chart Data
+  const chartData = useMemo(() => {
+    return timeHistory.map((time, idx) => ({
+      time: time,
+      wpm: wpmHistory[idx] || 0,
+      raw: rawWpmHistory[idx] || 0,
+    }));
+  }, [timeHistory, wpmHistory, rawWpmHistory]);
+
+  const calculateConsistency = useCallback(() => {
+    if (wpmHistory.length < 2) return 100;
+    const mean = wpmHistory.reduce((a, b) => a + b, 0) / wpmHistory.length;
+    if (mean === 0) return 0;
+    const variance = wpmHistory.reduce((a, b) => a + Math.pow(b - mean, 2), 0) / wpmHistory.length;
+    const stdDev = Math.sqrt(variance);
+    const cv = stdDev / mean;
+    return Math.max(0, Math.round((1 - cv) * 100));
+  }, [wpmHistory]);
 
   // Calculate ghost pacer progress
   let elapsedTime = 0;
@@ -239,65 +264,105 @@ export function SpeedTestView() {
               </button>
             </div>
           ) : (
-            /* Detailed Scorecard View */
-            <div className="flex flex-col items-center justify-center w-full max-w-[960px] gap-10">
-              {/* Big three + raw metrics row */}
-              <div className="flex flex-wrap justify-center items-baseline gap-6 sm:gap-[60px] md:gap-[90px] font-sans px-4">
-                <div className="flex flex-col items-start">
-                  <span className="text-[12px] sm:text-[14px] text-zinc-500 uppercase tracking-widest">WPM</span>
-                  <span className="text-[48px] sm:text-5xl md:text-[64px] font-extrabold text-[#d1d0c5] leading-none mt-1 font-sans">{wpm}</span>
+            /* Monkeytype-Style Detailed Scorecard View */
+            <div className="flex flex-col items-center justify-center w-full max-w-[1000px] gap-8 animate-fadeIn">
+              
+              {/* Top Section: Chart & Big Stats */}
+              <div className="flex flex-col md:flex-row gap-8 items-center md:items-stretch w-full px-4">
+                
+                {/* Left Column: WPM & Acc */}
+                <div className="flex flex-row md:flex-col gap-8 md:gap-4 justify-center items-end md:items-start min-w-[140px]">
+                  <div className="flex flex-col items-start">
+                    <span className="text-[28px] md:text-[32px] text-zinc-500 tracking-tight leading-none mb-1">wpm</span>
+                    <span className="text-[54px] md:text-[64px] font-bold text-[var(--accent-color)] leading-none">{wpm}</span>
+                  </div>
+                  <div className="flex flex-col items-start">
+                    <span className="text-[28px] md:text-[32px] text-zinc-500 tracking-tight leading-none mb-1">acc</span>
+                    <span className="text-[54px] md:text-[64px] font-bold text-[var(--accent-color)] leading-none">{Math.round(parseFloat(accuracy))}%</span>
+                  </div>
                 </div>
-                <div className="flex flex-col items-start">
-                  <span className="text-[12px] sm:text-[14px] text-zinc-500 uppercase tracking-widest">Accuracy</span>
-                  <span className="text-[48px] sm:text-5xl md:text-[64px] font-extrabold text-[#d1d0c5] leading-none mt-1 font-sans">
-                    {Math.round(parseFloat(accuracy))}%
-                  </span>
-                </div>
-                <div className="flex flex-col items-start">
-                  <span className="text-[12px] sm:text-[14px] text-zinc-500 uppercase tracking-widest">Seconds</span>
-                  <span className="text-[48px] sm:text-5xl md:text-[64px] font-extrabold text-[#d1d0c5] leading-none mt-1 font-sans">
-                    {testMode === 'time' ? testTimeLimit : timeLeft}
-                  </span>
-                </div>
-                <div className="flex flex-col items-start">
-                  <span className="text-[12px] sm:text-[14px] text-zinc-500 uppercase tracking-widest">Raw</span>
-                  <span className="text-[48px] sm:text-5xl md:text-[64px] font-extrabold text-[#d1d0c5] leading-none mt-1 font-sans">{rawWpm}</span>
+                
+                {/* Right Column: Chart */}
+                <div className="flex-1 h-[220px] w-full min-w-0 bg-zinc-950/20 rounded-xl p-4 border border-zinc-800/50">
+                  <ResponsiveContainer width="100%" height="100%">
+                    <LineChart data={chartData} margin={{ top: 5, right: 10, left: -20, bottom: 0 }}>
+                      <CartesianGrid strokeDasharray="3 3" stroke="#27272a" vertical={false} />
+                      <XAxis 
+                        dataKey="time" 
+                        stroke="#52525b" 
+                        tick={{ fill: '#71717a', fontSize: 12, fontFamily: 'monospace' }} 
+                        tickMargin={10} 
+                        minTickGap={20}
+                        tickFormatter={(val) => val.toString()}
+                      />
+                      <YAxis 
+                        stroke="#52525b" 
+                        tick={{ fill: '#71717a', fontSize: 12, fontFamily: 'monospace' }} 
+                        width={40}
+                      />
+                      <Tooltip 
+                        contentStyle={{ backgroundColor: '#09090b', border: '1px solid #27272a', borderRadius: '8px', color: '#e4e4e7', fontFamily: 'monospace' }}
+                        itemStyle={{ color: '#e4e4e7' }}
+                        labelStyle={{ color: '#a1a1aa', marginBottom: '4px' }}
+                      />
+                      <Line 
+                        type="monotone" 
+                        dataKey="wpm" 
+                        name="WPM"
+                        stroke="var(--accent-color)" 
+                        strokeWidth={3} 
+                        dot={{ r: 3, fill: 'var(--accent-color)', strokeWidth: 0 }} 
+                        activeDot={{ r: 5, fill: 'var(--accent-color)', stroke: '#fff', strokeWidth: 2 }} 
+                      />
+                      <Line 
+                        type="monotone" 
+                        dataKey="raw" 
+                        name="Raw"
+                        stroke="#52525b" 
+                        strokeWidth={2} 
+                        dot={false} 
+                        activeDot={{ r: 4, fill: '#52525b', stroke: '#fff', strokeWidth: 1 }}
+                      />
+                    </LineChart>
+                  </ResponsiveContainer>
                 </div>
               </div>
 
-              {/* Character Breakdown Section */}
-              <div className="w-full flex flex-col items-center sm:items-start max-w-[800px] mt-8 sm:mt-6 px-4">
-                <h4 className="text-[14px] sm:text-[16px] text-zinc-400 font-bold uppercase tracking-wider mb-4 font-sans">Characters</h4>
-                <div className="flex flex-wrap flex-row justify-center sm:justify-between items-baseline w-full gap-6 sm:gap-[60px] md:gap-[90px] font-sans">
-                  <div className="flex flex-col items-start">
-                    <span className="text-[12px] sm:text-[14px] text-zinc-500 uppercase tracking-widest">Correct</span>
-                    <span className="text-[32px] sm:text-5xl md:text-[64px] font-extrabold text-[#d1d0c5] leading-none mt-1 font-sans">
-                      {getCharacterStats().correct}
-                    </span>
-                  </div>
-                  <div className="flex flex-col items-start">
-                    <span className="text-[12px] sm:text-[14px] text-zinc-500 uppercase tracking-widest">Incorrect</span>
-                    <span className="text-[32px] sm:text-5xl md:text-[64px] font-extrabold text-[#d1d0c5] leading-none mt-1 font-sans">
-                      {getCharacterStats().incorrect}
-                    </span>
-                  </div>
-                  <div className="flex flex-col items-start">
-                    <span className="text-[12px] sm:text-[14px] text-zinc-500 uppercase tracking-widest">Extra</span>
-                    <span className="text-[32px] sm:text-5xl md:text-[64px] font-extrabold text-[#d1d0c5] leading-none mt-1 font-sans">
-                      {getCharacterStats().extra}
-                    </span>
-                  </div>
-                  <div className="flex flex-col items-start">
-                    <span className="text-[12px] sm:text-[14px] text-zinc-500 uppercase tracking-widest">Missed</span>
-                    <span className="text-[32px] sm:text-5xl md:text-[64px] font-extrabold text-[#d1d0c5] leading-none mt-1 font-sans">
-                      {getCharacterStats().missed}
-                    </span>
-                  </div>
+              {/* Bottom Section: Secondary Stats */}
+              <div className="grid grid-cols-2 md:grid-cols-5 gap-6 md:gap-4 w-full px-4 mt-2">
+                <div className="flex flex-col items-start">
+                  <span className="text-[13px] text-zinc-500 mb-1">test type</span>
+                  <span className="text-[20px] text-zinc-300 leading-tight">
+                    {testMode} {testMode === 'time' ? testTimeLimit : wordLimit}
+                    <br/>
+                    <span className="text-[12px] text-zinc-500">{config.languageId}</span>
+                  </span>
+                </div>
+                <div className="flex flex-col items-start">
+                  <span className="text-[13px] text-zinc-500 mb-1">raw</span>
+                  <span className="text-[32px] text-zinc-300 leading-none">{rawWpm}</span>
+                </div>
+                <div className="flex flex-col items-start">
+                  <span className="text-[13px] text-zinc-500 mb-1">characters</span>
+                  <span className="text-[24px] md:text-[28px] text-zinc-300 leading-none tracking-tight">
+                    {getCharacterStats().correct}<span className="text-zinc-600">/</span>
+                    {getCharacterStats().incorrect}<span className="text-zinc-600">/</span>
+                    {getCharacterStats().extra}<span className="text-zinc-600">/</span>
+                    {getCharacterStats().missed}
+                  </span>
+                </div>
+                <div className="flex flex-col items-start">
+                  <span className="text-[13px] text-zinc-500 mb-1">consistency</span>
+                  <span className="text-[32px] text-zinc-300 leading-none">{calculateConsistency()}%</span>
+                </div>
+                <div className="flex flex-col items-start">
+                  <span className="text-[13px] text-zinc-500 mb-1">time</span>
+                  <span className="text-[32px] text-zinc-300 leading-none">{testMode === 'time' ? testTimeLimit : (elapsedTime || 0)}s</span>
                 </div>
               </div>
 
               {/* Simple Controls row */}
-              <div className="flex items-center justify-center gap-6 sm:gap-12 mt-6">
+              <div className="flex items-center justify-center gap-6 sm:gap-12 mt-8">
                 <button 
                   onClick={() => setShowDetailed(false)}
                   className="w-[80px] h-[48px] sm:w-[108px] sm:h-[56px] rounded-[30px] border border-[var(--border-active)] hover:border-[var(--accent-color)] bg-[var(--bg-widget)]/60 hover:bg-[var(--accent-color)]/10 shadow-[0_4px_12px_rgba(0,0,0,0.15)] flex items-center justify-center transition-all duration-300 text-[var(--text-muted)] hover:text-[var(--accent-color)] cursor-pointer active:scale-95"
@@ -337,8 +402,9 @@ export function SpeedTestView() {
         <div className="flex flex-col items-center flex-1 animate-fadeIn w-full min-h-0 py-8">
           
           {/* Progress Track */}
-          <div className="w-full max-w-[800px] mx-auto mb-auto select-none shrink-0 px-6 sm:px-0">
-            <div className="relative w-full">
+          {!showKeyboard && (
+            <div className="w-full max-w-[800px] mx-auto mb-auto select-none shrink-0 px-6 sm:px-0">
+              <div className="relative w-full">
             {/* The floating user card */}
             <div 
               className="absolute -top-8 flex flex-col items-center transition-all duration-150 ease-out z-10 w-16"
@@ -396,6 +462,7 @@ export function SpeedTestView() {
             </div>
             </div>
           </div>
+          )}
 
           {/* Centered Typing Arena */}
           <div className="w-full shrink-0 flex flex-col justify-center my-8 md:my-10 min-h-[160px] relative">
@@ -414,11 +481,15 @@ export function SpeedTestView() {
               onProgress={handleProgress}
               resetCounter={resetCounter}
               testMode={testMode}
+              onLoadMoreWords={loadMoreZenWords}
               disableBackspace={disableBackspace}
+              strictMode={strictMode}
+              showKeyboard={showKeyboard}
               timeLeft={timeLeft}
               liveWpm={wpm}
               ghostWpm={ghostWpm}
-              language={languageId}
+              layoutId={config.layoutId as any}
+              strictMode={config.suddenDeath}
             />
 
             {/* Active Timer Display Below Arena */}
@@ -649,6 +720,55 @@ export function SpeedTestView() {
                   <span>{LANGUAGES.find(l => l.id === languageId)?.name.split(' ')[0] || 'English'}</span>
                 </button>
               </div>
+
+              {/* Pill 5: Layout Selection (only if language has multiple layouts) */}
+              {(() => {
+                const currentLang = LANGUAGES.find(l => l.id === languageId);
+                if (currentLang && currentLang.layouts && currentLang.layouts.length > 1) {
+                  return (
+                    <div className="flex items-center h-[46px] p-[2px] rounded-full border border-zinc-800 bg-zinc-950/30 backdrop-blur-sm select-none gap-[6px] transition-all duration-300 hidden md:flex">
+                      {currentLang.layouts.map(layout => {
+                        // Shorten names for the pill UI
+                        let shortName = layout.name;
+                        if (shortName === 'Mangal Remington GAIL') shortName = 'GAIL';
+                        if (shortName === 'Mangal InScript') shortName = 'InScript';
+                        if (shortName === 'Krutidev 010') shortName = 'Krutidev';
+                        
+                        return (
+                          <button
+                            key={layout.id}
+                            onClick={() => {
+                              setLayoutId(layout.id);
+                              saveConfig({ layoutId: layout.id });
+                              resetTest();
+                            }}
+                            className={`h-[38px] px-3.5 rounded-full flex items-center justify-center transition-all cursor-pointer text-[11px] font-bold uppercase ${
+                              config.layoutId === layout.id
+                                ? 'bg-zinc-800 text-white font-bold'
+                                : 'text-zinc-500 hover:text-white'
+                            }`}
+                            title={layout.name}
+                          >
+                            {shortName}
+                          </button>
+                        );
+                      })}
+                    </div>
+                  );
+                }
+                return null;
+              })()}
+
+              {/* Pill 6: Customization Modal Trigger */}
+              <div className="flex items-center h-[46px] p-[2px] rounded-full border border-zinc-800 bg-zinc-950/30 backdrop-blur-sm select-none gap-[6px] transition-all duration-300">
+                <button
+                  onClick={() => setIsCustomizationModalOpen(true)}
+                  className="w-[38px] h-[38px] rounded-full flex items-center justify-center transition-colors duration-200 cursor-pointer text-zinc-500 hover:text-white"
+                  title="Advanced Customization"
+                >
+                  <Settings className="w-[18px] h-[18px]" />
+                </button>
+              </div>
             </div>
 
             {/* Subtle restart instruction */}
@@ -706,7 +826,13 @@ export function SpeedTestView() {
                   onClick={() => {
                     setLanguageId(lang.id);
                     setFontId(lang.fonts[0].id);
-                    saveConfig({ languageId: lang.id, fontId: lang.fonts[0].id });
+                    const newLayoutId = lang.layouts[0].id;
+                    setLayoutId(newLayoutId);
+                    saveConfig({ 
+                      languageId: lang.id, 
+                      fontId: lang.fonts[0].id,
+                      layoutId: newLayoutId 
+                    });
                     resetTest();
                     setIsLanguageModalOpen(false);
                   }}
@@ -918,6 +1044,97 @@ export function SpeedTestView() {
               </button>
             </div>
           </form>
+        </div>
+      )}
+
+      {/* Customization Modal */}
+      {isCustomizationModalOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm animate-in fade-in duration-200">
+          <div className="bg-[#1a1a1a] border border-zinc-800 rounded-xl w-full max-w-sm overflow-hidden shadow-2xl flex flex-col animate-in zoom-in-95 duration-200">
+            <div className="flex justify-between items-center p-4 border-b border-zinc-800/50 bg-[#1e1e1e]">
+              <h3 className="font-bold text-white font-sans flex items-center gap-2">
+                <Settings className="w-4 h-4 text-zinc-400" />
+                Customization
+              </h3>
+              <button 
+                onClick={() => setIsCustomizationModalOpen(false)}
+                className="p-1 rounded hover:bg-zinc-800 text-zinc-400 hover:text-white transition-colors cursor-pointer"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+            
+            <div className="p-4 flex flex-col gap-4">
+              <label className="flex items-center justify-between cursor-pointer group">
+                <span className="text-sm font-medium text-zinc-300 group-hover:text-white transition-colors">Show Virtual Keyboard</span>
+                <div className={`w-10 h-6 rounded-full p-1 transition-colors ${showKeyboard ? 'bg-[var(--accent-color)]' : 'bg-zinc-700'}`}>
+                  <div className={`w-4 h-4 rounded-full bg-white transition-transform ${showKeyboard ? 'translate-x-4' : 'translate-x-0'}`} />
+                </div>
+                <input 
+                  type="checkbox" 
+                  className="hidden" 
+                  checked={showKeyboard} 
+                  onChange={(e) => {
+                    const val = e.target.checked;
+                    setShowKeyboard(val);
+                    saveConfig({ showKeyboard: val });
+                  }} 
+                />
+              </label>
+
+              <label className="flex items-center justify-between cursor-pointer group">
+                <div className="flex flex-col">
+                  <span className="text-sm font-medium text-zinc-300 group-hover:text-white transition-colors">Allow Backspace</span>
+                  <span className="text-xs text-zinc-500">Allow correcting mistakes</span>
+                </div>
+                <div className={`w-10 h-6 rounded-full p-1 transition-colors ${!disableBackspace ? 'bg-[var(--accent-color)]' : 'bg-zinc-700'}`}>
+                  <div className={`w-4 h-4 rounded-full bg-white transition-transform ${!disableBackspace ? 'translate-x-4' : 'translate-x-0'}`} />
+                </div>
+                <input 
+                  type="checkbox" 
+                  className="hidden" 
+                  checked={!disableBackspace} 
+                  onChange={(e) => {
+                    const val = !e.target.checked;
+                    setDisableBackspace(val);
+                    saveConfig({ disableBackspace: val });
+                  }} 
+                />
+              </label>
+
+              <label className="flex items-center justify-between cursor-pointer group">
+                <div className="flex flex-col">
+                  <span className="text-sm font-medium text-zinc-300 group-hover:text-white transition-colors">Strict Mode</span>
+                  <span className="text-xs text-zinc-500">Block incorrect keystrokes</span>
+                </div>
+                <div className={`w-10 h-6 rounded-full p-1 transition-colors ${strictMode ? 'bg-[var(--accent-color)]' : 'bg-zinc-700'}`}>
+                  <div className={`w-4 h-4 rounded-full bg-white transition-transform ${strictMode ? 'translate-x-4' : 'translate-x-0'}`} />
+                </div>
+                <input 
+                  type="checkbox" 
+                  className="hidden" 
+                  checked={strictMode} 
+                  onChange={(e) => {
+                    const val = e.target.checked;
+                    setStrictMode(val);
+                    saveConfig({ strictMode: val });
+                  }} 
+                />
+              </label>
+            </div>
+            
+            <div className="p-4 border-t border-zinc-800/50 bg-[#1e1e1e] flex justify-end">
+              <button 
+                onClick={() => {
+                  setIsCustomizationModalOpen(false);
+                  resetTest();
+                }}
+                className="px-4 py-2 bg-[var(--accent-color)] hover:bg-[var(--accent-color)]/90 text-white font-bold rounded-lg transition-colors cursor-pointer text-sm shadow-lg shadow-[var(--accent-color)]/20"
+              >
+                Done
+              </button>
+            </div>
+          </div>
         </div>
       )}
     </div>

@@ -1,0 +1,41 @@
+[Package]
+Version=7.0
+ExecuteProgram=
+ReadMeFile=readme.htm
+[StartMenu]
+Path=
+Create=0
+AddUninstallEntry=0
+[Info]
+Name="Remington GAIL (SIL)",""
+Copyright="© SIL Global",""
+Version="1.1",""
+[Files]
+0="","remington_gail.kmx",0
+1="","remington_gail.js",0
+2="","remington_gail.kvk",0
+3="","readme.htm",0
+4="","LayoutU_.png",0
+5="","LayoutU_RA.png",0
+6="","LayoutU_S.png",0
+7="","welcome.htm",0
+8="","LayoutU_SRA.png",0
+9="","zwj.bmp",0
+10="","zwnj.bmp",0
+11="","AnnapurnaSIL_README.txt",0
+12="","AnnapurnaSIL-Bold.ttf",0
+13="","AnnapurnaSIL-Regular.ttf",0
+14="","FONTLOG.txt",0
+15="","OFL.txt",0
+16="","OFL-FAQ.txt",0
+17="","removed-glyph-q-key.png",0
+18="","LICENSE.md",0
+19="","kmp.inf",0
+20="","kmp.json",0
+[Keyboard0]
+Name=Remington GAIL (SIL)
+ID=remington_gail
+Version=1.1
+OSKFont=AnnapurnaSIL-Regular.ttf
+DisplayFont=AnnapurnaSIL-Regular.ttf
+Language0=hi,Hindi

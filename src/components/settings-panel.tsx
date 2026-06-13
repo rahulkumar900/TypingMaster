@@ -26,6 +26,8 @@ interface SettingsPanelProps {
   languageId: string;
   fontId: string;
   onFontIdChange: (fontId: string) => void;
+  layoutId: string;
+  onLayoutIdChange: (layoutId: string) => void;
 }
 
 export const SettingsPanel: React.FC<SettingsPanelProps> = ({
@@ -49,7 +51,9 @@ export const SettingsPanel: React.FC<SettingsPanelProps> = ({
   onGhostWpmChange,
   languageId,
   fontId,
-  onFontIdChange
+  onFontIdChange,
+  layoutId,
+  onLayoutIdChange
 }) => {
   if (!isOpen) return null;
 
@@ -163,11 +167,36 @@ export const SettingsPanel: React.FC<SettingsPanelProps> = ({
             </h3>
 
             {/* Font / Layout Selection based on active language */}
-            <div className="bg-[var(--bg-panel)] border border-[var(--border-subtle)] rounded-xl p-3 flex flex-col gap-2">
-              <span className="text-[11px] text-[var(--text-muted-alt)] font-semibold uppercase tracking-wider">Specific Exam Layout (Font)</span>
+            <div className="bg-[var(--bg-panel)] border border-[var(--border-subtle)] rounded-xl p-3 flex flex-col gap-4">
+              
+              {/* Keyboard Layout Selector */}
               <div className="flex flex-col gap-2">
-                {LANGUAGES.find(l => l.id === languageId)?.fonts.map(font => (
-                  <button
+                <span className="text-[11px] text-[var(--text-muted-alt)] font-semibold uppercase tracking-wider">Keyboard Layout Mapping</span>
+                <div className="flex flex-col gap-2">
+                  {LANGUAGES.find(l => l.id === languageId)?.layouts?.map(layout => (
+                    <button
+                      key={layout.id}
+                      onClick={() => onLayoutIdChange(layout.id)}
+                      className={`flex items-center justify-between p-2.5 rounded-lg border transition-all cursor-pointer text-left ${
+                        layoutId === layout.id
+                          ? 'border-[var(--accent-color)] bg-[var(--bg-panel)]'
+                          : 'border-[var(--border-subtle)] hover:border-[var(--border-active)] bg-[var(--bg-panel)]'
+                      }`}
+                    >
+                      <span className={`text-[13px] font-semibold ${layoutId === layout.id ? 'text-[var(--accent-color)]' : 'text-[var(--text-main)]'}`}>
+                        {layout.name}
+                      </span>
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              {/* Exam Font Selector */}
+              <div className="flex flex-col gap-2 pt-2 border-t border-[var(--border-subtle)]">
+                <span className="text-[11px] text-[var(--text-muted-alt)] font-semibold uppercase tracking-wider">Display Font</span>
+                <div className="flex flex-col gap-2">
+                  {LANGUAGES.find(l => l.id === languageId)?.fonts.map(font => (
+                    <button
                     key={font.id}
                     onClick={() => onFontIdChange(font.id)}
                     className={`flex items-center justify-between p-2.5 rounded-lg border transition-all cursor-pointer text-left ${
@@ -187,6 +216,7 @@ export const SettingsPanel: React.FC<SettingsPanelProps> = ({
               </div>
             </div>
           </div>
+        </div>
 
 
           {/* Interface Toggles */}

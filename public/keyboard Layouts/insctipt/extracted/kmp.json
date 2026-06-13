@@ -1,0 +1,86 @@
+{
+  "system": {
+    "keymanDeveloperVersion": "11.0.1356.0",
+    "fileVersion": "7.0"
+  },
+  "options": {
+    "readmeFile": "readme.htm"
+  },
+  "info": {
+    "name": {
+      "description": "Devanagari - INSCRIPT Basic"
+    },
+    "copyright": {
+      "description": "(c) 2009-2019 SIL International"
+    },
+    "author": {
+      "description": ""
+    },
+    "version": {
+      "description": "1.1"
+    }
+  },
+  "files": [
+    {
+      "name": "basic_kbdindev.kmx",
+      "description": ""
+    },
+    {
+      "name": "basic_kbdindev.js",
+      "description": ""
+    },
+    {
+      "name": "basic_kbdindev.kvk",
+      "description": ""
+    },
+    {
+      "name": "readme.htm",
+      "description": ""
+    },
+    {
+      "name": "LayoutU_.png",
+      "description": "File LayoutU_.png"
+    },
+    {
+      "name": "LayoutU_RA.png",
+      "description": "File LayoutU_RA.png"
+    },
+    {
+      "name": "LayoutU_S.png",
+      "description": "File LayoutU_S.png"
+    },
+    {
+      "name": "LayoutU_SLC.png",
+      "description": "File LayoutU_SLC.png"
+    },
+    {
+      "name": "LayoutU_SRA.png",
+      "description": "File LayoutU_SRA.png"
+    },
+    {
+      "name": "welcome.htm",
+      "description": "File welcome.htm"
+    },
+    {
+      "name": "kmp.inf",
+      "description": "Package information"
+    },
+    {
+      "name": "kmp.json",
+      "description": "Package information (JSON)"
+    }
+  ],
+  "keyboards": [
+    {
+      "name": "Devanagari - INSCRIPT Basic",
+      "id": "basic_kbdindev",
+      "version": "1.1",
+      "languages": [
+        {
+          "name": "Hindi",
+          "id": "hi"
+        }
+      ]
+    }
+  ]
+}

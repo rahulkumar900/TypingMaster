@@ -758,6 +758,7 @@ export function SphereView({ user, config, initialRoomId }: SphereViewProps) {
               targetText={roomPassage}
               fontSize={config.fontSize}
               fontFamily={LANGUAGES.find(l => l.id === 'english')?.fonts.find(f => f.id === config.fontId)?.fontFamily || 'monospace'}
+              layoutId={config.layoutId as any}
               cursorStyle={config.cursorStyle}
               strictMode={true}
               synth={config.synth}
@@ -770,7 +771,6 @@ export function SphereView({ user, config, initialRoomId }: SphereViewProps) {
               testMode={createMode === 'govt-exam' ? 'govt-exam' : createMode === 'words' ? 'words' : 'time'}
               timeLeft={createMode === 'time' ? Math.max(0, createLimit - raceElapsed) : raceElapsed}
               liveWpm={userWpm}
-              language="english"
             />
           </div>
         </div>

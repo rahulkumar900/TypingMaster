@@ -185,5 +185,9 @@ export const BENGALI_MAP: Record<string, string> = {
   "&": "\u2019", // right single quote  (Shift+7)
   "*": "\u201C", // left double quote   (Shift+8)
   "(": "(",      // open bracket        (Shift+9)
-  ")": ")",      // close bracket       (Shift+0)};
-}
+  ")": ")"       // close bracket       (Shift+0)};
+};
+
+export const BENGALI_BIJOY_MAP: Record<string, string> = {
+  // Placeholder for Bengali Bijoy layout
+};

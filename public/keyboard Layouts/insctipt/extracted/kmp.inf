@@ -1,0 +1,31 @@
+[Package]
+Version=7.0
+ExecuteProgram=
+ReadMeFile=readme.htm
+[StartMenu]
+Path=
+Create=0
+AddUninstallEntry=0
+[Info]
+Name="Devanagari - INSCRIPT Basic",""
+Copyright="(c) 2009-2019 SIL International",""
+Author="",""
+Version="1.1",""
+[Files]
+0="","basic_kbdindev.kmx",0
+1="","basic_kbdindev.js",0
+2="","basic_kbdindev.kvk",0
+3="","readme.htm",0
+4="File LayoutU_.png","LayoutU_.png",0
+5="File LayoutU_RA.png","LayoutU_RA.png",0
+6="File LayoutU_S.png","LayoutU_S.png",0
+7="File LayoutU_SLC.png","LayoutU_SLC.png",0
+8="File LayoutU_SRA.png","LayoutU_SRA.png",0
+9="File welcome.htm","welcome.htm",0
+10="Package information","kmp.inf",0
+11="Package information (JSON)","kmp.json",0
+[Keyboard0]
+Name=Devanagari - INSCRIPT Basic
+ID=basic_kbdindev
+Version=1.1
+Language0=hi,Hindi

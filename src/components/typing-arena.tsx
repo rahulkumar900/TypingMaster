@@ -1,9 +1,10 @@
 'use client';
 
 import React, { useRef, useEffect, useState } from 'react';
-import { Keyboard } from 'lucide-react';
+import { Keyboard, Key } from 'lucide-react';
 import { TypingAudioSynthesizer } from '@/lib/synth';
-import { TransliteratorEngine, createTransliterator, needsTransliteration } from '@/lib/transliterate';
+import { TransliteratorEngine, createTypingEngine, needsTransliteration, LayoutId } from '@/lib/transliterate';
+import { KeyboardVisualizer } from './keyboard-visualizer';
 
 interface TypingArenaProps {
   targetText: string;
@@ -25,8 +26,9 @@ interface TypingArenaProps {
   timeLeft?: number;
   liveWpm?: number;
   ghostWpm?: number;
-  language?: string;  // e.g. 'hindi', 'english'
+  layoutId?: LayoutId; // e.g. 'MANGAL_INSCRIPT', 'KRUTIDEV_010'
   strictMode?: boolean; // If true, completely blocks incorrect keystrokes. Default false.
+  showKeyboard?: boolean; // If true, displays the virtual keyboard
 }
 
 export const TypingArena: React.FC<TypingArenaProps> = ({
@@ -49,8 +51,9 @@ export const TypingArena: React.FC<TypingArenaProps> = ({
   timeLeft,
   liveWpm,
   ghostWpm = 0,
-  language = 'english',
+  layoutId = 'OS_DEFAULT',
   strictMode = false,
+  showKeyboard = false,
 }) => {
   // typedVal is used for caret positioning (derived from actual textarea DOM value)
   const [typedVal, setTypedVal] = useState('');
@@ -64,12 +67,14 @@ export const TypingArena: React.FC<TypingArenaProps> = ({
   const startTimeRef = useRef<number | null>(null);
   const isComposingRef = useRef(false); // tracks IME composition state
   // Phonetic transliteration engine (used when OS IME is not available)
-  const transliteratorRef = useRef<TransliteratorEngine | null>(createTransliterator(language));
-  const usePhonetic = needsTransliteration(language);
+  const transliteratorRef = useRef<TransliteratorEngine | null>(
+    createTypingEngine({ id: layoutId, backspaceAllowed: !disableBackspace })
+  );
+  const usePhonetic = needsTransliteration(layoutId);
 
   useEffect(() => {
-    transliteratorRef.current = createTransliterator(language);
-  }, [language]);
+    transliteratorRef.current = createTypingEngine({ id: layoutId, backspaceAllowed: !disableBackspace });
+  }, [layoutId, disableBackspace]);
 
   // Focus textarea
   const focusInput = () => {
@@ -256,7 +261,8 @@ export const TypingArena: React.FC<TypingArenaProps> = ({
       const key = e.key;
 
       // Let browser handle these normally
-      if (e.ctrlKey || e.metaKey || e.altKey) return;
+      if (e.ctrlKey || e.metaKey) return;
+      if (e.altKey && key === 'Tab') return;
       if (['Tab', 'ArrowLeft', 'ArrowRight', 'ArrowUp', 'ArrowDown', 'Home', 'End'].includes(key)) return;
 
       e.preventDefault(); // stop the raw Latin char from appearing
@@ -270,9 +276,26 @@ export const TypingArena: React.FC<TypingArenaProps> = ({
         return;
       }
 
-      if (key === ' ') {
+      if (key === ' ' && !e.altKey) {
         synth?.playClick('space');
         const newOutput = transliteratorRef.current?.processKey(' ') || '';
+        if (strictMode) {
+          const targetChars = Array.from(targetText);
+          const newChars = Array.from(newOutput);
+          let isMatch = true;
+          for (let i = 0; i < newChars.length; i++) {
+            if (newChars[i] !== targetChars[i]) {
+              isMatch = false;
+              break;
+            }
+          }
+          if (!isMatch) {
+            synth?.playClick('error');
+            // Revert transliterator internal state
+            transliteratorRef.current?.processKey('Backspace');
+            return;
+          }
+        }
         if (textareaRef.current) textareaRef.current.value = newOutput;
         processInput(newOutput);
         onKeystroke(false);
@@ -280,8 +303,30 @@ export const TypingArena: React.FC<TypingArenaProps> = ({
       }
 
       if (key.length === 1) {
+        let lookupKey = key;
+        if (e.altKey) {
+          lookupKey = `Alt-${key}`;
+        }
+        
         synth?.playClick('char');
-        const newOutput = transliteratorRef.current?.processKey(key) || '';
+        const newOutput = transliteratorRef.current?.processKey(lookupKey) || '';
+        if (strictMode) {
+          const targetChars = Array.from(targetText);
+          const newChars = Array.from(newOutput);
+          let isMatch = true;
+          for (let i = 0; i < newChars.length; i++) {
+            if (newChars[i] !== targetChars[i]) {
+              isMatch = false;
+              break;
+            }
+          }
+          if (!isMatch) {
+            synth?.playClick('error');
+            // Revert transliterator internal state
+            transliteratorRef.current?.processKey('Backspace');
+            return;
+          }
+        }
         if (textareaRef.current) textareaRef.current.value = newOutput;
         processInput(newOutput);
         onKeystroke(false);
@@ -556,14 +601,18 @@ export const TypingArena: React.FC<TypingArenaProps> = ({
         {/* Passage Info Footer */}
         {author && title && (
           <footer 
-            className="flex items-center text-[12px] text-[var(--text-muted)] font-sans mt-1"
+            className="flex items-center justify-between text-[12px] text-[var(--text-muted)] font-sans mt-1"
             id="typing-meta-container"
           >
-            <span className="font-semibold text-[var(--text-muted)]">{title}</span>
-            <span className="mx-2 opacity-50">&bull;</span>
-            <span className="italic opacity-80">{author}</span>
+            <div>
+              <span className="font-semibold text-[var(--text-muted)]">{title}</span>
+              <span className="mx-2 opacity-50">&bull;</span>
+              <span className="italic opacity-80">{author}</span>
+            </div>
           </footer>
         )}
+        
+        {showKeyboard && gameState === 'running' && <KeyboardVisualizer languageId={layoutId as any} fontFamily={fontFamily} />}
       </section>
     );
   }
@@ -609,7 +658,7 @@ export const TypingArena: React.FC<TypingArenaProps> = ({
         <div 
           ref={wordsDisplayRef}
           className="words-container relative flex flex-wrap align-start text-[var(--text-muted)] font-mono select-none overflow-hidden leading-[1.8] tracking-[0.02em]"
-          style={{ fontSize: `min(${fontSize}px, 6vw)`, height: '6.3em' }}
+          style={{ fontSize: `min(${fontSize}px, 6vw)`, height: '6.3em', fontFamily: fontFamily || 'inherit' }}
         >
           <div 
             ref={caretRef}
@@ -647,16 +696,22 @@ export const TypingArena: React.FC<TypingArenaProps> = ({
       </div>
 
       {/* Quote Metadata Footer */}
-      {author && title && (
-        <footer 
-          className="flex items-center mt-6 text-[13px] text-[var(--text-muted)] font-sans"
-          id="typing-meta-container"
-        >
-          <span className="font-medium">{author}</span>
-          <span className="mx-2 opacity-50">&bull;</span>
-          <span className="italic opacity-80">{title}</span>
-        </footer>
-      )}
+      <footer 
+        className="flex items-center justify-between mt-6 text-[13px] text-[var(--text-muted)] font-sans w-full"
+        id="typing-meta-container"
+      >
+        <div>
+          {author && title && (
+            <>
+              <span className="font-medium">{author}</span>
+              <span className="mx-2 opacity-50">&bull;</span>
+              <span className="italic opacity-80">{title}</span>
+            </>
+          )}
+        </div>
+      </footer>
+      
+      {showKeyboard && gameState === 'running' && <KeyboardVisualizer languageId={layoutId as any} fontFamily={fontFamily} />}
     </section>
   );
 };

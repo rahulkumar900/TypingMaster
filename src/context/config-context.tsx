@@ -7,6 +7,8 @@ interface ConfigContextType {
   currentTheme: string;
   languageId: string;
   setLanguageId: React.Dispatch<React.SetStateAction<string>>;
+  layoutId: string;
+  setLayoutId: React.Dispatch<React.SetStateAction<string>>;
   fontId: string;
   setFontId: React.Dispatch<React.SetStateAction<string>>;
   dimMode: boolean;
@@ -29,6 +31,10 @@ interface ConfigContextType {
   setCustomText: React.Dispatch<React.SetStateAction<string>>;
   disableBackspace: boolean;
   setDisableBackspace: React.Dispatch<React.SetStateAction<boolean>>;
+  strictMode: boolean;
+  setStrictMode: React.Dispatch<React.SetStateAction<boolean>>;
+  showKeyboard: boolean;
+  setShowKeyboard: React.Dispatch<React.SetStateAction<boolean>>;
   govtExamType: 'ssc-chsl' | 'ssc-cgl' | 'state-clerk';
   setGovtExamType: React.Dispatch<React.SetStateAction<'ssc-chsl' | 'ssc-cgl' | 'state-clerk'>>;
   suddenDeath: boolean;
@@ -50,6 +56,7 @@ const ConfigContext = createContext<ConfigContextType | undefined>(undefined);
 export function ConfigProvider({ children }: { children: React.ReactNode }) {
   const currentTheme = 'carbon';
   const [languageId, setLanguageId] = useState<string>('english');
+  const [layoutId, setLayoutId] = useState<string>('OS_DEFAULT');
   const [fontId, setFontId] = useState<string>('standard');
   const [dimMode, setDimMode] = useState<boolean>(false);
   const [cursorStyle, setCursorStyle] = useState<'pipe' | 'block' | 'outline' | 'underline'>('pipe');
@@ -63,6 +70,8 @@ export function ConfigProvider({ children }: { children: React.ReactNode }) {
   const [customText, setCustomText] = useState<string>('Type whatever you want to practice here.');
 
   const [disableBackspace, setDisableBackspace] = useState<boolean>(false);
+  const [strictMode, setStrictMode] = useState<boolean>(false);
+  const [showKeyboard, setShowKeyboard] = useState<boolean>(true);
   const [govtExamType, setGovtExamType] = useState<'ssc-chsl' | 'ssc-cgl' | 'state-clerk'>('ssc-chsl');
 
   const [suddenDeath, setSuddenDeath] = useState<boolean>(false);
@@ -90,6 +99,7 @@ export function ConfigProvider({ children }: { children: React.ReactNode }) {
           setDimMode(config.dimMode || false);
           setCursorStyle(config.cursorStyle || 'pipe');
           setLanguageId(config.languageId || config.language || 'english');
+          setLayoutId(config.layoutId || 'OS_DEFAULT');
           setFontId(config.fontId || 'standard');
           setFontSize(config.fontSize || 24);
           setIsSoundOn(config.soundEnabled ?? true);
@@ -98,10 +108,12 @@ export function ConfigProvider({ children }: { children: React.ReactNode }) {
           setTestTimeLimit(config.testTimeLimit || 60);
           setWordLimit(config.wordLimit || 25);
           setCustomText(config.customText || 'Type whatever you want to practice here.');
+          if (config.disableBackspace !== undefined) setDisableBackspace(config.disableBackspace);
+          if (config.strictMode !== undefined) setStrictMode(config.strictMode);
+          if (config.showKeyboard !== undefined) setShowKeyboard(config.showKeyboard);
           setIncludePunctuation(config.includePunctuation ?? false);
           setIncludeNumbers(config.includeNumbers ?? false);
           setShowSpeedometer(config.showSpeedometer ?? true);
-          setDisableBackspace(config.disableBackspace ?? false);
           setGovtExamType(config.govtExamType || 'ssc-chsl');
           setSuddenDeath(config.suddenDeath ?? false);
           setGhostWpm(config.ghostWpm || 0);
@@ -132,6 +144,7 @@ export function ConfigProvider({ children }: { children: React.ReactNode }) {
       currentTheme,
       dimMode,
       languageId,
+      layoutId,
       fontId,
       cursorStyle,
       fontSize,
@@ -145,6 +158,8 @@ export function ConfigProvider({ children }: { children: React.ReactNode }) {
       includeNumbers,
       showSpeedometer,
       disableBackspace,
+      strictMode,
+      showKeyboard,
       govtExamType,
       suddenDeath,
       ghostWpm,
@@ -181,6 +196,7 @@ export function ConfigProvider({ children }: { children: React.ReactNode }) {
     <ConfigContext.Provider value={{
       currentTheme,
       languageId, setLanguageId,
+      layoutId, setLayoutId,
       fontId, setFontId,
       dimMode, setDimMode,
       cursorStyle, setCursorStyle,
@@ -192,6 +208,8 @@ export function ConfigProvider({ children }: { children: React.ReactNode }) {
       wordLimit, setWordLimit,
       customText, setCustomText,
       disableBackspace, setDisableBackspace,
+      strictMode, setStrictMode,
+      showKeyboard, setShowKeyboard,
       govtExamType, setGovtExamType,
       suddenDeath, setSuddenDeath,
       ghostWpm, setGhostWpm,
