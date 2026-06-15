@@ -489,7 +489,6 @@ export function SpeedTestView() {
               liveWpm={wpm}
               ghostWpm={ghostWpm}
               layoutId={config.layoutId as any}
-              strictMode={config.suddenDeath}
             />
 
             {/* Active Timer Display Below Arena */}
