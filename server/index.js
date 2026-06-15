@@ -8,7 +8,9 @@ const pool = require('./db');
 const path = require('path');
 const redisClient = require('./redis-client');
 require('dotenv').config({ path: path.join(__dirname, '.env') });
+const { OAuth2Client } = require('google-auth-library');
 
+const googleClient = new OAuth2Client(process.env.GOOGLE_CLIENT_ID);
 const app = express();
 const server = http.createServer(app);
 const io = new Server(server, {
@@ -114,6 +116,78 @@ app.post('/api/auth/register', async (req, res) => {
       return res.status(503).json({ error: 'Database is currently offline. Please play as Guest or try again later.' });
     }
     res.status(500).json({ error: 'Internal server error' });
+  }
+});
+
+app.post('/api/auth/google', async (req, res) => {
+  const { access_token } = req.body;
+  if (!access_token) {
+    return res.status(400).json({ error: 'Google access_token is required' });
+  }
+
+  try {
+    // Fetch user info from Google using the access_token
+    const response = await fetch('https://www.googleapis.com/oauth2/v3/userinfo', {
+      headers: { Authorization: `Bearer ${access_token}` }
+    });
+
+    if (!response.ok) {
+      throw new Error('Failed to fetch user info from Google');
+    }
+
+    const payload = await response.json();
+    const { email, name, picture, sub } = payload; // sub is the unique Google user ID
+
+    // Check if user already exists
+    let result = await pool.query('SELECT * FROM users WHERE email = $1', [email]);
+    let user = result.rows[0];
+
+    if (!user) {
+      // Automatically register new user
+      // We generate a random password hash for Google users since they don't have one
+      const randomPassword = require('crypto').randomBytes(16).toString('hex');
+      const passwordHash = await bcrypt.hash(randomPassword, 10);
+      
+      // Generate a unique username based on the first half of their email
+      const baseUsername = email.split('@')[0];
+      const randomSuffix = Math.floor(1000 + Math.random() * 9000);
+      const username = `${baseUsername}${randomSuffix}`;
+
+      const insertResult = await pool.query(
+        'INSERT INTO users (username, email, password_hash, avatar) VALUES ($1, $2, $3, $4) RETURNING id, username, email, avatar',
+        [username, email, passwordHash, picture]
+      );
+      user = insertResult.rows[0];
+
+      // Initialize user stats row
+      await pool.query(
+        'INSERT INTO user_stats (user_id) VALUES ($1) ON CONFLICT (user_id) DO NOTHING',
+        [user.id]
+      );
+    } else if (!user.avatar && picture) {
+      // Update avatar if they didn't have one
+      await pool.query('UPDATE users SET avatar = $1 WHERE id = $2', [picture, user.id]);
+      user.avatar = picture;
+    }
+
+    const token = jwt.sign(
+      { userId: user.id, username: user.username },
+      process.env.JWT_SECRET || 'fallback_secret',
+      { expiresIn: '7d' }
+    );
+
+    res.json({
+      token,
+      user: {
+        id: user.id,
+        username: user.username,
+        email: user.email,
+        avatarUrl: user.avatar
+      }
+    });
+  } catch (err) {
+    console.error('Google Auth Error:', err);
+    res.status(401).json({ error: 'Invalid Google Token' });
   }
 });
 
@@ -300,6 +374,190 @@ const MATCH_PASSAGES = [
   "The click-clack of mechanical keys echoes in the quiet room. Each keypress is a step closer to the finish line. Do not rush, do not look back, just keep moving forward with precision and speed."
 ];
 
+
+const startBotSimulation = (roomId, botPlayer) => {
+  const room = activeRooms.get(roomId);
+  if (!room) return;
+  const botState = room.p1.socketId === botPlayer.socketId ? room.p1 : room.p2;
+  const humanState = room.p1.socketId === botPlayer.socketId ? room.p2 : room.p1;
+  const charsPerSecond = (botPlayer.targetWpm * 5) / 60;
+  
+  const botInterval = setInterval(() => {
+    const currentRoom = activeRooms.get(roomId);
+    if (!currentRoom || botState.complete || humanState.complete || humanState.disconnected) {
+      clearInterval(botInterval);
+      return;
+    }
+    
+    botState.correctCount += charsPerSecond;
+    if (botState.correctCount > currentRoom.targetText.length) {
+       botState.correctCount = currentRoom.targetText.length;
+    }
+    
+    botState.wpm = botPlayer.targetWpm;
+    botState.accuracy = 100;
+    
+    const progress = Math.min(100, (botState.correctCount / currentRoom.targetText.length) * 100);
+    botState.typedText = currentRoom.targetText.substring(0, Math.floor(botState.correctCount));
+    
+    io.to(humanState.socketId).emit('opponent_progress', {
+      progress,
+      wpm: botState.wpm,
+      accuracy: botState.accuracy
+    });
+    
+    if (botState.correctCount >= currentRoom.targetText.length) {
+      clearInterval(botInterval);
+      botState.complete = true;
+      botState.typedText = currentRoom.targetText;
+      
+      const firstFinisher = !humanState.complete;
+      const winner = firstFinisher ? botPlayer.user.username : humanState.user.username;
+      
+      io.to(humanState.socketId).emit('race_complete', {
+         winner,
+         wpm: humanState.wpm,
+         accuracy: humanState.accuracy,
+         opponentStats: {
+           wpm: botState.wpm,
+           accuracy: botState.accuracy,
+           progress: 100
+         }
+      });
+      
+      if (humanState.complete) {
+        activeRooms.delete(roomId);
+      }
+    }
+  }, 1000);
+  
+  botState.intervalId = botInterval;
+};
+
+const startMatch = async (p1, p2) => {
+  const roomCode = Math.random().toString(36).substring(2, 8).toUpperCase();
+  let targetText = MATCH_PASSAGES[Math.floor(Math.random() * MATCH_PASSAGES.length)];
+  let passageId = null;
+  try {
+    const passagesRes = await pool.query('SELECT id, content FROM passages ORDER BY RANDOM() LIMIT 1');
+    if (passagesRes.rows.length > 0) {
+      passageId = passagesRes.rows[0].id;
+      targetText = passagesRes.rows[0].content;
+    }
+  } catch (dbErr) {
+    console.error('Failed to fetch passage from DB, falling back to static text:', dbErr.message);
+  }
+
+  let dbRoomId = null;
+  let dbMatchId = null;
+  try {
+    const p1UserId = p1.user ? getDbUserId(p1.user.id) : null;
+    const p2UserId = p2.user ? getDbUserId(p2.user.id) : null;
+
+    const roomRes = await pool.query(
+      'INSERT INTO rooms (room_code, host_user_id, status) VALUES ($1, $2, $3) RETURNING id',
+      [roomCode, p1UserId, 'countdown']
+    );
+    dbRoomId = roomRes.rows[0].id;
+
+    if (p1UserId) await pool.query('INSERT INTO room_players (room_id, user_id) VALUES ($1, $2)', [dbRoomId, p1UserId]);
+    if (p2UserId) await pool.query('INSERT INTO room_players (room_id, user_id) VALUES ($1, $2)', [dbRoomId, p2UserId]);
+
+    const matchRes = await pool.query(
+      'INSERT INTO matches (room_id, passage_id, started_at) VALUES ($1, $2, NULL) RETURNING id',
+      [dbRoomId, passageId]
+    );
+    dbMatchId = matchRes.rows[0].id;
+  } catch (dbErr) {
+    console.error('Failed to create room/match records in PostgreSQL:', dbErr.message);
+  }
+
+  const roomId = dbRoomId || `room_${Date.now()}_${Math.random().toString(36).substring(7)}`;
+  const matchId = dbMatchId || `match_${Date.now()}_${Math.random().toString(36).substring(7)}`;
+
+  const roomState = {
+    roomId,
+    matchId,
+    targetText,
+    startTime: null,
+    p1: {
+      isBot: p1.isBot || false,
+      socketId: p1.socketId,
+      user: p1.user,
+      avatarUrl: p1.avatarUrl,
+      typedText: '',
+      correctCount: 0,
+      totalKeystrokes: 0,
+      incorrectKeystrokes: 0,
+      wpm: 0,
+      accuracy: 100,
+      complete: false
+    },
+    p2: {
+      isBot: p2.isBot || false,
+      socketId: p2.socketId,
+      user: p2.user,
+      avatarUrl: p2.avatarUrl,
+      typedText: '',
+      correctCount: 0,
+      totalKeystrokes: 0,
+      incorrectKeystrokes: 0,
+      wpm: 0,
+      accuracy: 100,
+      complete: false
+    }
+  };
+
+  activeRooms.set(roomId, roomState);
+
+  const s1 = io.sockets.sockets.get(p1.socketId);
+  const s2 = io.sockets.sockets.get(p2.socketId);
+  
+  if (s1) s1.join(roomId);
+  if (s2) s2.join(roomId);
+
+  if (!p1.isBot) {
+    io.to(p1.socketId).emit('match_found', {
+      roomId,
+      targetText,
+      opponent: { username: p2.user.username, avatarUrl: p2.avatarUrl }
+    });
+  }
+
+  if (!p2.isBot) {
+    io.to(p2.socketId).emit('match_found', {
+      roomId,
+      targetText,
+      opponent: { username: p1.user.username, avatarUrl: p1.avatarUrl }
+    });
+  }
+
+  let countdown = 3;
+  const countdownInterval = setInterval(async () => {
+    io.to(roomId).emit('countdown_tick', countdown);
+    countdown--;
+
+    if (countdown < 0) {
+      clearInterval(countdownInterval);
+      roomState.startTime = Date.now();
+      io.to(roomId).emit('race_start');
+      console.log(`Race started in room ${roomId}: ${p1.user.username} vs ${p2.user.username}`);
+
+      if (dbRoomId && dbMatchId) {
+        try {
+          await pool.query('UPDATE rooms SET status = $1 WHERE id = $2', ['running', dbRoomId]);
+          await pool.query('UPDATE matches SET started_at = NOW() WHERE id = $1', [dbMatchId]);
+        } catch (dbErr) {
+          console.error('Failed to update room/match start in DB:', dbErr.message);
+        }
+      }
+      
+      if (p1.isBot) startBotSimulation(roomId, p1);
+      if (p2.isBot) startBotSimulation(roomId, p2);
+    }
+  }, 1000);
+};
+
 let waitingPlayers = [];
 const activeRooms = new Map(); // roomId -> roomState
 
@@ -321,134 +579,39 @@ io.on('connection', (socket) => {
     if (waitingPlayers.length >= 2) {
       const p1 = waitingPlayers.shift();
       const p2 = waitingPlayers.shift();
-      
-      const roomCode = Math.random().toString(36).substring(2, 8).toUpperCase();
-      
-      // Select a random passage from passages table
-      let targetText = MATCH_PASSAGES[Math.floor(Math.random() * MATCH_PASSAGES.length)];
-      let passageId = null;
-      try {
-        const passagesRes = await pool.query('SELECT id, content FROM passages ORDER BY RANDOM() LIMIT 1');
-        if (passagesRes.rows.length > 0) {
-          passageId = passagesRes.rows[0].id;
-          targetText = passagesRes.rows[0].content;
-        }
-      } catch (dbErr) {
-        console.error('Failed to fetch passage from DB, falling back to static text:', dbErr.message);
-      }
-
-      // Create Room and Match records in database
-      let dbRoomId = null;
-      let dbMatchId = null;
-
-      try {
-        const p1UserId = getDbUserId(p1.user.id);
-        const p2UserId = getDbUserId(p2.user.id);
-
-        // Insert Room
-        const roomRes = await pool.query(
-          'INSERT INTO rooms (room_code, host_user_id, status) VALUES ($1, $2, $3) RETURNING id',
-          [roomCode, p1UserId, 'countdown']
-        );
-        dbRoomId = roomRes.rows[0].id;
-
-        // Insert Room Players
-        if (p1UserId) {
-          await pool.query('INSERT INTO room_players (room_id, user_id) VALUES ($1, $2)', [dbRoomId, p1UserId]);
-        }
-        if (p2UserId) {
-          await pool.query('INSERT INTO room_players (room_id, user_id) VALUES ($1, $2)', [dbRoomId, p2UserId]);
-        }
-
-        // Insert Match (started_at is NULL until countdown finishes)
-        const matchRes = await pool.query(
-          'INSERT INTO matches (room_id, passage_id, started_at) VALUES ($1, $2, NULL) RETURNING id',
-          [dbRoomId, passageId]
-        );
-        dbMatchId = matchRes.rows[0].id;
-      } catch (dbErr) {
-        console.error('Failed to create room/match records in PostgreSQL:', dbErr.message);
-      }
-
-      // Fallback in-memory IDs if DB writes failed
-      const roomId = dbRoomId || `room_${Date.now()}_${Math.random().toString(36).substring(7)}`;
-      const matchId = dbMatchId || `match_${Date.now()}_${Math.random().toString(36).substring(7)}`;
-
-      const roomState = {
-        roomId,
-        matchId,
-        targetText,
-        startTime: null,
-        p1: {
-          socketId: p1.socketId,
-          user: p1.user,
-          avatarUrl: p1.avatarUrl,
-          typedText: '',
-          correctCount: 0,
-          totalKeystrokes: 0,
-          incorrectKeystrokes: 0,
-          wpm: 0,
-          accuracy: 100,
-          complete: false
-        },
-        p2: {
-          socketId: p2.socketId,
-          user: p2.user,
-          avatarUrl: p2.avatarUrl,
-          typedText: '',
-          correctCount: 0,
-          totalKeystrokes: 0,
-          incorrectKeystrokes: 0,
-          wpm: 0,
-          accuracy: 100,
-          complete: false
-        }
-      };
-
-      activeRooms.set(roomId, roomState);
-
-      const s1 = io.sockets.sockets.get(p1.socketId);
-      const s2 = io.sockets.sockets.get(p2.socketId);
-      
-      if (s1) s1.join(roomId);
-      if (s2) s2.join(roomId);
-
-      // Emit match found with selected targetText
-      io.to(p1.socketId).emit('match_found', {
-        roomId,
-        targetText,
-        opponent: { username: p2.user.username, avatarUrl: p2.avatarUrl }
-      });
-
-      io.to(p2.socketId).emit('match_found', {
-        roomId,
-        targetText,
-        opponent: { username: p1.user.username, avatarUrl: p1.avatarUrl }
-      });
-
-      // Synchronize and run countdown on the server
-      let countdown = 3;
-      const countdownInterval = setInterval(async () => {
-        io.to(roomId).emit('countdown_tick', countdown);
-        countdown--;
-
-        if (countdown < 0) {
-          clearInterval(countdownInterval);
-          roomState.startTime = Date.now();
-          io.to(roomId).emit('race_start');
-          console.log(`Race started in room ${roomId}: ${p1.user.username} vs ${p2.user.username}`);
-
-          // Update database tables started_at and status
-          if (dbRoomId && dbMatchId) {
+      if (p1.botTimer) clearTimeout(p1.botTimer);
+      if (p2.botTimer) clearTimeout(p2.botTimer);
+      startMatch(p1, p2);
+    } else {
+      player.botTimer = setTimeout(async () => {
+        const idx = waitingPlayers.findIndex(p => p.socketId === socket.id);
+        if (idx !== -1) {
+          const humanPlayer = waitingPlayers.splice(idx, 1)[0];
+          let botTargetWpm = 10;
+          
+          const dbUserId = humanPlayer.user ? getDbUserId(humanPlayer.user.id) : null;
+          if (dbUserId) {
             try {
-              await pool.query('UPDATE rooms SET status = $1 WHERE id = $2', ['running', dbRoomId]);
-              await pool.query('UPDATE matches SET started_at = NOW() WHERE id = $1', [dbMatchId]);
-            } catch (dbErr) {
-              console.error('Failed to update room/match start in DB:', dbErr.message);
+              const statsRes = await pool.query('SELECT highest_wpm FROM user_stats WHERE user_id = $1', [dbUserId]);
+              if (statsRes.rows.length > 0 && statsRes.rows[0].highest_wpm > 0) {
+                 botTargetWpm = statsRes.rows[0].highest_wpm + 5;
+              }
+            } catch (err) {
+              console.error('Error fetching bot wpm', err);
             }
           }
+
+          const botPlayer = {
+            isBot: true,
+            socketId: `bot_${Date.now()}`,
+            user: { username: 'ThunderBot', id: 'bot_0' },
+            avatarUrl: 'https://api.dicebear.com/9.x/bottts/svg?seed=ThunderBot',
+            targetWpm: botTargetWpm
+          };
+          
+          startMatch(humanPlayer, botPlayer);
         }
-      }, 1000);
+      }, 60000);
     }
   });
 

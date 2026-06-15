@@ -3,6 +3,7 @@ import "./globals.css";
 import { AuthProvider } from "@/context/auth-context";
 import { ConfigProvider } from "@/context/config-context";
 import { Toaster } from "sonner";
+import { GoogleProvider } from "@/components/google-provider";
 
 export const viewport: Viewport = {
   width: 'device-width',
@@ -64,12 +65,14 @@ export default function RootLayout({
         />
       </head>
       <body className="h-full transition-colors duration-500 overflow-x-hidden">
-        <AuthProvider>
-          <ConfigProvider>
-            {children}
-            <Toaster theme="dark" position="top-right" richColors />
-          </ConfigProvider>
-        </AuthProvider>
+        <GoogleProvider>
+          <AuthProvider>
+            <ConfigProvider>
+              {children}
+              <Toaster theme="dark" position="top-right" richColors />
+            </ConfigProvider>
+          </AuthProvider>
+        </GoogleProvider>
       </body>
     </html>
   );

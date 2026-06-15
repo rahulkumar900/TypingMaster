@@ -83,6 +83,24 @@ export const TypingArena: React.FC<TypingArenaProps> = ({
     }
   };
 
+  useEffect(() => {
+    const handleGlobalKeyDown = (e: KeyboardEvent) => {
+      if (document.activeElement && ['INPUT', 'TEXTAREA', 'SELECT'].includes(document.activeElement.tagName)) {
+        return;
+      }
+      
+      if (gameState !== 'completed' && e.key.length === 1 && !e.ctrlKey && !e.altKey && !e.metaKey) {
+        if (textareaRef.current && document.activeElement !== textareaRef.current) {
+          e.preventDefault();
+          textareaRef.current.focus();
+        }
+      }
+    };
+
+    window.addEventListener('keydown', handleGlobalKeyDown);
+    return () => window.removeEventListener('keydown', handleGlobalKeyDown);
+  }, [gameState]);
+
   // Reset typing state when resetCounter changes
   useEffect(() => {
     typedValRef.current = '';
@@ -592,7 +610,7 @@ export const TypingArena: React.FC<TypingArenaProps> = ({
           {!isFocused && gameState !== 'completed' && (
             <div className="absolute inset-0 z-20 flex items-center justify-center backdrop-blur-[2px] rounded-xl transition-all pointer-events-none">
               <span className="flex items-center gap-2 bg-[var(--text-main)] text-[var(--bg-panel)] px-4 py-2 rounded-full text-sm font-semibold shadow-lg">
-                <Keyboard className="w-4 h-4" /> Click to focus and start typing
+                <Keyboard className="w-4 h-4" /> Click or press any key to focus
               </span>
             </div>
           )}
@@ -611,8 +629,11 @@ export const TypingArena: React.FC<TypingArenaProps> = ({
             </div>
           </footer>
         )}
-        
-        {showKeyboard && gameState === 'running' && <KeyboardVisualizer languageId={layoutId as any} fontFamily={fontFamily} />}
+        {showKeyboard && gameState === 'running' && (
+          <div className="absolute top-[100%] left-0 w-full z-10 pt-4">
+            <KeyboardVisualizer languageId={layoutId as any} fontFamily={fontFamily} />
+          </div>
+        )}
       </section>
     );
   }
@@ -649,7 +670,7 @@ export const TypingArena: React.FC<TypingArenaProps> = ({
         {!isFocused && gameState !== 'completed' && (
           <div className="absolute inset-0 z-20 flex items-center justify-center backdrop-blur-[2px] rounded-xl transition-all pointer-events-none">
             <span className="flex items-center gap-2 bg-[var(--text-main)] text-[var(--bg-panel)] px-4 py-2 rounded-full text-sm font-semibold shadow-lg">
-              <Keyboard className="w-4 h-4" /> Click to focus and start typing
+              <Keyboard className="w-4 h-4" /> Click or press any key to focus
             </span>
           </div>
         )}
@@ -711,7 +732,11 @@ export const TypingArena: React.FC<TypingArenaProps> = ({
         </div>
       </footer>
       
-      {showKeyboard && gameState === 'running' && <KeyboardVisualizer languageId={layoutId as any} fontFamily={fontFamily} />}
+      {showKeyboard && gameState === 'running' && (
+        <div className="absolute top-[100%] left-0 w-full z-10 pt-4">
+          <KeyboardVisualizer languageId={layoutId as any} fontFamily={fontFamily} />
+        </div>
+      )}
     </section>
   );
 };

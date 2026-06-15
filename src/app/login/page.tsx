@@ -8,6 +8,8 @@ import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { Eye, EyeOff } from 'lucide-react';
 import { useAuth } from '@/context/auth-context';
+import { useGoogleLogin } from '@react-oauth/google';
+import { toast } from 'sonner';
 
 export default function LoginPage() {
   const router = useRouter();
@@ -45,6 +47,37 @@ export default function LoginPage() {
       setIsLoading(false);
     }
   };
+
+  const loginWithGoogle = useGoogleLogin({
+    onSuccess: async (tokenResponse) => {
+      try {
+        setIsLoading(true);
+        const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'https://typingmaster-bibp.onrender.com';
+        
+        const res = await fetch(`${apiUrl}/api/auth/google`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ access_token: tokenResponse.access_token }),
+        });
+
+        const data = await res.json();
+
+        if (!res.ok) {
+          throw new Error(data.error || 'Google Login failed on server');
+        }
+
+        // Successfully registered/logged in via our backend
+        login(data.user, data.token);
+      } catch (err: any) {
+        toast.error(err.message);
+      } finally {
+        setIsLoading(false);
+      }
+    },
+    onError: () => {
+      toast.error("Google Login Failed");
+    }
+  });
 
 
   return (
@@ -119,6 +152,7 @@ export default function LoginPage() {
 
           <Button 
             type="button"
+            onClick={() => loginWithGoogle()}
             className="w-full bg-transparent hover:bg-zinc-900 text-white border border-zinc-800 h-12 rounded-xl flex items-center justify-center gap-2"
           >
             <svg viewBox="0 0 24 24" className="w-5 h-5" fill="none">

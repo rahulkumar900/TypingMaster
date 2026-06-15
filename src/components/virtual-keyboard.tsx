@@ -7,7 +7,6 @@ interface VirtualKeyboardProps {
   layoutId: LayoutId;
   fontFamily?: string;
 }
-
 const KEYBOARD_ROWS = [
   ['`', '1', '2', '3', '4', '5', '6', '7', '8', '9', '0', '-', '=', 'Backspace'],
   ['Tab', 'q', 'w', 'e', 'r', 't', 'y', 'u', 'i', 'o', 'p', '[', ']', '\\'],
@@ -60,7 +59,7 @@ function getMappedChar(layoutId: LayoutId, physicalKey: string, isShift: boolean
   return isShift ? lookupKey : physicalKey;
 }
 
-export function VirtualKeyboard({ layoutId, fontFamily }: VirtualKeyboardProps) {
+const VirtualKeyboardBase = ({ layoutId, fontFamily }: VirtualKeyboardProps) => {
   const [shiftPressed, setShiftPressed] = useState(false);
   const [altPressed, setAltPressed] = useState(false);
   const [activeKeys, setActiveKeys] = useState<Set<string>>(new Set());
@@ -158,7 +157,7 @@ export function VirtualKeyboard({ layoutId, fontFamily }: VirtualKeyboardProps) 
   };
 
   return (
-    <div className="w-full flex flex-col items-center mt-6 mb-2 animate-in fade-in zoom-in-95 duration-300">
+    <div className="w-full flex flex-col items-center mt-2 animate-in fade-in zoom-in-95 duration-300 scale-[0.85] origin-top">
       <div className="inline-block w-full max-w-4xl">
         <div className="flex flex-col gap-1.5">
           {KEYBOARD_ROWS.map((row, rowIndex) => (
@@ -173,11 +172,11 @@ export function VirtualKeyboard({ layoutId, fontFamily }: VirtualKeyboardProps) 
                   <div
                     key={keyIndex}
                     className={`
-                      relative flex flex-col justify-center items-center h-12 rounded-lg shadow-sm border transition-all duration-75 select-none
+                      relative flex flex-col justify-center items-center h-12 rounded-lg border transition-all duration-75 select-none
                       ${getKeyWidthClass(key)}
                       ${active 
-                        ? 'bg-[var(--accent-color)] text-white border-[var(--accent-color)] translate-y-[2px] shadow-none' 
-                        : 'bg-[var(--bg-element)] text-[var(--text-main)] border-[var(--border-subtle)] hover:bg-[var(--bg-hover)] shadow-[0_2px_0_rgba(0,0,0,0.1)]'
+                        ? 'bg-[var(--accent-color)] text-white border-transparent translate-y-[4px] shadow-none' 
+                        : 'bg-[var(--bg-element)] text-[var(--text-main)] border-[var(--border-subtle)] hover:bg-[var(--bg-hover)] shadow-[0_4px_0_var(--border-active)]'
                       }
                     `}
                   >
@@ -208,4 +207,6 @@ export function VirtualKeyboard({ layoutId, fontFamily }: VirtualKeyboardProps) 
       </div>
     </div>
   );
-}
+};
+
+export const VirtualKeyboard = React.memo(VirtualKeyboardBase);

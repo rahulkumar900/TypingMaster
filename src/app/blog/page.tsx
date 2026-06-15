@@ -26,8 +26,26 @@ const POSTS = [
   {
     slug: 'best-mechanical-switches-for-typing',
     title: 'The Best Mechanical Switches for High-Speed Typing',
-    excerpt: 'Linear, tactile, or clicky? We break down the physics behind Cherry MX, Gateron, and Kailh switches to find the perfect match for typists.',
+    excerpt: 'Linear, tactile, or clicky? We break down the physics behind mechanical switches to find the perfect match for typists.',
     date: 'May 20, 2026',
+  },
+  {
+    slug: 'mastering-hindi-typing-mangals-vs-krutidev',
+    title: 'Mastering Hindi Typing: Mangal vs. Krutidev',
+    excerpt: 'Are you preparing for a government exam? Understanding the difference between Legacy Krutidev and Unicode Mangal layouts is the key to passing.',
+    date: 'June 12, 2026',
+  },
+  {
+    slug: 'breaking-100-wpm-mathematical-approach',
+    title: 'The Ultimate Guide to Breaking 100 WPM: A Mathematical Approach',
+    excerpt: 'Getting stuck at 80 WPM is normal. Breaking into the triple digits requires a mathematical approach to N-grams, rolling keystrokes, and lookahead buffering.',
+    date: 'June 14, 2026',
+  },
+  {
+    slug: 'ssc-typing-test-rules-and-evaluation',
+    title: 'Cracking the SSC Typing Test: Exact Rules & Evaluation Math',
+    excerpt: 'One wrong keystroke can cost you your government job. Understand the strict rules for Full Mistakes, Half Mistakes, and how the SSC algorithm calculates your final net WPM.',
+    date: 'June 15, 2026',
   }
 ];
 

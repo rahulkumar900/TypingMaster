@@ -8,6 +8,7 @@ import { useConfig } from '@/context/config-context';
 import { SettingsPanel } from '@/components/settings-panel';
 import { StatsDashboard, TestRecord } from '@/components/stats-dashboard';
 import { GlobalFooter } from '@/components/layout/footer';
+import { ErrorBoundary } from '@/components/error-boundary';
 import { Mail, Shield, Lock, DollarSign, Settings, Trophy, Globe, X, Check } from 'lucide-react';
 
 const TwitterIcon = (props: React.SVGProps<SVGSVGElement>) => (
@@ -162,7 +163,22 @@ export function AppLayout({
   };
 
   const activeTabPath = getActiveTab();
-  const shouldHideHeaderFooter = hideHeaderAndFooterDuringRace && isRacing;
+  
+  const [isRaceActive, setIsRaceActive] = useState(isRacing);
+
+  useEffect(() => {
+    setIsRaceActive(isRacing);
+  }, [isRacing]);
+
+  useEffect(() => {
+    const handleRaceChange = (e: any) => setIsRaceActive(e.detail.isRunning);
+    if (typeof window !== 'undefined') {
+      window.addEventListener('typingGameStateChange', handleRaceChange);
+      return () => window.removeEventListener('typingGameStateChange', handleRaceChange);
+    }
+  }, []);
+
+  const shouldHideHeaderFooter = hideHeaderAndFooterDuringRace || isRaceActive;
 
   return (
     <div className="min-h-[100dvh] bg-[var(--bg-body)] text-[var(--text-main)] transition-colors duration-500 relative flex flex-col items-center font-sans overflow-x-hidden w-full">
@@ -176,10 +192,10 @@ export function AppLayout({
         
         {/* Shared Global Header */}
         <header 
-          className={`flex flex-wrap items-center justify-between w-full transition-all duration-500 mb-6 md:mb-10 gap-y-4 gap-x-2 border-b border-[var(--border-subtle)] pb-5 ${
+          className={`flex flex-wrap items-center justify-between w-full transition-all duration-500 mb-6 md:mb-10 gap-y-4 gap-x-2 border-b pb-5 ${
             shouldHideHeaderFooter 
-              ? 'opacity-0 pointer-events-none mb-0 h-0 overflow-hidden py-0 border-none' 
-              : 'opacity-100'
+              ? 'opacity-0 pointer-events-none border-transparent' 
+              : 'opacity-100 border-[var(--border-subtle)]'
           }`}
         >
           {/* Logo */}
@@ -244,15 +260,17 @@ export function AppLayout({
 
         {/* Dynamic Page Views */}
         <main className="flex-grow w-full flex flex-col justify-center">
-          {children}
+          <ErrorBoundary>
+            {children}
+          </ErrorBoundary>
         </main>
 
         {/* Footer controls & Links */}
         <footer 
-          className={`flex flex-wrap items-center justify-center gap-6 mt-8 md:mt-auto text-[var(--text-muted-alt)] text-xs select-none transition-all duration-500 border-t border-[var(--border-subtle)] pt-6 pb-2 ${
+          className={`flex flex-wrap items-center justify-center gap-6 mt-8 md:mt-auto text-[var(--text-muted-alt)] text-xs select-none transition-all duration-500 border-t pt-6 pb-2 ${
             shouldHideHeaderFooter
-              ? 'opacity-0 pointer-events-none mt-0 h-0 overflow-hidden py-0 border-none' 
-              : 'opacity-100'
+              ? 'opacity-0 pointer-events-none border-transparent' 
+              : 'opacity-100 border-[var(--border-subtle)]'
           }`}
         >
           <button
@@ -310,14 +328,16 @@ export function AppLayout({
       {/* Dynamic SEO Content Rendered Below the Fold */}
       {seoContent && (
         <div className={`w-full max-w-[1380px] px-4 sm:px-6 md:px-8 pb-12 z-10 transition-all duration-500 ${
-          shouldHideHeaderFooter ? 'hidden' : 'block opacity-100'
+          shouldHideHeaderFooter ? 'opacity-0 pointer-events-none' : 'opacity-100'
         }`}>
           {seoContent}
         </div>
       )}
 
       {/* Global SEO Footer */}
-      {!shouldHideHeaderFooter && <GlobalFooter />}
+      <div className={`w-full transition-all duration-500 ${shouldHideHeaderFooter ? 'opacity-0 pointer-events-none' : 'opacity-100'}`}>
+        <GlobalFooter />
+      </div>
 
       {/* Shared settings overlay panel */}
       <SettingsPanel

@@ -353,7 +353,7 @@ export function useTypingEngine(config: any) {
     }
     setGameState('completed');
 
-    const elapsed = timerStartedAtRef.current ? (Date.now() - timerStartedAtRef.current) / 1000 : 1;
+    const elapsed = timerStartedAtRef.current ? (performance.now() - timerStartedAtRef.current) / 1000 : 1;
     const mins = Math.max(0.001, elapsed / 60);
 
     let finalWpm = 0, finalRawWpm = 0, finalAccuracy = '100.00', finalRawAccuracy = 100;
@@ -451,14 +451,14 @@ export function useTypingEngine(config: any) {
 
   const startTest = () => {
     setGameState('running');
-    timerStartedAtRef.current = Date.now();
+    timerStartedAtRef.current = performance.now();
     
     if (config.testMode === 'time') {
       setTimeLeft(config.testTimeLimit);
       timerIntervalRef.current = setInterval(() => {
         setTimeLeft(prev => {
           const nextTime = prev - 1;
-          const elapsed = (Date.now() - (timerStartedAtRef.current || Date.now())) / 1000;
+          const elapsed = (performance.now() - (timerStartedAtRef.current || performance.now())) / 1000;
           const metrics = calculateMetrics(elapsed);
           setWpm(metrics.wpm); setRawWpm(metrics.rawWpm); setAccuracy(metrics.accuracy); setRawAccuracy(metrics.rawAccuracy); setLiveWpm(metrics.wpm);
           setWpmHistory(hist => [...hist, metrics.wpm]); setRawWpmHistory(hist => [...hist, metrics.rawWpm]); setTimeHistory(timeHist => [...timeHist, Math.round(elapsed)]);
@@ -471,7 +471,7 @@ export function useTypingEngine(config: any) {
       timerIntervalRef.current = setInterval(() => {
         setTimeLeft(prev => {
           const nextTime = prev + 1;
-          const elapsed = (Date.now() - (timerStartedAtRef.current || Date.now())) / 1000;
+          const elapsed = (performance.now() - (timerStartedAtRef.current || performance.now())) / 1000;
           const metrics = calculateMetrics(elapsed);
           setWpm(metrics.wpm); setRawWpm(metrics.rawWpm); setAccuracy(metrics.accuracy); setRawAccuracy(metrics.rawAccuracy); setLiveWpm(metrics.wpm);
           setWpmHistory(hist => [...hist, metrics.wpm]); setRawWpmHistory(hist => [...hist, metrics.rawWpm]); setTimeHistory(timeHist => [...timeHist, Math.round(elapsed)]);
@@ -487,7 +487,7 @@ export function useTypingEngine(config: any) {
     setTypedLength(typedLength);
     if (typedValue !== undefined) typedTextRef.current = typedValue;
     if (timerStartedAtRef.current) {
-      const elapsed = (Date.now() - timerStartedAtRef.current) / 1000;
+      const elapsed = (performance.now() - timerStartedAtRef.current) / 1000;
       setLiveWpm(calculateMetrics(elapsed).wpm);
     }
   };

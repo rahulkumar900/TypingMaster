@@ -79,7 +79,7 @@ export function SpeedTestView() {
     gameState, timeLeft, resetCounter,
     wpm, rawWpm, accuracy,
     typedLength,
-    wpmHistory, rawWpmHistory, timeHistory,
+    wpmHistory, rawWpmHistory, timeHistory, missedKeys,
     resetTest, startTest, completeTest, handleProgress, handleKeystroke, loadMoreZenWords,
     getCharacterStats
   } = engine;
@@ -96,6 +96,16 @@ export function SpeedTestView() {
   useEffect(() => {
     if (isCustomTextOpen) setCustomTextInput(customText);
   }, [isCustomTextOpen, customText]);
+
+  // Dispatch game state changes so AppLayout can hide header/footer
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+      const event = new CustomEvent('typingGameStateChange', { 
+        detail: { isRunning: gameState === 'running' } 
+      });
+      window.dispatchEvent(event);
+    }
+  }, [gameState]);
 
   // Reset detailed view when test goes back to idle or restarts
   useEffect(() => {
@@ -229,6 +239,21 @@ export function SpeedTestView() {
                     {testMode === 'time' ? testTimeLimit : timeLeft}
                   </span>
                 </div>
+                {Object.keys(missedKeys).length > 0 && (
+                  <div className="flex flex-col items-start animate-fadeIn">
+                    <span className="text-[12px] sm:text-[14px] text-zinc-500 uppercase tracking-widest">Weak Keys</span>
+                    <div className="flex gap-2 mt-4">
+                      {Object.entries(missedKeys)
+                        .sort((a, b) => b[1] - a[1])
+                        .slice(0, 3)
+                        .map(([key, count]) => (
+                          <div key={key} className="w-[48px] h-[48px] sm:w-[64px] sm:h-[64px] rounded-lg bg-red-500/10 border border-red-500/30 flex items-center justify-center text-red-400 font-bold text-2xl uppercase">
+                            {key === ' ' ? 'SPC' : key}
+                          </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
               </div>
 
               {/* Simple Controls row */}
@@ -402,8 +427,8 @@ export function SpeedTestView() {
         <div className="flex flex-col items-center flex-1 animate-fadeIn w-full min-h-0 py-8">
           
           {/* Progress Track */}
-          {!showKeyboard && (
-            <div className="w-full max-w-[800px] mx-auto mb-auto select-none shrink-0 px-6 sm:px-0">
+          {!showKeyboard && gameState === 'running' && (
+            <div className="absolute top-0 left-1/2 -translate-x-1/2 w-full max-w-[800px] select-none shrink-0 px-6 sm:px-0 animate-fadeIn z-10 pt-4">
               <div className="relative w-full">
             {/* The floating user card */}
             <div 
@@ -465,7 +490,7 @@ export function SpeedTestView() {
           )}
 
           {/* Centered Typing Arena */}
-          <div className="w-full shrink-0 flex flex-col justify-center my-8 md:my-10 min-h-[160px] relative">
+          <div className="w-full shrink-0 flex flex-col justify-center my-auto min-h-[160px] relative">
             <TypingArena
               targetText={targetText}
               author={author}
@@ -491,14 +516,14 @@ export function SpeedTestView() {
               layoutId={config.layoutId as any}
             />
 
-            {/* Active Timer Display Below Arena */}
+            {/* Active Timer Display */}
             {gameState === 'running' && testMode === 'time' && (
-              <div className="text-center mt-10 text-[18px] font-medium font-sans text-white tracking-wide">
+              <div className={`absolute left-1/2 -translate-x-1/2 text-[18px] font-medium font-sans text-white tracking-wide animate-fadeIn z-10 ${showKeyboard ? 'bottom-[100%] mb-6' : 'top-[100%] mt-6'}`}>
                 Time Left: {timeLeft}
               </div>
             )}
             {gameState === 'running' && testMode === 'words' && (
-              <div className="text-center mt-10 text-[18px] font-medium font-sans text-white tracking-wide">
+              <div className={`absolute left-1/2 -translate-x-1/2 text-[18px] font-medium font-sans text-white tracking-wide animate-fadeIn z-10 ${showKeyboard ? 'bottom-[100%] mb-6' : 'top-[100%] mt-6'}`}>
                 Words Left: {Math.max(0, wordLimit - Math.floor(typedLength / 5))}
               </div>
             )}
