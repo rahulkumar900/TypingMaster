@@ -590,7 +590,7 @@ export const TypingArena: React.FC<TypingArenaProps> = ({
           </div>
           <textarea
             ref={textareaRef}
-            defaultValue=""
+            value={typedVal}
             onChange={handleChange}
             onKeyDown={handleKeyDown}
             onCompositionStart={handleCompositionStart}
