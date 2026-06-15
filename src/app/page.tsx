@@ -5,8 +5,9 @@ import { SeoContentSection } from '@/components/seo/seo-content-section';
 import { InternalLinks } from '@/components/seo/internal-links';
 
 export const metadata: Metadata = {
-  title: 'Typing Test & WPM Speed Test | English & Hindi',
-  description: 'Boost your typing speed (WPM) with our free online typing test. Practice General English or master Regional Languages like Hindi Mangal and Krutidev.',
+  title: 'Typing Test & WPM Speed Test | English & Hindi Typing Practice',
+  description: 'Boost your typing speed (WPM) with our free online typing test. Practice General English or master Regional Languages like Hindi Mangal and Krutidev. Track your progress with advanced analytics.',
+  keywords: 'typing test, typing speed test, wpm test, english typing test, hindi typing test online, typing practice, touch typing practice, check typing speed, online typing master, typing speed online, mangal typing test, krutidev typing test, ssc typing test',
   alternates: {
     canonical: 'https://typingthunder.com/',
   },
@@ -16,10 +17,33 @@ const jsonLd = {
   "@context": "https://schema.org",
   "@graph": [
     {
-      "@type": "WebPage",
-      "name": "Typing Test & WPM Speed Test | English & Hindi",
-      "description": "Boost your typing speed (WPM) with our free online typing test. Practice General English or master Regional Languages like Hindi Mangal and Krutidev.",
-      "url": "https://typingthunder.com"
+      "@type": "WebSite",
+      "name": "TypingThunder",
+      "url": "https://typingthunder.com/",
+      "description": "The ultimate platform for free online typing tests, typing practice, and checking WPM speed in English and Hindi.",
+      "potentialAction": {
+        "@type": "SearchAction",
+        "target": "https://typingthunder.com/search?q={search_term_string}",
+        "query-input": "required name=search_term_string"
+      }
+    },
+    {
+      "@type": "Organization",
+      "name": "TypingThunder",
+      "url": "https://typingthunder.com",
+      "logo": "https://typingthunder.com/icon.png",
+      "sameAs": []
+    },
+    {
+      "@type": "SoftwareApplication",
+      "name": "TypingThunder WPM Engine",
+      "applicationCategory": "EducationalApplication",
+      "operatingSystem": "Browser",
+      "offers": {
+        "@type": "Offer",
+        "price": "0",
+        "priceCurrency": "USD"
+      }
     },
     {
       "@type": "FAQPage",
@@ -39,6 +63,14 @@ const jsonLd = {
             "@type": "Answer",
             "text": "Yes! We fully support regional language typing, including Hindi Mangal (Remington Gail, InScript) and Krutidev keyboard layouts which are standard for government exams like SSC and CPCT."
           }
+        },
+        {
+          "@type": "Question",
+          "name": "How do I increase my typing speed?",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "Focus on accuracy first. Keep your fingers on the home row (ASDF JKL;), avoid looking at your keyboard, and practice daily using our typing test tool for at least 15 minutes."
+          }
         }
       ]
     }
@@ -48,26 +80,29 @@ const jsonLd = {
 export default function Home() {
   return (
     <AppLayout
+      seoTitle="Typing Test & WPM Speed Test | English & Hindi"
+      seoDescription="Boost your typing speed (WPM) with our free online typing test. Practice General English or master Regional Languages like Hindi Mangal and Krutidev."
       seoContent={
         <>
           <SeoContentSection title="Master Your Typing Speed in English and Regional Languages">
             <p>
-              Welcome to TypingThunder, the ultimate typing test platform designed to help you increase your Words Per Minute (WPM) and accuracy. Whether you are aiming to improve your general English typing speed for professional work, or preparing for high-stakes government typing exams in regional languages, our platform provides a flawless, ad-free environment to practice.
+              Welcome to <strong>TypingThunder</strong>, the ultimate typing test platform designed to help you increase your Words Per Minute (WPM) and accuracy. Whether you are aiming to improve your general English typing speed for professional work, learning touch typing from scratch, or preparing for high-stakes government typing exams in regional languages, our platform provides a flawless, ad-free environment for <strong>typing practice</strong>.
             </p>
 
             <h3>The Perfect Balance: English and Hindi Typing</h3>
             <p>
-              Unlike standard typing tests that only cater to an English-speaking audience, TypingThunder is built from the ground up to offer a balanced experience. We provide beautiful, minimalist interfaces for <strong>General English Typing</strong>, alongside strict, examination-grade modes for <strong>Hindi Typing</strong>.
+              Unlike standard typing speed tests that only cater to an English-speaking audience, TypingThunder is built from the ground up to offer a balanced, bilingual experience. We provide beautiful, minimalist interfaces for <strong>General English Typing</strong>, alongside strict, examination-grade modes for <strong>Hindi Typing</strong>.
             </p>
             <p>
-              If you are preparing for SSC, CPCT, UP Police, or other government examinations, you can seamlessly switch to our Hindi Mangal Font (Remington Gail & InScript) or Krutidev 010 layouts. Our phonetic engine perfectly mirrors the strict rules of offline examination software, ensuring that your practice perfectly translates to the real world.
+              If you are preparing for SSC, CPCT, UP Police, or other government examinations, you can seamlessly switch to our Hindi Mangal Font (Remington Gail & InScript) or Krutidev 010 layouts. Our phonetic engine perfectly mirrors the strict rules of offline examination software, ensuring that your typing practice perfectly translates to the real world.
             </p>
 
             <h3>Why Take a WPM Typing Speed Test?</h3>
             <ul>
-              <li><strong>Enhance Productivity:</strong> Increasing your WPM directly translates to hours saved when writing emails, code, or documents.</li>
-              <li><strong>Build Muscle Memory:</strong> Regular practice with our test eliminates the need to look down at your keyboard.</li>
-              <li><strong>Track Your Progress:</strong> We provide detailed, interactive charts mapping your raw speed and consistency over time.</li>
+              <li><strong>Enhance Productivity:</strong> Increasing your WPM directly translates to hours saved when writing emails, code, or documents. A fast typing speed is a crucial modern skill.</li>
+              <li><strong>Build Muscle Memory:</strong> Regular typing practice with our online typing test eliminates the need to look down at your keyboard.</li>
+              <li><strong>Track Your Progress:</strong> Create a free account to access detailed, interactive charts mapping your raw speed, accuracy, and consistency over time.</li>
+              <li><strong>Compete Globally:</strong> Test your skills against friends or global players in our real-time typing arena.</li>
             </ul>
 
             <h3 className="mt-8 mb-4 border-b border-zinc-800 pb-2">Frequently Asked Questions (FAQ)</h3>
@@ -83,7 +118,11 @@ export default function Home() {
               </div>
               <div>
                 <h4 className="font-bold text-white">What is Strict Mode?</h4>
-                <p className="text-zinc-400 mt-1">Strict Mode forces you to correct any mistakes before moving forward. It builds perfect muscle memory and is highly recommended for typists striving for 100% accuracy.</p>
+                <p className="text-zinc-400 mt-1">Strict Mode forces you to correct any mistakes before moving forward. It builds perfect muscle memory and is highly recommended for typists striving for 100% accuracy during their typing practice.</p>
+              </div>
+              <div>
+                <h4 className="font-bold text-white">How do I increase my typing speed?</h4>
+                <p className="text-zinc-400 mt-1">Focus on accuracy first. Keep your fingers on the home row (ASDF JKL;), avoid looking at your keyboard, and practice daily using our typing test tool for at least 15 minutes.</p>
               </div>
             </div>
           </SeoContentSection>

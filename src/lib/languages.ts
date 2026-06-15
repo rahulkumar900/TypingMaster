@@ -45,7 +45,7 @@ export const LANGUAGES: LanguageConfig[] = [
     name: 'Hindi (हिन्दी)',
     fonts: [
       { id: 'mangal', name: 'Mangal / Annapurna (InScript)', fontFamily: '"Annapurna SIL", "Mangal", "Arial Unicode MS", sans-serif', type: 'unicode' },
-      { id: 'krutidev', name: 'Kruti Dev 010 (Legacy)', fontFamily: '"Kruti Dev 010", "DevLys 010", monospace', type: 'legacy' }
+      { id: 'krutidev', name: 'Kruti Dev 010 (Legacy Layout)', fontFamily: '"Annapurna SIL", "Mangal", "Arial Unicode MS", sans-serif', type: 'unicode' }
     ],
     layouts: [
       { id: 'MANGAL_INSCRIPT', name: 'Mangal InScript' },
@@ -65,7 +65,7 @@ export const LANGUAGES: LanguageConfig[] = [
     name: 'Marathi (मराठी)',
     fonts: [
       { id: 'mangal-mr', name: 'Mangal / Annapurna (Unicode)', fontFamily: '"Annapurna SIL", "Mangal", sans-serif', type: 'unicode' },
-      { id: 'krutidev-mr', name: 'Kruti Dev (Legacy)', fontFamily: '"Kruti Dev 010", "DevLys 010", monospace', type: 'legacy' }
+      { id: 'krutidev-mr', name: 'Kruti Dev (Legacy Layout)', fontFamily: '"Annapurna SIL", "Mangal", sans-serif', type: 'unicode' }
     ],
     layouts: [
       { id: 'MANGAL_INSCRIPT', name: 'Mangal InScript' },

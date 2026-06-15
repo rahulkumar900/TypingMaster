@@ -47,7 +47,7 @@ export class MacroEngine implements TransliteratorEngine {
       if (this.backspaceAllowed) {
         this.rawBuffer.pop();
       }
-    } else if (key.length === 1) {
+    } else if (key.length === 1 || key.startsWith('Alt-')) {
       this.rawBuffer.push(key);
     }
     return this.getOutput();
