@@ -8,9 +8,11 @@ export class MacroEngine implements TransliteratorEngine {
   private lookupMap: Map<string, string>;
   private matchRegex: RegExp;
   private backspaceAllowed: boolean;
+  private isLegacy: boolean;
 
-  constructor(keymap: Record<string, string>, backspaceAllowed: boolean = true) {
+  constructor(keymap: Record<string, string>, backspaceAllowed: boolean = true, isLegacy: boolean = false) {
     this.backspaceAllowed = backspaceAllowed;
+    this.isLegacy = isLegacy;
 
     // Sort string pairs length descending to solve the greedy match problem
     const sortedPairs = Object.entries(keymap)
@@ -39,7 +41,22 @@ export class MacroEngine implements TransliteratorEngine {
   getOutput(): string {
     const rawText = this.rawBuffer.join('');
     // Continuous O(N) regex evaluation pipeline
-    return rawText.replace(this.matchRegex, (matched) => this.lookupMap.get(matched) ?? matched);
+    let mappedText = rawText.replace(this.matchRegex, (matched) => this.lookupMap.get(matched) ?? matched);
+    
+    if (this.isLegacy) {
+      // Post-processing for Hindi Legacy Layouts (Remington GAIL / KrutiDev -> Unicode)
+      // 1. Remove halant + aa matra (् + ा) -> completes the half character
+      mappedText = mappedText.replace(/\u094D\u093E/g, '');
+      
+      // 2. Fix short 'i' matra (ि) position: move it after the consonant cluster
+      // Consonant cluster: (consonant + halant)* + consonant
+      mappedText = mappedText.replace(/\u093F((?:[\u0915-\u0939\u0958-\u095F]\u094D)*[\u0915-\u0939\u0958-\u095F])/g, '$1\u093F');
+      
+      // 3. Fix Reph (र्) position: KrutiDev types it after the consonant, Unicode expects it before
+      mappedText = mappedText.replace(/([\u0915-\u0939\u0958-\u095F])\u0930\u094D/g, '\u0930\u094D$1');
+    }
+
+    return mappedText;
   }
 
   processKey(key: string): string {

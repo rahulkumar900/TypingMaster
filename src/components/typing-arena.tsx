@@ -67,13 +67,23 @@ export const TypingArena: React.FC<TypingArenaProps> = ({
   const startTimeRef = useRef<number | null>(null);
   const isComposingRef = useRef(false); // tracks IME composition state
   // Phonetic transliteration engine (used when OS IME is not available)
-  const transliteratorRef = useRef<TransliteratorEngine | null>(
-    createTypingEngine({ id: layoutId, backspaceAllowed: !disableBackspace })
-  );
-  const usePhonetic = needsTransliteration(layoutId);
-
+  const transliteratorRef = useRef<TransliteratorEngine | null>(null);
+  const usePhonetic = needsTransliteration(layoutId || 'OS_DEFAULT');
+  
+  // Re-initialize engine if layoutId changes
   useEffect(() => {
-    transliteratorRef.current = createTypingEngine({ id: layoutId, backspaceAllowed: !disableBackspace });
+    let active = true;
+    const loadEngine = async () => {
+      const e = await createTypingEngine({
+        id: layoutId || 'OS_DEFAULT',
+        backspaceAllowed: !disableBackspace
+      });
+      if (active) {
+        transliteratorRef.current = e;
+      }
+    };
+    loadEngine();
+    return () => { active = false; };
   }, [layoutId, disableBackspace]);
 
   // Focus textarea
@@ -297,23 +307,11 @@ export const TypingArena: React.FC<TypingArenaProps> = ({
       if (key === ' ' && !e.altKey) {
         synth?.playClick('space');
         const newOutput = transliteratorRef.current?.processKey(' ') || '';
-        if (strictMode) {
-          const targetChars = Array.from(targetText);
-          const newChars = Array.from(newOutput);
-          let isMatch = true;
-          for (let i = 0; i < newChars.length; i++) {
-            if (newChars[i] !== targetChars[i]) {
-              isMatch = false;
-              break;
-            }
-          }
-          if (!isMatch) {
-            synth?.playClick('error');
-            // Revert transliterator internal state
-            transliteratorRef.current?.processKey('Backspace');
-            return;
-          }
-        }
+        // Note: Strict mode revert is fundamentally incompatible with legacy phonetic layouts 
+        // (like KrutiDev/Remington) because intermediate keystrokes (like typing 'ि' before a letter)
+        // do not match the final Unicode string visually or sequentially until the word is complete.
+        // Therefore, we bypass the revert behavior for phonetic layouts.
+        
         if (textareaRef.current) textareaRef.current.value = newOutput;
         processInput(newOutput);
         onKeystroke(false);
@@ -328,23 +326,7 @@ export const TypingArena: React.FC<TypingArenaProps> = ({
         
         synth?.playClick('char');
         const newOutput = transliteratorRef.current?.processKey(lookupKey) || '';
-        if (strictMode) {
-          const targetChars = Array.from(targetText);
-          const newChars = Array.from(newOutput);
-          let isMatch = true;
-          for (let i = 0; i < newChars.length; i++) {
-            if (newChars[i] !== targetChars[i]) {
-              isMatch = false;
-              break;
-            }
-          }
-          if (!isMatch) {
-            synth?.playClick('error');
-            // Revert transliterator internal state
-            transliteratorRef.current?.processKey('Backspace');
-            return;
-          }
-        }
+        // Note: Strict mode revert bypassed for phonetic layouts.
         if (textareaRef.current) textareaRef.current.value = newOutput;
         processInput(newOutput);
         onKeystroke(false);

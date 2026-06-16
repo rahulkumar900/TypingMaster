@@ -207,6 +207,7 @@ export const KRUTIDEV_010_MAP: Record<string, string> = {
   "ks": "ो",
   "kS": "ौ",
   "k":  "ा",
+  "f":  "ि",
   "h":  "ी",
   "q":  "ु",
   "w":  "ू",

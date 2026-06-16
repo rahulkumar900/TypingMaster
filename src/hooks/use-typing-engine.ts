@@ -1,301 +1,36 @@
-import { useState, useRef, useCallback, useEffect } from 'react';
-import { LANGUAGES } from '@/lib/languages';
-import { TestRecord } from '@/components/stats-dashboard';
+import { useState, useCallback, useEffect, useRef } from 'react';
 import { useAuth } from '@/context/auth-context';
+import { TestRecord } from '@/components/stats-dashboard';
+import { useTextGenerator } from './use-text-generator';
+import { useTypingTimer } from './use-typing-timer';
+import { useTypingMetrics } from './use-typing-metrics';
 
 export function useTypingEngine(config: any) {
-  // Try to use auth if available safely
   let auth: any = null;
   try {
     auth = useAuth();
-  } catch (e) {
-    // Auth context not initialized yet (e.g. static shell render)
-  }
+  } catch (e) {}
   const token = auth?.token;
 
-  // Text source states
-  const [targetText, setTargetText] = useState<string>('');
-  const [author, setAuthor] = useState<string>('');
-  const [title, setTitle] = useState<string>('');
-
-  // Game States
   const [gameState, setGameState] = useState<'idle' | 'running' | 'completed'>('idle');
-  const [timeLeft, setTimeLeft] = useState<number>(60);
   const [resetCounter, setResetCounter] = useState<number>(0);
 
-  // Live Metrics States
-  const [wpm, setWpm] = useState<number>(0);
-  const [rawWpm, setRawWpm] = useState<number>(0);
-  const [accuracy, setAccuracy] = useState<string>('100.00');
-  const [rawAccuracy, setRawAccuracy] = useState<number>(100);
-  const [liveWpm, setLiveWpm] = useState<number>(0);
-  const [typedLength, setTypedLength] = useState<number>(0);
+  const metrics = useTypingMetrics(config, token);
+  const generator = useTextGenerator(config, metrics.testHistory);
 
+  const onTick = useCallback((elapsed: number) => {
+    const calc = metrics.calculateMetrics(elapsed);
+    metrics.setWpm(calc.wpm);
+    metrics.setRawWpm(calc.rawWpm);
+    metrics.setAccuracy(calc.accuracy);
+    metrics.setRawAccuracy(calc.rawAccuracy);
+    metrics.setLiveWpm(calc.wpm);
+    metrics.setWpmHistory(hist => [...hist, calc.wpm]);
+    metrics.setRawWpmHistory(hist => [...hist, calc.rawWpm]);
+    metrics.setTimeHistory(timeHist => [...timeHist, Math.round(elapsed)]);
+  }, [metrics]);
 
-  // Missed Keys tracking state
-  const [missedKeys, setMissedKeys] = useState<Record<string, number>>({});
-
-  // Graph History States
-  const [wpmHistory, setWpmHistory] = useState<number[]>([]);
-  const [rawWpmHistory, setRawWpmHistory] = useState<number[]>([]);
-  const [timeHistory, setTimeHistory] = useState<number[]>([]);
-
-  // Local Performance History Database
-  const [testHistory, setTestHistory] = useState<TestRecord[]>([]);
-  
-  // Government Exam score
-  const [examScore, setExamScore] = useState<any>(null);
-
-  // Refs to store values to prevent stale interval states
-  const correctCountRef = useRef<number>(0);
-  const typedLengthRef = useRef<number>(0);
-  const typedTextRef = useRef<string>('');
-  const totalKeystrokesRef = useRef<number>(0);
-  const incorrectKeystrokesRef = useRef<number>(0);
-  const timerStartedAtRef = useRef<number | null>(null);
-  const timerIntervalRef = useRef<NodeJS.Timeout | null>(null);
-
-  // Load History Table
-  useEffect(() => {
-    const loadLocalHistory = () => {
-      if (typeof window !== 'undefined') {
-        const savedHist = localStorage.getItem('typingthunder_test_history');
-        if (savedHist) {
-          try {
-            setTestHistory(JSON.parse(savedHist));
-          } catch (e) {
-            console.error("Failed to load run history", e);
-          }
-        }
-      }
-    };
-
-    if (token) {
-      const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'https://typingmaster-bibp.onrender.com';
-      fetch(`${apiUrl}/api/stats`, {
-        headers: {
-          'Authorization': `Bearer ${token}`
-        }
-      })
-      .then(res => {
-        if (!res.ok) {
-          console.warn('Failed to fetch stats from DB. Status:', res.status);
-          return null;
-        }
-        return res.json();
-      })
-      .then(data => {
-        if (!data || !Array.isArray(data)) {
-          loadLocalHistory();
-          return;
-        }
-        const mappedHistory: TestRecord[] = data.map((item: any) => ({
-          id: item.id.toString(),
-          date: new Date(item.date).toLocaleDateString(undefined, { month: 'short', day: 'numeric', year: 'numeric', hour: '2-digit', minute: '2-digit' }),
-          mode: item.mode,
-          limitValue: 0,
-          wpm: item.wpm,
-          accuracy: parseFloat(item.accuracy).toFixed(2),
-          rawAccuracy: Math.round(parseFloat(item.accuracy)),
-          missedKeys: {},
-          wpmHistory: [],
-          rawWpmHistory: [],
-          timeHistory: []
-        }));
-        setTestHistory(mappedHistory);
-      })
-      .catch(err => {
-        console.warn('Failed to sync history with database API, falling back to local history:', err);
-        loadLocalHistory();
-      });
-    } else {
-      loadLocalHistory();
-    }
-  }, [token]);
-
-  const generateText = useCallback(() => {
-    const activeLang = LANGUAGES.find(l => l.id === config.languageId) || LANGUAGES[0];
-
-    if (config.testMode === 'quotes') {
-      const activeQuotes = activeLang.quotes && activeLang.quotes.length > 0 ? activeLang.quotes : LANGUAGES[0].quotes;
-      const randomIndex = Math.floor(Math.random() * activeQuotes.length);
-      const quote = activeQuotes[randomIndex];
-      setTargetText(quote.text);
-      setAuthor(quote.author);
-      setTitle(quote.title);
-    } else if (config.testMode === 'govt-exam') {
-      const activePassages = activeLang.examPassages && activeLang.examPassages.length > 0 ? activeLang.examPassages : LANGUAGES[0].examPassages;
-      const randomIndex = Math.floor(Math.random() * activePassages.length);
-      const passage = activePassages[randomIndex];
-      setTargetText(passage.text);
-      setAuthor(passage.source);
-      setTitle(passage.title);
-    } else if (config.testMode === 'custom') {
-      setTargetText(config.customText.trim() || 'Custom text is empty.');
-      setAuthor('');
-      setTitle('');
-    } else {
-      const limit = config.testMode === 'words' ? config.wordLimit : config.testMode === 'zen' ? 50 : 150;
-      const baseWords = activeLang.words && activeLang.words.length > 0 ? activeLang.words : LANGUAGES[0].words;
-      let sourceWords = baseWords;
-      let weakKeysStr = '';
-
-      if (config.testMode === 'weak-keys') {
-        const counts: Record<string, number> = {};
-        testHistory.forEach(record => {
-          if (record.missedKeys) {
-            Object.entries(record.missedKeys).forEach(([key, val]) => {
-              const cleanKey = key.toLowerCase();
-              if (/[a-z\u0900-\u097F]/.test(cleanKey)) {
-                counts[cleanKey] = (counts[cleanKey] || 0) + val;
-              }
-            });
-          }
-        });
-        const weakKeys = Object.entries(counts)
-          .sort((a, b) => b[1] - a[1])
-          .map(x => x[0])
-          .slice(0, 3);
-        const fallbackKeys = config.languageId === 'english' ? ['z', 'x', 'q', 'p', 'v'] : baseWords.slice(0,5).map(w => w[0] || 'a');
-        const activeWeakKeys = weakKeys.length > 0 ? weakKeys : fallbackKeys;
-        weakKeysStr = activeWeakKeys.join(', ').toUpperCase();
-        
-        const filtered = baseWords.filter(w => 
-          activeWeakKeys.some(k => w.toLowerCase().includes(k))
-        );
-        sourceWords = filtered.length > 10 ? filtered : baseWords;
-      }
-
-      const generated: string[] = [];
-      for (let i = 0; i < limit; i++) {
-        if (config.includeNumbers && Math.random() < 0.15) {
-          const types = ['year', 'small', 'decimal', 'large', 'percent', 'range'];
-          const chosenType = types[Math.floor(Math.random() * types.length)];
-          let numStr = '';
-          switch (chosenType) {
-            case 'year': numStr = (Math.floor(Math.random() * 50) + 1980).toString(); break;
-            case 'small': numStr = Math.floor(Math.random() * 10).toString(); break;
-            case 'decimal': numStr = (Math.random() * 100).toFixed(Math.floor(Math.random() * 2) + 1); break;
-            case 'large': numStr = Math.floor(Math.random() * 9000 + 1000).toString(); break;
-            case 'percent': numStr = `${Math.floor(Math.random() * 100)}%`; break;
-            case 'range':
-              const start = Math.floor(Math.random() * 10) + 1;
-              const end = start + Math.floor(Math.random() * 10) + 1;
-              numStr = `${start}-${end}`;
-              break;
-            default: numStr = Math.floor(Math.random() * 100).toString();
-          }
-          generated.push(numStr);
-        } else {
-          const index = Math.floor(Math.random() * sourceWords.length);
-          generated.push(sourceWords[index]);
-        }
-      }
-
-      if (config.includePunctuation) {
-        const processed = [];
-        let i = 0;
-        while (i < generated.length) {
-          const remaining = generated.length - i;
-          const sentenceLen = Math.min(remaining, Math.floor(Math.random() * 6) + 5);
-          for (let j = 0; j < sentenceLen; j++) {
-            let word = generated[i + j];
-            if (j === 0 && /[a-zA-Z]/.test(word)) word = word.charAt(0).toUpperCase() + word.slice(1);
-            if (j > 0 && j < sentenceLen - 1 && Math.random() < 0.08) {
-              const wrapType = Math.random() < 0.5 ? 'quotes' : 'parentheses';
-              if (wrapType === 'quotes') word = `"${word}"`;
-              else word = `(${word})`;
-            }
-            if (j < sentenceLen - 1 && Math.random() < 0.12 && !/[.,;:!?%]$/.test(word)) {
-              const punc = Math.random() < 0.8 ? ',' : ';';
-              word = word + punc;
-            }
-            if (j === sentenceLen - 1 && !/[.,;:!?%]$/.test(word)) {
-              const endPunc = Math.random() < 0.85 ? '.' : Math.random() < 0.7 ? '?' : '!';
-              word = word + endPunc;
-            }
-            processed.push(word);
-          }
-          i += sentenceLen;
-        }
-        setTargetText(processed.join(' '));
-      } else {
-        setTargetText(generated.join(' '));
-      }
-      setAuthor('');
-      setTitle(config.testMode === 'zen' ? 'Zen Indefinite Practice' : config.testMode === 'weak-keys' ? `Weak Keys Practice (${weakKeysStr})` : '');
-    }
-  }, [config.testMode, config.wordLimit, config.customText, config.includePunctuation, config.includeNumbers, testHistory, config.languageId]);
-
-  const resetTest = useCallback(() => {
-    if (timerIntervalRef.current) {
-      clearInterval(timerIntervalRef.current);
-      timerIntervalRef.current = null;
-    }
-
-    correctCountRef.current = 0;
-    typedLengthRef.current = 0;
-    typedTextRef.current = '';
-    totalKeystrokesRef.current = 0;
-    incorrectKeystrokesRef.current = 0;
-    timerStartedAtRef.current = null;
-
-    setGameState('idle');
-    setTypedLength(0);
-    setTimeLeft(config.testMode === 'time' ? config.testTimeLimit : 0);
-    setWpm(0);
-    setRawWpm(0);
-    setLiveWpm(0);
-    setAccuracy('100.00');
-    setRawAccuracy(100);
-    setMissedKeys({});
-
-    setWpmHistory([]);
-    setRawWpmHistory([]);
-    setTimeHistory([]);
-
-    setResetCounter(prev => prev + 1);
-    generateText();
-  }, [config.testTimeLimit, config.testMode, config.wordLimit, generateText]);
-
-  useEffect(() => {
-    resetTest();
-  }, [config.testMode, config.testTimeLimit, config.wordLimit, config.includePunctuation, config.includeNumbers, config.customText, config.languageId]);
-
-  useEffect(() => {
-    const handleGlobalKeys = (e: KeyboardEvent) => {
-      if (e.key === 'Escape') {
-        e.preventDefault();
-        resetTest();
-      }
-    };
-    window.addEventListener('keydown', handleGlobalKeys);
-    return () => window.removeEventListener('keydown', handleGlobalKeys);
-  }, [resetTest]);
-
-  const handleClearHistory = () => {
-    setTestHistory([]);
-    localStorage.removeItem('typingthunder_test_history');
-  };
-
-  const calculateMetrics = (elapsed: number) => {
-    const mins = Math.max(0.001, elapsed / 60);
-    const correct = correctCountRef.current;
-    const typedLen = typedLengthRef.current;
-    const totalKeys = totalKeystrokesRef.current;
-    const incorrectKeys = incorrectKeystrokesRef.current;
-
-    if (typedLen === 0) return { wpm: 0, rawWpm: 0, accuracy: '100.00', rawAccuracy: 100 };
-
-    const currentWpm = Math.round((correct / 5) / mins);
-    const currentRawWpm = Math.round((typedLen / 5) / mins);
-    const currentAcc = ((correct / typedLen) * 100).toFixed(2);
-    const currentRawAcc = totalKeys > 0 ? Math.round(((totalKeys - incorrectKeys) / totalKeys) * 100) : 100;
-
-    return { wpm: currentWpm, rawWpm: currentRawWpm, accuracy: currentAcc, rawAccuracy: Math.max(0, currentRawAcc) };
-  };
-
-  const alignPassages = (targetStr: string, typedStr: string) => {
+  const alignPassages = useCallback((targetStr: string, typedStr: string) => {
     const targetWords = targetStr.trim().split(/\s+/).filter(Boolean);
     const typedWords = typedStr.trim().split(/\s+/).filter(Boolean);
     const m = targetWords.length;
@@ -344,25 +79,29 @@ export function useTypingEngine(config: any) {
       fullDetails: fullDetails.reverse(),
       halfDetails: halfDetails.reverse()
     };
-  };
+  }, []);
 
-  const completeTest = () => {
-    if (timerIntervalRef.current) {
-      clearInterval(timerIntervalRef.current);
-      timerIntervalRef.current = null;
+  const onCompleteRef = useRef<() => void>(() => {});
+
+  const timer = useTypingTimer(config, onTick, () => onCompleteRef.current());
+
+  const completeTestImpl = useCallback(() => {
+    if (timer.timerIntervalRef.current) {
+      clearInterval(timer.timerIntervalRef.current);
+      timer.timerIntervalRef.current = null;
     }
     setGameState('completed');
 
-    const elapsed = timerStartedAtRef.current ? (performance.now() - timerStartedAtRef.current) / 1000 : 1;
+    const elapsed = timer.getElapsed();
     const mins = Math.max(0.001, elapsed / 60);
 
     let finalWpm = 0, finalRawWpm = 0, finalAccuracy = '100.00', finalRawAccuracy = 100;
     let scoreCard: any = null;
 
     if (config.testMode === 'govt-exam') {
-      const typedString = typedTextRef.current;
-      const analysis = alignPassages(targetText, typedString);
-      const grossKeystrokes = totalKeystrokesRef.current;
+      const typedString = metrics.typedTextRef.current;
+      const analysis = alignPassages(generator.targetText, typedString);
+      const grossKeystrokes = metrics.totalKeystrokesRef.current;
       const totalErrors = analysis.totalWeightedErrors;
       const grossWords = grossKeystrokes / 5;
       const grossWpmVal = Math.round(grossWords / mins);
@@ -386,28 +125,28 @@ export function useTypingEngine(config: any) {
         status: isPassed ? 'PASSED' : 'FAILED',
         fullDetails: analysis.fullDetails, halfDetails: analysis.halfDetails
       };
-      setExamScore(scoreCard);
+      metrics.setExamScore(scoreCard);
       finalWpm = netWpmVal; finalRawWpm = grossWpmVal;
       finalAccuracy = accuracyVal; finalRawAccuracy = Math.round(parseFloat(accuracyVal));
     } else {
-      const metrics = calculateMetrics(elapsed);
-      finalWpm = metrics.wpm; finalRawWpm = metrics.rawWpm;
-      finalAccuracy = metrics.accuracy; finalRawAccuracy = metrics.rawAccuracy;
-      setExamScore(null);
+      const calc = metrics.calculateMetrics(elapsed);
+      finalWpm = calc.wpm; finalRawWpm = calc.rawWpm;
+      finalAccuracy = calc.accuracy; finalRawAccuracy = calc.rawAccuracy;
+      metrics.setExamScore(null);
     }
 
-    setWpm(finalWpm); setRawWpm(finalRawWpm); setAccuracy(finalAccuracy); setRawAccuracy(finalRawAccuracy);
+    metrics.setWpm(finalWpm); metrics.setRawWpm(finalRawWpm); metrics.setAccuracy(finalAccuracy); metrics.setRawAccuracy(finalRawAccuracy);
 
     const newRecord: TestRecord = {
       id: Date.now().toString(),
       date: new Date().toLocaleDateString(undefined, { month: 'short', day: 'numeric', year: 'numeric', hour: '2-digit', minute: '2-digit' }),
       mode: config.testMode,
-      limitValue: config.testMode === 'time' ? config.testTimeLimit : config.testMode === 'words' ? config.wordLimit : targetText.split(' ').length,
+      limitValue: config.testMode === 'time' ? config.testTimeLimit : config.testMode === 'words' ? config.wordLimit : generator.targetText.split(' ').length,
       wpm: finalWpm, accuracy: finalAccuracy, rawAccuracy: finalRawAccuracy,
-      missedKeys: { ...missedKeys },
-      wpmHistory: [...wpmHistory, finalWpm],
-      rawWpmHistory: [...rawWpmHistory, finalRawWpm],
-      timeHistory: [...timeHistory, Math.round(elapsed)],
+      missedKeys: { ...metrics.missedKeys },
+      wpmHistory: [...metrics.wpmHistory, finalWpm],
+      rawWpmHistory: [...metrics.rawWpmHistory, finalRawWpm],
+      timeHistory: [...metrics.timeHistory, Math.round(elapsed)],
       examScore: scoreCard
     };
 
@@ -415,146 +154,88 @@ export function useTypingEngine(config: any) {
       const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'https://typingmaster-bibp.onrender.com';
       fetch(`${apiUrl}/api/stats`, {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${token}`
-        },
-        body: JSON.stringify({
-          wpm: finalWpm,
-          accuracy: parseFloat(finalAccuracy),
-          test_type: config.testMode
-        })
-      })
-      .then(res => {
-        if (!res.ok) {
-          console.warn('Failed to save stats to server. Status:', res.status);
-          return null;
-        }
-        return res.json();
-      })
-      .then(savedItem => {
-        if (savedItem) {
-          console.log('Saved stats to server:', savedItem);
-        }
-      })
-      .catch(err => {
-        console.warn('Failed to save stats to server:', err);
-      });
+        headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
+        body: JSON.stringify({ wpm: finalWpm, accuracy: parseFloat(finalAccuracy), test_type: config.testMode })
+      }).catch(err => console.warn('Failed to save stats:', err));
     }
 
-    setTestHistory(prev => {
+    metrics.setTestHistory(prev => {
       const updated = [newRecord, ...prev];
       localStorage.setItem('typingthunder_test_history', JSON.stringify(updated));
       return updated;
     });
-  };
+  }, [timer, metrics, config, generator.targetText, token, alignPassages]);
 
-  const startTest = () => {
+  useEffect(() => {
+    onCompleteRef.current = completeTestImpl;
+  }, [completeTestImpl]);
+
+
+  const resetTest = useCallback(() => {
+    timer.resetTimer();
+    metrics.resetMetrics();
+    setGameState('idle');
+    setResetCounter(prev => prev + 1);
+    generator.generateText();
+  }, [timer, metrics, generator]);
+
+  useEffect(() => {
+    resetTest();
+  }, [config.testMode, config.testTimeLimit, config.wordLimit, config.includePunctuation, config.includeNumbers, config.customText, config.languageId]);
+
+  useEffect(() => {
+    const handleGlobalKeys = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') {
+        e.preventDefault();
+        resetTest();
+      }
+    };
+    window.addEventListener('keydown', handleGlobalKeys);
+    return () => window.removeEventListener('keydown', handleGlobalKeys);
+  }, [resetTest]);
+
+  const startTest = useCallback(() => {
     setGameState('running');
-    timerStartedAtRef.current = performance.now();
-    
-    if (config.testMode === 'time') {
-      setTimeLeft(config.testTimeLimit);
-      timerIntervalRef.current = setInterval(() => {
-        setTimeLeft(prev => {
-          const nextTime = prev - 1;
-          const elapsed = (performance.now() - (timerStartedAtRef.current || performance.now())) / 1000;
-          const metrics = calculateMetrics(elapsed);
-          setWpm(metrics.wpm); setRawWpm(metrics.rawWpm); setAccuracy(metrics.accuracy); setRawAccuracy(metrics.rawAccuracy); setLiveWpm(metrics.wpm);
-          setWpmHistory(hist => [...hist, metrics.wpm]); setRawWpmHistory(hist => [...hist, metrics.rawWpm]); setTimeHistory(timeHist => [...timeHist, Math.round(elapsed)]);
-          if (nextTime <= 0) { completeTest(); return 0; }
-          return nextTime;
-        });
-      }, 1000);
-    } else {
-      setTimeLeft(0);
-      timerIntervalRef.current = setInterval(() => {
-        setTimeLeft(prev => {
-          const nextTime = prev + 1;
-          const elapsed = (performance.now() - (timerStartedAtRef.current || performance.now())) / 1000;
-          const metrics = calculateMetrics(elapsed);
-          setWpm(metrics.wpm); setRawWpm(metrics.rawWpm); setAccuracy(metrics.accuracy); setRawAccuracy(metrics.rawAccuracy); setLiveWpm(metrics.wpm);
-          setWpmHistory(hist => [...hist, metrics.wpm]); setRawWpmHistory(hist => [...hist, metrics.rawWpm]); setTimeHistory(timeHist => [...timeHist, Math.round(elapsed)]);
-          return nextTime;
-        });
-      }, 1000);
-    }
-  };
+    timer.startTimer();
+  }, [timer]);
 
-  const handleProgress = (correctCount: number, typedLength: number, typedValue?: string) => {
-    correctCountRef.current = correctCount;
-    typedLengthRef.current = typedLength;
-    setTypedLength(typedLength);
-    if (typedValue !== undefined) typedTextRef.current = typedValue;
-    if (timerStartedAtRef.current) {
-      const elapsed = (performance.now() - timerStartedAtRef.current) / 1000;
-      setLiveWpm(calculateMetrics(elapsed).wpm);
+  const handleProgress = useCallback((correctCount: number, currentTypedLength: number, typedValue?: string) => {
+    metrics.handleProgress(correctCount, currentTypedLength, typedValue);
+    if (timer.getElapsed() > 0 && gameState === 'running') {
+      const elapsed = timer.getElapsed();
+      metrics.setLiveWpm(metrics.calculateMetrics(elapsed).wpm);
     }
-  };
+  }, [metrics, timer, gameState]);
 
-  const loadMoreZenWords = useCallback(() => {
-    const generated: string[] = [];
-    const activeLang = LANGUAGES.find(l => l.id === config.languageId) || LANGUAGES[0];
-    const baseWords = activeLang.words && activeLang.words.length > 0 ? activeLang.words : LANGUAGES[0].words;
-    for (let i = 0; i < 50; i++) {
-      if (config.includeNumbers && Math.random() < 0.15) {
-        generated.push(Math.floor(Math.random() * 100).toString());
-      } else if (config.includePunctuation && Math.random() < 0.1) {
-          const punctuation = config.languageId === 'hindi' || config.languageId === 'marathi' ? [',', '।', '?', '!', ' -', '...'] : [',', '.', '?', '!', ';', ':', ' -', '...'];
-          generated.push(baseWords[Math.floor(Math.random() * baseWords.length)] + punctuation[Math.floor(Math.random() * punctuation.length)]);
-      } else {
-        generated.push(baseWords[Math.floor(Math.random() * baseWords.length)]);
-      }
+  const handleKeystroke = useCallback((isError: boolean, missedChar?: string) => {
+    metrics.handleKeystroke(isError, missedChar);
+    if (isError && config.suddenDeath) {
+      completeTestImpl();
     }
-    setTargetText(prev => prev + ' ' + generated.join(' '));
-  }, [config.includePunctuation, config.includeNumbers, config.languageId]);
-
-  const handleKeystroke = (isError: boolean, missedChar?: string) => {
-    totalKeystrokesRef.current += 1;
-    if (isError) {
-      incorrectKeystrokesRef.current += 1;
-      if (missedChar) {
-        setMissedKeys(prev => ({ ...prev, [missedChar]: (prev[missedChar] || 0) + 1 }));
-      }
-      
-      if (config.suddenDeath) {
-        completeTest();
-      }
-    }
-  };
+  }, [metrics, config.suddenDeath, completeTestImpl]);
 
   const getCharacterStats = useCallback(() => {
-    const target = targetText;
-    const typed = typedTextRef.current;
-    let correct = 0;
-    let incorrect = 0;
-    let extra = 0;
-    
+    const target = generator.targetText;
+    const typed = metrics.typedTextRef.current;
+    let correct = 0; let incorrect = 0; let extra = 0;
     const minLen = Math.min(target.length, typed.length);
     for (let i = 0; i < minLen; i++) {
-      if (typed[i] === target[i]) {
-        correct++;
-      } else {
-        incorrect++;
-      }
+      if (typed[i] === target[i]) correct++;
+      else incorrect++;
     }
-    if (typed.length > target.length) {
-      extra = typed.length - target.length;
-    }
+    if (typed.length > target.length) extra = typed.length - target.length;
     const missed = Math.max(0, target.length - typed.length);
-    
     return { correct, incorrect, extra, missed };
-  }, [targetText]);
+  }, [generator.targetText, metrics.typedTextRef]);
 
   return {
-    targetText, author, title,
-    gameState, timeLeft, resetCounter,
-    wpm, rawWpm, accuracy, rawAccuracy, liveWpm,
-    typedLength,
-    missedKeys, wpmHistory, rawWpmHistory, timeHistory,
-    testHistory, setTestHistory, examScore,
-    resetTest, startTest, completeTest, handleProgress, loadMoreZenWords, handleKeystroke, handleClearHistory,
+    targetText: generator.targetText, author: generator.author, title: generator.title,
+    gameState, timeLeft: timer.timeLeft, resetCounter,
+    wpm: metrics.wpm, rawWpm: metrics.rawWpm, accuracy: metrics.accuracy, rawAccuracy: metrics.rawAccuracy, liveWpm: metrics.liveWpm,
+    typedLength: metrics.typedLength,
+    missedKeys: metrics.missedKeys, wpmHistory: metrics.wpmHistory, rawWpmHistory: metrics.rawWpmHistory, timeHistory: metrics.timeHistory,
+    testHistory: metrics.testHistory, setTestHistory: metrics.setTestHistory, examScore: metrics.examScore,
+    resetTest, startTest, completeTest: completeTestImpl, handleProgress, loadMoreZenWords: generator.loadMoreZenWords, handleKeystroke, handleClearHistory: metrics.handleClearHistory,
     getCharacterStats
   };
 }
-
