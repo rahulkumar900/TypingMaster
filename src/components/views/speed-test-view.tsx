@@ -84,6 +84,8 @@ export function SpeedTestView() {
     getCharacterStats, examScore
   } = engine;
 
+  const isGovtExam = (testMode as string) === 'govt-exam';
+
   // Sync custom inputs with config values when opened
   useEffect(() => {
     if (isCustomTimeOpen) setCustomTimeInput(testTimeLimit.toString());
@@ -151,7 +153,7 @@ export function SpeedTestView() {
       {gameState === 'completed' ? (
         /* ================= RESULTS SCORECARD ================= */
         <article className="flex flex-col items-center justify-center animate-fadeIn w-full py-8 text-center select-none font-sans">
-          {testMode === 'govt-exam' && examScore ? (
+          {isGovtExam && examScore ? (
             /* ================= GOVERNMENT EXAM SCORECARD ================= */
             <div className="flex flex-col items-center justify-center w-full max-w-[850px] gap-8 animate-fadeIn text-slate-100">
               {/* Result Badge */}
@@ -521,7 +523,7 @@ export function SpeedTestView() {
         <div className="flex flex-col items-center flex-1 animate-fadeIn w-full min-h-0 py-8">
           
           {/* Progress Track */}
-          {!showKeyboard && gameState === 'running' && testMode !== 'govt-exam' && (
+          {!showKeyboard && gameState === 'running' && !isGovtExam && (
             <div className="absolute top-0 left-1/2 -translate-x-1/2 w-full max-w-[800px] select-none shrink-0 px-6 sm:px-0 animate-fadeIn z-10 pt-4">
               <div className="relative w-full">
             {/* The floating user card */}
@@ -539,7 +541,7 @@ export function SpeedTestView() {
             </div>
 
             {/* The ghost pacer floating card */}
-            {ghostWpm > 0 && testMode !== 'govt-exam' && (
+            {ghostWpm > 0 && !isGovtExam && (
               <div 
                 className={`absolute -top-8 flex flex-col items-center z-5 ${
                   gameState === 'running' ? 'transition-all duration-1000 ease-linear' : 'transition-all duration-150 ease-out'
@@ -585,7 +587,7 @@ export function SpeedTestView() {
 
           {/* Centered Typing Arena */}
           <div className={`w-full flex flex-col relative ${
-            testMode === 'govt-exam' 
+            isGovtExam 
               ? 'flex-1 h-full min-h-0' 
               : 'shrink-0 justify-center my-auto min-h-[160px]'
           }`}>
@@ -631,7 +633,7 @@ export function SpeedTestView() {
           <div 
             className={`flex flex-col items-center justify-center gap-4 transition-all duration-500 w-full shrink-0 mt-auto ${
               gameState === 'running' 
-                ? (testMode === 'govt-exam' ? 'hidden' : 'opacity-0 pointer-events-none') 
+                ? (isGovtExam ? 'hidden' : 'opacity-0 pointer-events-none') 
                 : 'opacity-100'
             }`}
             id="monkeytype-config-bar"
@@ -708,7 +710,7 @@ export function SpeedTestView() {
               </div>
 
               {/* Pill 3: Limits / Suboptions */}
-              {(testMode === 'time' || testMode === 'words' || testMode === 'custom' || testMode === 'govt-exam') && (
+              {(testMode === 'time' || testMode === 'words' || testMode === 'custom' || isGovtExam) && (
                 <div className="flex items-center h-[46px] p-[2px] rounded-full border border-zinc-800 bg-zinc-950/30 backdrop-blur-sm select-none gap-[6px] transition-all duration-300">
                   {testMode === 'time' && (
                     <>
@@ -804,7 +806,7 @@ export function SpeedTestView() {
                     </button>
                   )}
 
-                  {testMode === 'govt-exam' && (
+                  {isGovtExam && (
                     <div className="flex items-center gap-[6px]">
                       {(['ssc-chsl', 'ssc-cgl', 'state-clerk'] as const).map((type) => (
                         <button
