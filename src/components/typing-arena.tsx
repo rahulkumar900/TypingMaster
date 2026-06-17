@@ -326,7 +326,19 @@ export const TypingArena: React.FC<TypingArenaProps> = ({
         
         synth?.playClick('char');
         const newOutput = transliteratorRef.current?.processKey(lookupKey) || '';
-        // Note: Strict mode revert bypassed for phonetic layouts.
+        if (strictMode) {
+          // Allow intermediate states for legacy layouts (Krutidev / Mangal Gail)
+          // because characters like 'short i' are typed BEFORE the consonant, but Unicode expects them AFTER.
+          // This means `newVal` (e.g. 'ि') won't match `targetText` (e.g. 'कि') until the consonant is typed.
+          const isLegacyLayout = usePhonetic && ['KRUTIDEV_010', 'MANGAL_GAIL'].includes(layoutId || '');
+          if (!isLegacyLayout && !targetText.startsWith(newOutput)) {
+            // Block invalid chars
+            if (usePhonetic) {
+              transliteratorRef.current?.processKey('Backspace');
+            }
+            return;
+          }
+        }
         if (textareaRef.current) textareaRef.current.value = newOutput;
         processInput(newOutput);
         onKeystroke(false);

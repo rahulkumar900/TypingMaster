@@ -27,7 +27,7 @@ export async function createTypingEngine(config: LayoutConfig): Promise<Translit
   switch (config.id) {
     case 'KRUTIDEV_010': {
       const { KRUTIDEV_010_MAP } = await import('./maps');
-      return new MacroEngine(KRUTIDEV_010_MAP, config.backspaceAllowed);
+      return new MacroEngine(KRUTIDEV_010_MAP, config.backspaceAllowed, true);
     }
     case 'MANGAL_GAIL': {
       const { REMINGTON_GAIL_MAP } = await import('./maps');
@@ -38,7 +38,7 @@ export async function createTypingEngine(config: LayoutConfig): Promise<Translit
         ...REMINGTON_GAIL_MAP.shift,
         ...gailAlt,
         ...gailAltShift
-      }, config.backspaceAllowed);
+      }, config.backspaceAllowed, true);
     }
     case 'ASSAMESE_INSCRIPT': { const { ASSAMESE_MAP } = await import('./mappings/assamese'); return new MacroEngine(ASSAMESE_MAP, config.backspaceAllowed); }
     case 'BENGALI_INSCRIPT': { const { BENGALI_MAP } = await import('./mappings/bengali'); return new MacroEngine(BENGALI_MAP, config.backspaceAllowed); }
