@@ -81,7 +81,7 @@ export function SpeedTestView() {
     typedLength,
     wpmHistory, rawWpmHistory, timeHistory, missedKeys,
     resetTest, startTest, completeTest, handleProgress, handleKeystroke, loadMoreZenWords,
-    getCharacterStats
+    getCharacterStats, examScore
   } = engine;
 
   // Sync custom inputs with config values when opened
@@ -101,7 +101,7 @@ export function SpeedTestView() {
   useEffect(() => {
     if (typeof window !== 'undefined') {
       const event = new CustomEvent('typingGameStateChange', { 
-        detail: { isRunning: gameState === 'running' } 
+        detail: { isRunning: gameState === 'running', gameState } 
       });
       window.dispatchEvent(event);
     }
@@ -151,7 +151,101 @@ export function SpeedTestView() {
       {gameState === 'completed' ? (
         /* ================= RESULTS SCORECARD ================= */
         <article className="flex flex-col items-center justify-center animate-fadeIn w-full py-8 text-center select-none font-sans">
-          {!showDetailed ? (
+          {testMode === 'govt-exam' && examScore ? (
+            /* ================= GOVERNMENT EXAM SCORECARD ================= */
+            <div className="flex flex-col items-center justify-center w-full max-w-[850px] gap-8 animate-fadeIn text-slate-100">
+              {/* Result Badge */}
+              <div className="flex flex-col items-center gap-3">
+                <div className={`px-8 py-3 rounded-full text-lg font-bold tracking-wider uppercase border shadow-lg animate-pulse ${
+                  examScore.status === 'PASSED' 
+                    ? 'bg-emerald-500/10 text-emerald-400 border-emerald-500/30' 
+                    : 'bg-red-500/10 text-red-400 border-red-500/30'
+                }`}>
+                  {examScore.status === 'PASSED' ? 'QUALIFIED (Passed)' : 'DISQUALIFIED (Failed)'}
+                </div>
+                <span className="text-sm text-zinc-500 font-mono">
+                  Preset: <span className="text-zinc-300 font-bold">{examScore.examType}</span>
+                </span>
+              </div>
+
+              {/* Metrics Grid */}
+              <div className="grid grid-cols-2 md:grid-cols-4 gap-4 w-full px-4">
+                <div className="bg-[var(--bg-panel)] border border-[var(--border-subtle)] rounded-2xl p-5 text-left transition-all hover:border-[var(--accent-color)]/30">
+                  <div className="text-[11px] font-bold text-zinc-500 uppercase tracking-widest">Net Speed</div>
+                  <div className="text-3xl font-extrabold text-[var(--accent-color)] mt-1.5 font-sans">{examScore.netWpm} WPM</div>
+                  <div className="text-[10px] text-zinc-500 mt-1 font-mono">Target: {examScore.speedTarget} WPM</div>
+                </div>
+
+                <div className="bg-[var(--bg-panel)] border border-[var(--border-subtle)] rounded-2xl p-5 text-left transition-all hover:border-[var(--accent-color)]/30">
+                  <div className="text-[11px] font-bold text-zinc-500 uppercase tracking-widest">Gross Speed</div>
+                  <div className="text-3xl font-extrabold text-zinc-300 mt-1.5 font-sans">{examScore.grossWpm} WPM</div>
+                  <div className="text-[10px] text-zinc-500 mt-1 font-mono">{examScore.grossKeystrokes} Keystrokes</div>
+                </div>
+
+                <div className="bg-[var(--bg-panel)] border border-[var(--border-subtle)] rounded-2xl p-5 text-left transition-all hover:border-[var(--accent-color)]/30">
+                  <div className="text-[11px] font-bold text-zinc-500 uppercase tracking-widest">Accuracy</div>
+                  <div className="text-3xl font-extrabold text-zinc-300 mt-1.5 font-sans">{examScore.accuracy}%</div>
+                  <div className="text-[10px] text-zinc-500 mt-1 font-mono">Based on error deductions</div>
+                </div>
+
+                <div className="bg-[var(--bg-panel)] border border-[var(--border-subtle)] rounded-2xl p-5 text-left transition-all hover:border-[var(--accent-color)]/30">
+                  <div className="text-[11px] font-bold text-zinc-500 uppercase tracking-widest">Error Rate</div>
+                  <div className="text-3xl font-extrabold text-zinc-300 mt-1.5 font-sans">{examScore.errorPercentage}%</div>
+                  <div className="text-[10px] text-zinc-500 mt-1 font-mono">Max Limit: {examScore.errorThreshold}%</div>
+                </div>
+              </div>
+
+              {/* Errors count row */}
+              <div className="grid grid-cols-3 gap-4 w-full px-4 text-center">
+                <div className="bg-zinc-950/20 border border-zinc-900 rounded-xl py-3 font-mono">
+                  <span className="text-[11px] text-zinc-500 uppercase">Total Errors</span>
+                  <span className="block text-lg font-bold text-red-400 mt-0.5">{examScore.totalErrors}</span>
+                </div>
+                <div className="bg-zinc-950/20 border border-zinc-900 rounded-xl py-3 font-mono">
+                  <span className="text-[11px] text-zinc-500 uppercase">Full Mistakes</span>
+                  <span className="block text-lg font-bold text-red-500/80 mt-0.5">{examScore.fullMistakes}</span>
+                </div>
+                <div className="bg-zinc-950/20 border border-zinc-900 rounded-xl py-3 font-mono">
+                  <span className="text-[11px] text-zinc-500 uppercase">Half Mistakes</span>
+                  <span className="block text-lg font-bold text-orange-400/80 mt-0.5">{examScore.halfMistakes}</span>
+                </div>
+              </div>
+
+              {/* Detailed Mistakes breakdown */}
+              {(examScore.fullDetails.length > 0 || examScore.halfDetails.length > 0) && (
+                <div className="w-full px-4 text-left">
+                  <div className="bg-[var(--bg-panel)] border border-[var(--border-subtle)] rounded-2xl p-5 flex flex-col gap-3 max-h-[200px] overflow-y-auto scrollbar-thin">
+                    <span className="text-[11px] font-bold text-zinc-500 uppercase tracking-widest font-mono">Error Log & Breakdown</span>
+                    <ul className="space-y-1.5 text-xs font-mono text-zinc-400 leading-relaxed">
+                      {examScore.fullDetails.map((det: string, idx: number) => (
+                        <li key={`f-${idx}`} className="flex gap-2 items-start text-red-400/90">
+                          <span className="font-bold">&bull;</span>
+                          <span>[Full] {det}</span>
+                        </li>
+                      ))}
+                      {examScore.halfDetails.map((det: string, idx: number) => (
+                        <li key={`h-${idx}`} className="flex gap-2 items-start text-orange-400/90">
+                          <span className="font-bold">&bull;</span>
+                          <span>[Half] {det}</span>
+                        </li>
+                      ))}
+                    </ul>
+                  </div>
+                </div>
+              )}
+
+              {/* Controls */}
+              <div className="flex items-center justify-center gap-6 mt-4">
+                <button 
+                  onClick={resetTest}
+                  className="w-[108px] h-[56px] rounded-[30px] border border-[var(--border-active)] hover:border-[var(--accent-color)] bg-[var(--bg-widget)]/60 hover:bg-[var(--accent-color)]/10 shadow-[0_4px_12px_rgba(0,0,0,0.15)] flex items-center justify-center transition-all duration-300 text-[var(--text-muted)] hover:text-[var(--accent-color)] cursor-pointer active:scale-95 gap-2 font-mono text-sm font-semibold"
+                  title="Restart Test"
+                >
+                  <RefreshCw className="w-4 h-4" /> Restart
+                </button>
+              </div>
+            </div>
+          ) : !showDetailed ? (
             /* Simple Results view */
             <div className="flex flex-col items-center justify-center w-full max-w-[800px] gap-12">
               {/* Floating instruction pill */}
@@ -427,7 +521,7 @@ export function SpeedTestView() {
         <div className="flex flex-col items-center flex-1 animate-fadeIn w-full min-h-0 py-8">
           
           {/* Progress Track */}
-          {!showKeyboard && gameState === 'running' && (
+          {!showKeyboard && gameState === 'running' && testMode !== 'govt-exam' && (
             <div className="absolute top-0 left-1/2 -translate-x-1/2 w-full max-w-[800px] select-none shrink-0 px-6 sm:px-0 animate-fadeIn z-10 pt-4">
               <div className="relative w-full">
             {/* The floating user card */}
@@ -490,7 +584,11 @@ export function SpeedTestView() {
           )}
 
           {/* Centered Typing Arena */}
-          <div className="w-full shrink-0 flex flex-col justify-center my-auto min-h-[160px] relative">
+          <div className={`w-full flex flex-col relative ${
+            testMode === 'govt-exam' 
+              ? 'flex-1 h-full min-h-0' 
+              : 'shrink-0 justify-center my-auto min-h-[160px]'
+          }`}>
             <TypingArena
               targetText={targetText}
               author={author}
@@ -533,7 +631,7 @@ export function SpeedTestView() {
           <div 
             className={`flex flex-col items-center justify-center gap-4 transition-all duration-500 w-full shrink-0 mt-auto ${
               gameState === 'running' 
-                ? 'opacity-0 pointer-events-none' 
+                ? (testMode === 'govt-exam' ? 'hidden' : 'opacity-0 pointer-events-none') 
                 : 'opacity-100'
             }`}
             id="monkeytype-config-bar"

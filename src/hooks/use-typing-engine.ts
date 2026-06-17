@@ -9,7 +9,7 @@ export function useTypingEngine(config: any) {
   let auth: any = null;
   try {
     auth = useAuth();
-  } catch (e) {}
+  } catch (e) { }
   const token = auth?.token;
 
   const [gameState, setGameState] = useState<'idle' | 'running' | 'completed'>('idle');
@@ -36,7 +36,7 @@ export function useTypingEngine(config: any) {
     const m = targetWords.length;
     const n = typedWords.length;
     const dp: number[][] = Array(m + 1).fill(0).map(() => Array(n + 1).fill(0));
-    
+
     for (let i = 1; i <= m; i++) {
       for (let j = 1; j <= n; j++) {
         if (targetWords[i - 1].toLowerCase() === typedWords[j - 1].toLowerCase()) {
@@ -46,13 +46,13 @@ export function useTypingEngine(config: any) {
         }
       }
     }
-    
+
     let i = m, j = n;
     let fullMistakes = 0;
     let halfMistakes = 0;
     const fullDetails: string[] = [];
     const halfDetails: string[] = [];
-    
+
     while (i > 0 || j > 0) {
       if (i > 0 && j > 0 && targetWords[i - 1].toLowerCase() === typedWords[j - 1].toLowerCase()) {
         if (targetWords[i - 1] !== typedWords[j - 1]) {
@@ -71,7 +71,7 @@ export function useTypingEngine(config: any) {
         i--;
       }
     }
-    
+
     return {
       fullMistakes,
       halfMistakes,
@@ -81,7 +81,7 @@ export function useTypingEngine(config: any) {
     };
   }, []);
 
-  const onCompleteRef = useRef<() => void>(() => {});
+  const onCompleteRef = useRef<() => void>(() => { });
 
   const timer = useTypingTimer(config, onTick, () => onCompleteRef.current());
 
@@ -109,12 +109,12 @@ export function useTypingEngine(config: any) {
       const netWpmVal = Math.round((netKeystrokes / 5) / mins);
       const errorPercentageVal = grossWords > 0 ? (totalErrors / grossWords) * 100 : 0;
       const accuracyVal = Math.max(0, 100 - errorPercentageVal).toFixed(2);
-      
+
       let speedTarget = 35;
       let errorThreshold = 7;
       if (config.govtExamType === 'ssc-cgl') { speedTarget = 27; errorThreshold = 5; }
       else if (config.govtExamType === 'state-clerk') { speedTarget = 30; errorThreshold = 5; }
-      
+
       const isPassed = netWpmVal >= speedTarget && errorPercentageVal <= errorThreshold;
       scoreCard = {
         examType: config.govtExamType === 'ssc-chsl' ? 'SSC CHSL (English)' : config.govtExamType === 'ssc-cgl' ? 'SSC CGL (English)' : 'State Clerk Typing Exam',

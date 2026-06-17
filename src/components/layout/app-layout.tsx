@@ -1,18 +1,36 @@
-'use client';
+"use client";
 
-import React, { useState, useEffect } from 'react';
-import Link from 'next/link';
-import { usePathname, useRouter } from 'next/navigation';
-import { useAuth } from '@/context/auth-context';
-import { useConfig } from '@/context/config-context';
-import { SettingsPanel } from '@/components/settings-panel';
-import { StatsDashboard, TestRecord } from '@/components/stats-dashboard';
-import { GlobalFooter } from '@/components/layout/footer';
-import { ErrorBoundary } from '@/components/error-boundary';
-import { Mail, Shield, Lock, DollarSign, Settings, Trophy, Globe, X, Check } from 'lucide-react';
+import React, { useState, useEffect } from "react";
+import Link from "next/link";
+import { usePathname, useRouter } from "next/navigation";
+import { useAuth } from "@/context/auth-context";
+import { useConfig } from "@/context/config-context";
+import { SettingsPanel } from "@/components/settings-panel";
+import { StatsDashboard, TestRecord } from "@/components/stats-dashboard";
+import { GlobalFooter } from "@/components/layout/footer";
+import { ErrorBoundary } from "@/components/error-boundary";
+import {
+  Mail,
+  Shield,
+  Lock,
+  DollarSign,
+  Settings,
+  Trophy,
+  Globe,
+  X,
+  Check,
+} from "lucide-react";
 
 const TwitterIcon = (props: React.SVGProps<SVGSVGElement>) => (
-  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" {...props}>
+  <svg
+    viewBox="0 0 24 24"
+    fill="none"
+    stroke="currentColor"
+    strokeWidth="2"
+    strokeLinecap="round"
+    strokeLinejoin="round"
+    {...props}
+  >
     <path d="M22 4s-.7 2.1-2 3.4c1.6 10-9.4 17.3-18 11.6 2.2.1 4.4-.6 6-2C3 15.5.5 9.6 3 5c2.2 2.6 5.6 4.1 9 4-.9-4.2 4-6.6 7-3.8 1.1 0 3-1.2 3-1.2z" />
   </svg>
 );
@@ -24,24 +42,48 @@ const DiscordIcon = (props: React.SVGProps<SVGSVGElement>) => (
 );
 
 const GithubIcon = (props: React.SVGProps<SVGSVGElement>) => (
-  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" {...props}>
+  <svg
+    viewBox="0 0 24 24"
+    fill="none"
+    stroke="currentColor"
+    strokeWidth="2"
+    strokeLinecap="round"
+    strokeLinejoin="round"
+    {...props}
+  >
     <path d="M15 22v-4a4.8 4.8 0 0 0-1-3.5c3 0 6-2 6-5.5.08-1.25-.27-2.48-1-3.5.28-1.15.28-2.35 0-3.5 0 0-1 0-3 1.5-2.64-.5-5.36-.5-8 0C6 2 5 2 5 2c-.3 1.15-.3 2.35 0 3.5A5.403 5.403 0 0 0 4 9c0 3.5 3 5.5 6 5.5-.39.49-.68 1.05-.85 1.65-.17.6-.22 1.23-.15 1.85v4" />
     <path d="M9 18c-4.51 2-5-2-7-2" />
   </svg>
 );
 
 const renderAvatar = (url: string, sizeClass = "w-6 h-6") => {
-  if (url && !url.includes('seed=Lakshayyyy') && !url.includes('seed=default')) {
+  if (
+    url &&
+    !url.includes("seed=Lakshayyyy") &&
+    !url.includes("seed=default")
+  ) {
     return (
-      <div className={`${sizeClass} rounded-full border border-zinc-700 flex items-center justify-center text-zinc-500 overflow-hidden bg-zinc-900`}>
+      <div
+        className={`${sizeClass} rounded-full border border-zinc-700 flex items-center justify-center text-zinc-500 overflow-hidden bg-zinc-900`}
+      >
         <img src={url} alt="Avatar" className="w-full h-full object-cover" />
       </div>
     );
   }
   return (
-    <div className={`${sizeClass} rounded-full border border-zinc-700 flex items-center justify-center text-zinc-400 overflow-hidden bg-zinc-800`}>
-      <svg className="w-3.5 h-3.5 text-zinc-400" viewBox="0 0 24 24" fill="currentColor">
-        <path fillRule="evenodd" d="M7.5 6a4.5 4.5 0 119 0 4.5 4.5 0 01-9 0zM3.751 20.105a8.25 8.25 0 0116.498 0 .75.75 0 01-.437.695A18.683 18.683 0 0112 22.5c-2.786 0-5.433-.608-7.812-1.7a.75.75 0 01-.437-.695z" clipRule="evenodd" />
+    <div
+      className={`${sizeClass} rounded-full border border-zinc-700 flex items-center justify-center text-zinc-400 overflow-hidden bg-zinc-800`}
+    >
+      <svg
+        className="w-3.5 h-3.5 text-zinc-400"
+        viewBox="0 0 24 24"
+        fill="currentColor"
+      >
+        <path
+          fillRule="evenodd"
+          d="M7.5 6a4.5 4.5 0 119 0 4.5 4.5 0 01-9 0zM3.751 20.105a8.25 8.25 0 0116.498 0 .75.75 0 01-.437.695A18.683 18.683 0 0112 22.5c-2.786 0-5.433-.608-7.812-1.7a.75.75 0 01-.437-.695z"
+          clipRule="evenodd"
+        />
       </svg>
     </div>
   );
@@ -62,24 +104,24 @@ export function AppLayout({
   seoDescription,
   hideHeaderAndFooterDuringRace = false,
   isRacing = false,
-  seoContent
+  seoContent,
 }: AppLayoutProps) {
   const pathname = usePathname();
   const { user: currentUser, logout, token } = useAuth();
   const config = useConfig();
-  
+
   const [isSettingsOpen, setIsSettingsOpen] = useState(false);
   const [isDashboardOpen, setIsDashboardOpen] = useState(false);
   const [dashboardHistory, setDashboardHistory] = useState<TestRecord[]>([]);
 
   // Apply theme classes dynamically to document body
   useEffect(() => {
-    if (typeof window !== 'undefined') {
-      const activeTheme = config.currentTheme || 'carbon';
+    if (typeof window !== "undefined") {
+      const activeTheme = config.currentTheme || "carbon";
       document.body.className = document.body.className
-        .split(' ')
-        .filter(c => !c.startsWith('theme-'))
-        .join(' ');
+        .split(" ")
+        .filter((c) => !c.startsWith("theme-"))
+        .join(" ");
       document.body.classList.add(`theme-${activeTheme}`);
     }
   }, [config.currentTheme]);
@@ -89,42 +131,50 @@ export function AppLayout({
     if (isDashboardOpen) {
       const loadHistory = () => {
         if (token) {
-          const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'https://typingmaster-bibp.onrender.com';
+          const apiUrl =
+            process.env.NEXT_PUBLIC_API_URL ||
+            "https://typingmaster-bibp.onrender.com";
           fetch(`${apiUrl}/api/stats`, {
             headers: {
-              'Authorization': `Bearer ${token}`
-            }
+              Authorization: `Bearer ${token}`,
+            },
           })
-          .then(res => (res.ok ? res.json() : null))
-          .then(data => {
-            if (data && Array.isArray(data)) {
-              const mapped: TestRecord[] = data.map((item: any) => ({
-                id: item.id.toString(),
-                date: new Date(item.date).toLocaleDateString(undefined, { month: 'short', day: 'numeric', year: 'numeric', hour: '2-digit', minute: '2-digit' }),
-                mode: item.mode,
-                limitValue: 0,
-                wpm: item.wpm,
-                accuracy: parseFloat(item.accuracy).toFixed(2),
-                rawAccuracy: Math.round(parseFloat(item.accuracy)),
-                missedKeys: {},
-                wpmHistory: [],
-                rawWpmHistory: [],
-                timeHistory: []
-              }));
-              setDashboardHistory(mapped);
-            } else {
-              loadLocalHistory();
-            }
-          })
-          .catch(() => loadLocalHistory());
+            .then((res) => (res.ok ? res.json() : null))
+            .then((data) => {
+              if (data && Array.isArray(data)) {
+                const mapped: TestRecord[] = data.map((item: any) => ({
+                  id: item.id.toString(),
+                  date: new Date(item.date).toLocaleDateString(undefined, {
+                    month: "short",
+                    day: "numeric",
+                    year: "numeric",
+                    hour: "2-digit",
+                    minute: "2-digit",
+                  }),
+                  mode: item.mode,
+                  limitValue: 0,
+                  wpm: item.wpm,
+                  accuracy: parseFloat(item.accuracy).toFixed(2),
+                  rawAccuracy: Math.round(parseFloat(item.accuracy)),
+                  missedKeys: {},
+                  wpmHistory: [],
+                  rawWpmHistory: [],
+                  timeHistory: [],
+                }));
+                setDashboardHistory(mapped);
+              } else {
+                loadLocalHistory();
+              }
+            })
+            .catch(() => loadLocalHistory());
         } else {
           loadLocalHistory();
         }
       };
 
       const loadLocalHistory = () => {
-        if (typeof window !== 'undefined') {
-          const saved = localStorage.getItem('typingthunder_test_history');
+        if (typeof window !== "undefined") {
+          const saved = localStorage.getItem("typingthunder_test_history");
           if (saved) {
             try {
               setDashboardHistory(JSON.parse(saved));
@@ -139,31 +189,37 @@ export function AppLayout({
 
   const handleClearHistory = () => {
     setDashboardHistory([]);
-    if (typeof window !== 'undefined') {
-      localStorage.removeItem('typingthunder_test_history');
+    if (typeof window !== "undefined") {
+      localStorage.removeItem("typingthunder_test_history");
     }
   };
 
   const navItems = [
-    { label: 'Speed Test', href: '/typing-test' },
-    { label: 'Play 1 v 1', href: '/play-1vs1' },
-    { label: 'Practice', href: '/typing-practice' },
-    { label: 'Sphere', href: '/sphere' },
-    { label: 'Ratings', href: '/ratings' }
+    { label: "Speed Test", href: "/typing-test" },
+    { label: "Play 1 v 1", href: "/play-1vs1" },
+    { label: "Practice", href: "/typing-practice" },
+    { label: "Sphere", href: "/sphere" },
+    { label: "Ratings", href: "/ratings" },
   ];
 
   // Detect which tab should be styled active based on current path
   const getActiveTab = () => {
-    if (pathname === '/typing-test' || pathname === '/' || pathname === '/online-typing-test' || pathname === '/typing-speed-test') return '/typing-test';
-    if (pathname === '/play-1vs1') return '/play-1vs1';
-    if (pathname === '/typing-practice') return '/typing-practice';
-    if (pathname === '/sphere') return '/sphere';
-    if (pathname === '/ratings') return '/ratings';
-    return '';
+    if (
+      pathname === "/typing-test" ||
+      pathname === "/" ||
+      pathname === "/online-typing-test" ||
+      pathname === "/typing-speed-test"
+    )
+      return "/typing-test";
+    if (pathname === "/play-1vs1") return "/play-1vs1";
+    if (pathname === "/typing-practice") return "/typing-practice";
+    if (pathname === "/sphere") return "/sphere";
+    if (pathname === "/ratings") return "/ratings";
+    return "";
   };
 
   const activeTabPath = getActiveTab();
-  
+
   const [isRaceActive, setIsRaceActive] = useState(isRacing);
 
   useEffect(() => {
@@ -172,9 +228,10 @@ export function AppLayout({
 
   useEffect(() => {
     const handleRaceChange = (e: any) => setIsRaceActive(e.detail.isRunning);
-    if (typeof window !== 'undefined') {
-      window.addEventListener('typingGameStateChange', handleRaceChange);
-      return () => window.removeEventListener('typingGameStateChange', handleRaceChange);
+    if (typeof window !== "undefined") {
+      window.addEventListener("typingGameStateChange", handleRaceChange);
+      return () =>
+        window.removeEventListener("typingGameStateChange", handleRaceChange);
     }
   }, []);
 
@@ -182,28 +239,30 @@ export function AppLayout({
 
   return (
     <div className="min-h-[100dvh] bg-[var(--bg-body)] text-[var(--text-main)] transition-colors duration-500 relative flex flex-col items-center font-sans overflow-x-hidden w-full">
-      
       {/* Background gradients */}
       <div className="absolute top-0 left-1/4 w-[500px] h-[500px] bg-[var(--accent-color)]/2 rounded-full blur-[120px] pointer-events-none select-none z-0" />
       <div className="fixed bottom-10 right-1/4 w-[400px] h-[400px] bg-white/1 rounded-full blur-[100px] pointer-events-none select-none z-0" />
 
       {/* Main Wrapper (100dvh to exactly fit typing app) */}
       <div className="w-full max-w-[1380px] p-4 sm:p-6 md:p-8 flex flex-col justify-between z-10 min-h-[100dvh]">
-        
         {/* Shared Global Header */}
-        <header 
+        <header
           className={`flex flex-wrap items-center justify-between w-full transition-all duration-500 mb-6 md:mb-10 gap-y-4 gap-x-2 border-b pb-5 ${
-            shouldHideHeaderFooter 
-              ? 'opacity-0 pointer-events-none border-transparent' 
-              : 'opacity-100 border-[var(--border-subtle)]'
+            shouldHideHeaderFooter
+              ? "opacity-0 pointer-events-none border-transparent"
+              : "opacity-100 border-[var(--border-subtle)]"
           }`}
         >
           {/* Logo */}
-          <Link 
+          <Link
             href="/typing-test"
             className="flex items-center gap-2.5 cursor-pointer select-none group order-1"
           >
-            <svg className="w-5 h-5 text-white" viewBox="0 0 24 24" fill="currentColor">
+            <svg
+              className="w-5 h-5 text-white"
+              viewBox="0 0 24 24"
+              fill="currentColor"
+            >
               <path d="M19 9h-6l2-7H5L3 15h6l-2 7 12-13z" />
             </svg>
             <div className="text-lg font-bold text-[var(--text-main)] tracking-tight leading-none font-sans">
@@ -214,12 +273,15 @@ export function AppLayout({
           {/* Right side Profile controls */}
           <div className="flex items-center gap-3 sm:gap-5 order-2 md:order-3">
             {currentUser ? (
-              <Link 
+              <Link
                 href="/profile"
                 className="flex items-center justify-center hover:scale-105 transition-all cursor-pointer"
                 title="Go to Profile"
               >
-                {renderAvatar(currentUser.avatarUrl, "w-8 h-8 md:w-9 md:h-9 shadow-md")}
+                {renderAvatar(
+                  currentUser.avatarUrl,
+                  "w-8 h-8 md:w-9 md:h-9 shadow-md",
+                )}
               </Link>
             ) : (
               <>
@@ -248,7 +310,9 @@ export function AppLayout({
                   key={item.href}
                   href={item.href}
                   className={`hover:text-white cursor-pointer transition-colors relative pb-1.5 ${
-                    isActive ? 'text-white font-bold' : 'text-[var(--text-muted)]'
+                    isActive
+                      ? "text-white font-bold"
+                      : "text-[var(--text-muted)]"
                   }`}
                 >
                   <span>{item.label}</span>
@@ -260,17 +324,15 @@ export function AppLayout({
 
         {/* Dynamic Page Views */}
         <main className="flex-grow w-full flex flex-col justify-center">
-          <ErrorBoundary>
-            {children}
-          </ErrorBoundary>
+          <ErrorBoundary>{children}</ErrorBoundary>
         </main>
 
         {/* Footer controls & Links */}
-        <footer 
+        <footer
           className={`flex flex-wrap items-center justify-center gap-6 mt-8 md:mt-auto text-[var(--text-muted-alt)] text-xs select-none transition-all duration-500 border-t pt-6 pb-2 ${
             shouldHideHeaderFooter
-              ? 'opacity-0 pointer-events-none border-transparent' 
-              : 'opacity-100 border-[var(--border-subtle)]'
+              ? "opacity-0 pointer-events-none border-transparent"
+              : "opacity-100 border-[var(--border-subtle)]"
           }`}
         >
           <button
@@ -280,7 +342,7 @@ export function AppLayout({
             <Settings className="w-3.5 h-3.5" />
             <span>Settings</span>
           </button>
-          
+
           {currentUser && (
             <button
               onClick={() => setIsDashboardOpen(true)}
@@ -293,49 +355,81 @@ export function AppLayout({
 
           <span className="text-zinc-800">|</span>
 
-          <a href="mailto:support@typingthunder.com" className="flex items-center gap-1.5 hover:text-white transition-colors">
+          <a
+            href="mailto:support@typingthunder.com"
+            className="flex items-center gap-1.5 hover:text-white transition-colors"
+          >
             <Mail className="w-3.5 h-3.5" />
             <span>Contact</span>
           </a>
-          <a href="https://twitter.com/typingthunder" target="_blank" rel="noopener noreferrer" className="flex items-center gap-1.5 hover:text-white transition-colors">
+          <a
+            href="https://twitter.com/typingthunder"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="flex items-center gap-1.5 hover:text-white transition-colors"
+          >
             <TwitterIcon className="w-3.5 h-3.5" />
             <span>Twitter</span>
           </a>
-          <a href="https://discord.gg/typingthunder" target="_blank" rel="noopener noreferrer" className="flex items-center gap-1.5 hover:text-white transition-colors">
+          <a
+            href="https://discord.gg/typingthunder"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="flex items-center gap-1.5 hover:text-white transition-colors"
+          >
             <DiscordIcon className="w-3.5 h-3.5" />
             <span>Discord</span>
           </a>
-          <a href="https://github.com/typingthunder" target="_blank" rel="noopener noreferrer" className="flex items-center gap-1.5 hover:text-white transition-colors">
+          <a
+            href="https://github.com/typingthunder"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="flex items-center gap-1.5 hover:text-white transition-colors"
+          >
             <GithubIcon className="w-3.5 h-3.5" />
             <span>GitHub</span>
           </a>
-          <a href="/security" className="flex items-center gap-1.5 hover:text-white transition-colors">
+          <a
+            href="/security"
+            className="flex items-center gap-1.5 hover:text-white transition-colors"
+          >
             <Shield className="w-3.5 h-3.5" />
             <span>Security</span>
           </a>
-          <a href="/privacy" className="flex items-center gap-1.5 hover:text-white transition-colors">
+          <a
+            href="/privacy"
+            className="flex items-center gap-1.5 hover:text-white transition-colors"
+          >
             <Lock className="w-3.5 h-3.5" />
             <span>Privacy</span>
           </a>
-          <a href="/support" className="flex items-center gap-1.5 hover:text-white transition-colors">
+          <a
+            href="/support"
+            className="flex items-center gap-1.5 hover:text-white transition-colors"
+          >
             <DollarSign className="w-3.5 h-3.5" />
             <span>Support</span>
           </a>
         </footer>
-
       </div>
 
       {/* Dynamic SEO Content Rendered Below the Fold */}
       {seoContent && (
-        <div className={`w-full max-w-[1380px] px-4 sm:px-6 md:px-8 pb-12 z-10 transition-all duration-500 ${
-          shouldHideHeaderFooter ? 'opacity-0 pointer-events-none' : 'opacity-100'
-        }`}>
+        <div
+          className={`w-full max-w-[1380px] px-4 sm:px-6 md:px-8 pb-12 z-10 transition-all duration-500 ${
+            shouldHideHeaderFooter
+              ? "opacity-0 pointer-events-none"
+              : "opacity-100"
+          }`}
+        >
           {seoContent}
         </div>
       )}
 
       {/* Global SEO Footer */}
-      <div className={`w-full transition-all duration-500 ${shouldHideHeaderFooter ? 'opacity-0 pointer-events-none' : 'opacity-100'}`}>
+      <div
+        className={`w-full transition-all duration-500 ${shouldHideHeaderFooter ? "opacity-0 pointer-events-none" : "opacity-100"}`}
+      >
         <GlobalFooter />
       </div>
 
@@ -403,7 +497,6 @@ export function AppLayout({
         history={dashboardHistory}
         onClearHistory={handleClearHistory}
       />
-
     </div>
   );
 }

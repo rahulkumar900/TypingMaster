@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useRef, useEffect, useState } from 'react';
-import { Keyboard, Key } from 'lucide-react';
+import { Keyboard, Key, Check } from 'lucide-react';
 import { TypingAudioSynthesizer } from '@/lib/synth';
 import { TransliteratorEngine, createTypingEngine, needsTransliteration, LayoutId } from '@/lib/transliterate';
 import { KeyboardVisualizer } from './keyboard-visualizer';
@@ -601,6 +601,20 @@ export const TypingArena: React.FC<TypingArenaProps> = ({
             onBlur={() => setIsFocused(false)}
             aria-label="Type the government exam text here"
           />
+          {gameState !== 'completed' && (
+            <div className="flex justify-end mt-2 shrink-0">
+              <button
+                type="button"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  onComplete();
+                }}
+                className="px-6 py-2.5 bg-[var(--accent-color)] text-black font-bold font-sans rounded-xl hover:opacity-90 active:scale-95 transition-all text-xs cursor-pointer shadow-md flex items-center gap-1.5 z-10"
+              >
+                <Check className="w-3.5 h-3.5" /> Submit Test
+              </button>
+            </div>
+          )}
           {!isFocused && gameState !== 'completed' && (
             <div className="absolute inset-0 z-20 flex items-center justify-center backdrop-blur-[2px] rounded-xl transition-all pointer-events-none">
               <span className="flex items-center gap-2 bg-[var(--text-main)] text-[var(--bg-panel)] px-4 py-2 rounded-full text-sm font-semibold shadow-lg">
@@ -623,11 +637,7 @@ export const TypingArena: React.FC<TypingArenaProps> = ({
             </div>
           </footer>
         )}
-        {showKeyboard && gameState === 'running' && (
-          <div className="absolute top-[100%] left-0 w-full z-10 pt-4">
-            <KeyboardVisualizer languageId={layoutId as any} fontFamily={fontFamily} />
-          </div>
-        )}
+
       </section>
     );
   }
