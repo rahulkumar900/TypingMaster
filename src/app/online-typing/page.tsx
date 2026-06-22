@@ -1,4 +1,5 @@
 import { Metadata } from 'next';
+import Image from 'next/image';
 import { AppLayout } from '@/components/layout/app-layout';
 import { SpeedTestView } from '@/components/views/speed-test-view';
 import { SeoContentSection } from '@/components/seo/seo-content-section';
@@ -6,9 +7,12 @@ import { InternalLinks } from '@/components/seo/internal-links';
 
 export const metadata: Metadata = {
   title: 'Online Typing Test & Free Practice Engine',
-  description: 'Test your online typing speed and accuracy. Practice minimalist touch typing in English and regional Indian layouts.',
+  description: 'Test your online typing speed and accuracy. Practice minimalist <a href="https://en.wikipedia.org/wiki/Touch_typing" target="_blank" rel="noopener noreferrer" className="text-yellow-500 hover:underline">touch typing</a> in English and regional Indian layouts.',
   alternates: {
     canonical: 'https://typingthunder.com/online-typing',
+  },
+  openGraph: {
+    url: 'https://typingthunder.com/online-typing',
   },
 };
 
@@ -66,6 +70,17 @@ export default function OnlineTypingPage() {
               <p>
                 A high-quality <strong>online typing</strong> interface is the perfect environment to measure and improve your keyboard skills. Modern careers require rapid text input. For example, developers, writers, and students type constantly. Therefore, learning how to touch type without looking down is highly valuable.
               </p>
+
+              <div className="relative w-full aspect-[16/9] md:aspect-[21/9] rounded-xl overflow-hidden border border-zinc-800 my-8">
+                <Image 
+                  src="/images/typing-test-infographic.png" 
+                  alt="Practicing a online typing on TypingThunder"
+                  fill
+                  sizes="(max-width: 1024px) 100vw, 896px"
+                  className="object-cover"
+                  priority
+                />
+              </div>
 
               <h3>Why Browser-Based Typing is Convenient</h3>
               <p>

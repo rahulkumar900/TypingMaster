@@ -1,4 +1,5 @@
 import { Metadata } from 'next';
+import Image from 'next/image';
 import { AppLayout } from '@/components/layout/app-layout';
 import { SpeedTestView } from '@/components/views/speed-test-view';
 import { SeoContentSection } from '@/components/seo/seo-content-section';
@@ -9,6 +10,9 @@ export const metadata: Metadata = {
   description: 'Check your typing speed with our free typing test. Get instant WPM scorecard, accuracy metrics, and practice Hindi/English.',
   alternates: {
     canonical: 'https://typingthunder.com/free-typing-test',
+  },
+  openGraph: {
+    url: 'https://typingthunder.com/free-typing-test',
   },
 };
 
@@ -67,6 +71,17 @@ export default function FreeTypingTestPage() {
                 Using a <strong>free typing test</strong> helps you discover your actual keyboard speed in just a few minutes. In today's digital world, typing is a basic skill. For example, high speed increases your efficiency when messaging, coding, or writing documents. Therefore, analyzing your Words Per Minute (WPM) score can boost your career prospects.
               </p>
 
+              <div className="relative w-full aspect-[16/9] md:aspect-[21/9] rounded-xl overflow-hidden border border-zinc-800 my-8">
+                <Image 
+                  src="/images/typing-test-infographic.png" 
+                  alt="Practicing a free typing test on TypingThunder"
+                  fill
+                  sizes="(max-width: 1024px) 100vw, 896px"
+                  className="object-cover"
+                  priority
+                />
+              </div>
+
               <h3>Why Choose an Ad-Free Typing Test?</h3>
               <p>
                 Many online tests contain popups and ads that distract you while typing. Consequently, these distractions lower your focus and accuracy. However, our minimalist tool provides a clean, distraction-free environment. This allows you to focus 100% of your energy on the text, ensuring a much more accurate score.
@@ -79,7 +94,7 @@ export default function FreeTypingTestPage() {
 
               <h3>How to Achieve a High Score</h3>
               <p>
-                If you want to type faster, you must practice touch typing. Keep your fingers resting on the home row keys (ASDF JKL;). Try to look only at the screen. In addition, maintain a steady rhythm while typing. It is better to type slowly and accurately than to type fast with mistakes.
+                If you want to type faster, you must practice <a href="https://en.wikipedia.org/wiki/Touch_typing" target="_blank" rel="noopener noreferrer" className="text-yellow-500 hover:underline">touch typing</a>. Keep your fingers resting on the home row keys (ASDF JKL;). Try to look only at the screen. In addition, maintain a steady rhythm while typing. It is better to type slowly and accurately than to type fast with mistakes.
               </p>
 
               <h3>Check Weak Keys and Improve</h3>

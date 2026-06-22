@@ -1,4 +1,5 @@
 import { Metadata } from 'next';
+import Image from 'next/image';
 import { AppLayout } from '@/components/layout/app-layout';
 import { SpeedTestView } from '@/components/views/speed-test-view';
 import { SeoContentSection } from '@/components/seo/seo-content-section';
@@ -6,9 +7,12 @@ import { InternalLinks } from '@/components/seo/internal-links';
 
 export const metadata: Metadata = {
   title: 'English Typing Test - Check Your WPM and Accuracy',
-  description: 'Take our free English typing test online. Check your WPM speed, accuracy, and learn tips to type faster with daily touch typing drills.',
+  description: 'Take our free English typing test online. Check your WPM speed, accuracy, and learn tips to type faster with daily <a href="https://en.wikipedia.org/wiki/Touch_typing" target="_blank" rel="noopener noreferrer" className="text-yellow-500 hover:underline">touch typing</a> drills.',
   alternates: {
     canonical: 'https://typingthunder.com/english-typing-test',
+  },
+  openGraph: {
+    url: 'https://typingthunder.com/english-typing-test',
   },
 };
 
@@ -66,6 +70,17 @@ export default function EnglishTypingTestPage() {
               <p>
                 Taking an <strong>english typing test</strong> represents the most effective method to measure your raw speed and typing accuracy. In today's digital economy, keyboard proficiency determines how quickly you can execute tasks. For example, programmers and writers save hours of work by typing faster. Therefore, practicing touch typing is highly beneficial for your career.
               </p>
+
+              <div className="relative w-full aspect-[16/9] md:aspect-[21/9] rounded-xl overflow-hidden border border-zinc-800 my-8">
+                <Image 
+                  src="/images/typing-test-infographic.png" 
+                  alt="Practicing a english typing test on TypingThunder"
+                  fill
+                  sizes="(max-width: 1024px) 100vw, 896px"
+                  className="object-cover"
+                  priority
+                />
+              </div>
 
               <h3>Why You Need an English Typing Test</h3>
               <p>

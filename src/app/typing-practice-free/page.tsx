@@ -1,14 +1,18 @@
 import { Metadata } from 'next';
+import Image from 'next/image';
 import { AppLayout } from '@/components/layout/app-layout';
 import { SpeedTestView } from '@/components/views/speed-test-view';
 import { SeoContentSection } from '@/components/seo/seo-content-section';
 import { InternalLinks } from '@/components/seo/internal-links';
 
 export const metadata: Metadata = {
-  title: 'Typing Practice Free - Interactive Touch Typing Drills',
+  title: 'Typing Practice Free - Interactive <a href="https://en.wikipedia.org/wiki/Touch_typing" target="_blank" rel="noopener noreferrer" className="text-yellow-500 hover:underline">touch typing</a> Drills',
   description: 'Access typing practice free online. Customize word limits, practice punctuation/numbers, and boost your professional speed.',
   alternates: {
     canonical: 'https://typingthunder.com/typing-practice-free',
+  },
+  openGraph: {
+    url: 'https://typingthunder.com/typing-practice-free',
   },
 };
 
@@ -66,6 +70,17 @@ export default function TypingPracticeFreePage() {
               <p>
                 Utilizing <strong>typing practice free</strong> tools online helps you develop faster key movements. In our modern digital economy, typing is an indispensable career skill. For example, programmers, journalists, and clerks use keyboards daily. Therefore, learning touch typing saves hundreds of hours of work each year.
               </p>
+
+              <div className="relative w-full aspect-[16/9] md:aspect-[21/9] rounded-xl overflow-hidden border border-zinc-800 my-8">
+                <Image 
+                  src="/images/typing-test-infographic.png" 
+                  alt="Practicing a typing practice free on TypingThunder"
+                  fill
+                  sizes="(max-width: 1024px) 100vw, 896px"
+                  className="object-cover"
+                  priority
+                />
+              </div>
 
               <h3>Why Touch Typing is Superior</h3>
               <p>

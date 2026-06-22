@@ -1,14 +1,18 @@
 import { Metadata } from 'next';
+import Image from 'next/image';
 import { AppLayout } from '@/components/layout/app-layout';
 import { SpeedTestView } from '@/components/views/speed-test-view';
 import { SeoContentSection } from '@/components/seo/seo-content-section';
 import { InternalLinks } from '@/components/seo/internal-links';
 
 export const metadata: Metadata = {
-  title: 'Free Typing Lessons - Learn Touch Typing Fast',
+  title: 'Free Typing Lessons - Learn <a href="https://en.wikipedia.org/wiki/Touch_typing" target="_blank" rel="noopener noreferrer" className="text-yellow-500 hover:underline">touch typing</a> Fast',
   description: 'Master touch typing with our free typing lessons. Learn correct finger positions, home row rules, and practice to type faster.',
   alternates: {
     canonical: 'https://typingthunder.com/typing-lessons',
+  },
+  openGraph: {
+    url: 'https://typingthunder.com/typing-lessons',
   },
 };
 
@@ -66,6 +70,17 @@ export default function TypingLessonsPage() {
               <p>
                 Structured <strong>typing lessons</strong> help you transition from slow hunt-and-peck typing to fast touch typing. In today's digital landscape, typing efficiency is a core professional skill. For example, writers and software engineers rely on their keyboards constantly. Therefore, learning correct finger positions saves time and reduces muscle strain.
               </p>
+
+              <div className="relative w-full aspect-[16/9] md:aspect-[21/9] rounded-xl overflow-hidden border border-zinc-800 my-8">
+                <Image 
+                  src="/images/typing-test-infographic.png" 
+                  alt="Practicing a typing lessons on TypingThunder"
+                  fill
+                  sizes="(max-width: 1024px) 100vw, 896px"
+                  className="object-cover"
+                  priority
+                />
+              </div>
 
               <h3>Lesson 1: The Core Foundation of the Home Row</h3>
               <p>

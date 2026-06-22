@@ -7,6 +7,9 @@ export const metadata: Metadata = {
   alternates: {
     canonical: 'https://typingthunder.com/ratings',
   },
+  openGraph: {
+    url: 'https://typingthunder.com/ratings',
+  },
 };
 
 export default function RatingsPage() {

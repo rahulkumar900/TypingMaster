@@ -1,4 +1,5 @@
 import { Metadata } from 'next';
+import Image from 'next/image';
 import { AppLayout } from '@/components/layout/app-layout';
 import { SpeedTestView } from '@/components/views/speed-test-view';
 import { SeoContentSection } from '@/components/seo/seo-content-section';
@@ -9,6 +10,9 @@ export const metadata: Metadata = {
   description: 'Improve your performance with daily typing test practice. Track consistency, identify weak keys, and qualify exams.',
   alternates: {
     canonical: 'https://typingthunder.com/typing-test-practice',
+  },
+  openGraph: {
+    url: 'https://typingthunder.com/typing-test-practice',
   },
 };
 
@@ -67,9 +71,20 @@ export default function TypingTestPracticePage() {
                 Engaging in structured <strong>typing test practice</strong> is the best way to raise your keyboard output. In a digital environment, speed and accuracy are crucial skills. For example, writers and software programmers save days of work by typing quickly. Therefore, consistent daily practice is highly beneficial.
               </p>
 
+              <div className="relative w-full aspect-[16/9] md:aspect-[21/9] rounded-xl overflow-hidden border border-zinc-800 my-8">
+                <Image 
+                  src="/images/typing-test-infographic.png" 
+                  alt="Practicing a typing test practice on TypingThunder"
+                  fill
+                  sizes="(max-width: 1024px) 100vw, 896px"
+                  className="object-cover"
+                  priority
+                />
+              </div>
+
               <h3>Why Finger Placement is Crucial for Typists</h3>
               <p>
-                Many beginners rely on look-and-type methods. Consequently, they limit their speed to around 30 WPM. However, touch typing uses standard finger placement. Rest your hands on the home row (ASDF JKL;). By utilizing all ten fingers, you distribute the keyboard load. This makes typing faster and reduces hand fatigue.
+                Many beginners rely on look-and-type methods. Consequently, they limit their speed to around 30 WPM. However, <a href="https://en.wikipedia.org/wiki/Touch_typing" target="_blank" rel="noopener noreferrer" className="text-yellow-500 hover:underline">touch typing</a> uses standard finger placement. Rest your hands on the home row (ASDF JKL;). By utilizing all ten fingers, you distribute the keyboard load. This makes typing faster and reduces hand fatigue.
               </p>
 
               <h3>How We Measure Your Performance</h3>

@@ -1,4 +1,5 @@
 import { Metadata } from 'next';
+import Image from 'next/image';
 import { AppLayout } from '@/components/layout/app-layout';
 import { SpeedTestView } from '@/components/views/speed-test-view';
 import { SeoContentSection } from '@/components/seo/seo-content-section';
@@ -9,6 +10,9 @@ export const metadata: Metadata = {
   description: 'Elevate your WPM with structured typing speed practice. Identify weak keystrokes and track consistency history.',
   alternates: {
     canonical: 'https://typingthunder.com/typing-speed-practice',
+  },
+  openGraph: {
+    url: 'https://typingthunder.com/typing-speed-practice',
   },
 };
 
@@ -67,7 +71,18 @@ export default function TypingSpeedPracticePage() {
                 Taking part in structured <strong>typing speed practice</strong> is the best way to accelerate your words per minute. In the modern workspace, keyboard skills are highly valuable. For example, faster typing allows you to finish emails, reports, and code rapidly. Therefore, regular speed practice saves weeks of time each year.
               </p>
 
-              <h3>Why Touch Typing is Key to Speed</h3>
+              <div className="relative w-full aspect-[16/9] md:aspect-[21/9] rounded-xl overflow-hidden border border-zinc-800 my-8">
+                <Image 
+                  src="/images/typing-test-infographic.png" 
+                  alt="Practicing a typing speed practice on TypingThunder"
+                  fill
+                  sizes="(max-width: 1024px) 100vw, 896px"
+                  className="object-cover"
+                  priority
+                />
+              </div>
+
+              <h3>Why <a href="https://en.wikipedia.org/wiki/Touch_typing" target="_blank" rel="noopener noreferrer" className="text-yellow-500 hover:underline">touch typing</a> is Key to Speed</h3>
               <p>
                 Many computer users develop bad habits, such as looking at their fingers while typing. Consequently, this slows down their reading flow. However, touch typing keeps your eyes fixed on the screen. By training all ten fingers, you build strong muscle memory. Over time, your hands move automatically, allowing you to write fluidly.
               </p>

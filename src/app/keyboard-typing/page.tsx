@@ -1,4 +1,5 @@
 import { Metadata } from 'next';
+import Image from 'next/image';
 import { AppLayout } from '@/components/layout/app-layout';
 import { SpeedTestView } from '@/components/views/speed-test-view';
 import { SeoContentSection } from '@/components/seo/seo-content-section';
@@ -6,9 +7,12 @@ import { InternalLinks } from '@/components/seo/internal-links';
 
 export const metadata: Metadata = {
   title: 'Keyboard Typing Test: Master QWERTY & Transliteration',
-  description: 'Improve keyboard typing speed and learn touch typing rules. Learn about different layout mappings and matra key structures.',
+  description: 'Improve keyboard typing speed and learn <a href="https://en.wikipedia.org/wiki/Touch_typing" target="_blank" rel="noopener noreferrer" className="text-yellow-500 hover:underline">touch typing</a> rules. Learn about different layout mappings and matra key structures.',
   alternates: {
     canonical: 'https://typingthunder.com/keyboard-typing',
+  },
+  openGraph: {
+    url: 'https://typingthunder.com/keyboard-typing',
   },
 };
 
@@ -66,6 +70,17 @@ export default function KeyboardTypingPage() {
               <p>
                 Engaging in structured <strong>keyboard typing</strong> practice represents the best way to improve your writing speed. In today's digital landscape, keyboard proficiency is a key career asset. For example, programmers, journalists, and clerks use keyboards constantly. Therefore, learning touch typing is highly beneficial.
               </p>
+
+              <div className="relative w-full aspect-[16/9] md:aspect-[21/9] rounded-xl overflow-hidden border border-zinc-800 my-8">
+                <Image 
+                  src="/images/typing-test-infographic.png" 
+                  alt="Practicing a keyboard typing on TypingThunder"
+                  fill
+                  sizes="(max-width: 1024px) 100vw, 896px"
+                  className="object-cover"
+                  priority
+                />
+              </div>
 
               <h3>Why Touch Typing is Superior to Hunting Keys</h3>
               <p>

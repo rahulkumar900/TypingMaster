@@ -8,6 +8,9 @@ export const metadata: Metadata = {
   alternates: {
     canonical: 'https://typingthunder.com/blog',
   },
+  openGraph: {
+    url: 'https://typingthunder.com/blog',
+  },
 };
 
 const POSTS = [

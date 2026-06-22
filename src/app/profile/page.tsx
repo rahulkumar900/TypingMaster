@@ -7,6 +7,9 @@ export const metadata: Metadata = {
   alternates: {
     canonical: 'https://typingthunder.com/profile',
   },
+  openGraph: {
+    url: 'https://typingthunder.com/profile',
+  },
 };
 
 export default function ProfilePage() {

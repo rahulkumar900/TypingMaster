@@ -1,4 +1,5 @@
 import { Metadata } from 'next';
+import Image from 'next/image';
 import { AppLayout } from '@/components/layout/app-layout';
 import { SpeedTestView } from '@/components/views/speed-test-view';
 import { SeoContentSection } from '@/components/seo/seo-content-section';
@@ -9,6 +10,9 @@ export const metadata: Metadata = {
   description: 'Practice typing online with custom text and real-time WPM metrics. Build finger muscle memory with free daily lessons.',
   alternates: {
     canonical: 'https://typingthunder.com/online-typing-practice',
+  },
+  openGraph: {
+    url: 'https://typingthunder.com/online-typing-practice',
   },
 };
 
@@ -34,7 +38,7 @@ const jsonLd = {
           "name": "What is the best way to do online typing practice?",
           "acceptedAnswer": {
             "@type": "Answer",
-            "text": "The best way is to practice touch typing on the home row without looking down at the keyboard. Focus on accuracy, keep your posture correct, and practice for 15 minutes daily."
+            "text": "The best way is to practice <a href="https://en.wikipedia.org/wiki/Touch_typing" target="_blank" rel="noopener noreferrer" className="text-yellow-500 hover:underline">touch typing</a> on the home row without looking down at the keyboard. Focus on accuracy, keep your posture correct, and practice for 15 minutes daily."
           }
         },
         {
@@ -66,6 +70,17 @@ export default function OnlineTypingPracticePage() {
               <p>
                 Structured <strong>online typing practice</strong> remains the best way to accelerate your keyboard speed. In a digitized world, text entry is a continuous task. For example, writers, coders, and administrators use keyboards hourly. Therefore, practicing correct posture and key positioning increases productivity and saves time.
               </p>
+
+              <div className="relative w-full aspect-[16/9] md:aspect-[21/9] rounded-xl overflow-hidden border border-zinc-800 my-8">
+                <Image 
+                  src="/images/typing-test-infographic.png" 
+                  alt="Practicing a online typing practice on TypingThunder"
+                  fill
+                  sizes="(max-width: 1024px) 100vw, 896px"
+                  className="object-cover"
+                  priority
+                />
+              </div>
 
               <h3>Why Traditional Typing Mappings Work</h3>
               <p>

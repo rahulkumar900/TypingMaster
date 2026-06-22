@@ -1,4 +1,5 @@
 import { Metadata } from 'next';
+import Image from 'next/image';
 import { AppLayout } from '@/components/layout/app-layout';
 import { SpeedTestView } from '@/components/views/speed-test-view';
 import { SeoContentSection } from '@/components/seo/seo-content-section';
@@ -9,6 +10,9 @@ export const metadata: Metadata = {
   description: 'Calculate your words per minute typing test speed. Track your raw keystrokes, net WPM, accuracy, and improve productivity.',
   alternates: {
     canonical: 'https://typingthunder.com/words-per-minute-typing-test',
+  },
+  openGraph: {
+    url: 'https://typingthunder.com/words-per-minute-typing-test',
   },
 };
 
@@ -67,6 +71,17 @@ export default function WordsPerMinuteTypingTestPage() {
                 A <strong>words per minute typing test</strong> allows you to evaluate your visual keyboard speed. In the modern workspace, high productivity is essential. For example, fast typing helps you finish reports, write emails, and compile code quickly. Therefore, testing your words per minute is a great way to monitor your progress.
               </p>
 
+              <div className="relative w-full aspect-[16/9] md:aspect-[21/9] rounded-xl overflow-hidden border border-zinc-800 my-8">
+                <Image 
+                  src="/images/typing-test-infographic.png" 
+                  alt="Practicing a words per minute typing test on TypingThunder"
+                  fill
+                  sizes="(max-width: 1024px) 100vw, 896px"
+                  className="object-cover"
+                  priority
+                />
+              </div>
+
               <h3>Understanding WPM and Keystroke Math</h3>
               <p>
                 In standard typing checks, a "word" is defined as exactly five keystrokes. This includes letters, numbers, punctuation, and spaces. For example, typing "go home" counts as seven keystrokes, or 1.4 words. Because words vary in length across languages, this standardization ensures that WPM scores remain fair and comparable.
@@ -79,7 +94,7 @@ export default function WordsPerMinuteTypingTestPage() {
 
               <h3>The Home Row: The Secret to Fast Typing</h3>
               <p>
-                To pass any words per minute typing test with flying colors, you must learn home row typing. Always keep your fingers on ASDF and JKL;. F and J keys have small physical bumps. These guide your fingers without looking down. By keeping your hands in this position, your fingers travel the shortest distance to reach other keys.
+                To pass any words per minute typing test with flying colors, you must learn <a href="https://en.wikipedia.org/wiki/Touch_typing" target="_blank" rel="noopener noreferrer" className="text-yellow-500 hover:underline">touch typing</a>. Always keep your fingers on ASDF and JKL;. F and J keys have small physical bumps. These guide your fingers without looking down. By keeping your hands in this position, your fingers travel the shortest distance to reach other keys.
               </p>
 
               <h3>Improve Your Typing Speed and Accuracy</h3>

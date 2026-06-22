@@ -1,4 +1,5 @@
 import { Metadata } from 'next';
+import Image from 'next/image';
 import { AppLayout } from '@/components/layout/app-layout';
 import { SpeedTestView } from '@/components/views/speed-test-view';
 import { SeoContentSection } from '@/components/seo/seo-content-section';
@@ -9,6 +10,9 @@ export const metadata: Metadata = {
   description: 'Take the online typing test in english to verify your words per minute speed. Compare your score to typing speed benchmarks.',
   alternates: {
     canonical: 'https://typingthunder.com/online-typing-test-in-english',
+  },
+  openGraph: {
+    url: 'https://typingthunder.com/online-typing-test-in-english',
   },
 };
 
@@ -67,9 +71,20 @@ export default function OnlineTypingTestInEnglishPage() {
                 Taking an <strong>online typing test in english</strong> represents the best way to evaluate your keyboard dexterity. In the modern workspace, productivity is highly valued. For example, faster typing allows you to write emails, documents, and code rapidly. Therefore, regular assessment helps you identify where your speed can improve.
               </p>
 
+              <div className="relative w-full aspect-[16/9] md:aspect-[21/9] rounded-xl overflow-hidden border border-zinc-800 my-8">
+                <Image 
+                  src="/images/typing-test-infographic.png" 
+                  alt="Practicing a online typing test in english on TypingThunder"
+                  fill
+                  sizes="(max-width: 1024px) 100vw, 896px"
+                  className="object-cover"
+                  priority
+                />
+              </div>
+
               <h3>Why English Keyboard Speed is Essential</h3>
               <p>
-                Most business communications rely on English. Consequently, slow keyboard speed acts as a bottleneck for your workflow. However, touch typing bypasses this limitation. By training your fingers to locate keys automatically, you can focus on the screen. Consequently, your creative writing flow is uninterrupted.
+                Most business communications rely on English. Consequently, slow keyboard speed acts as a bottleneck for your workflow. However, <a href="https://en.wikipedia.org/wiki/Touch_typing" target="_blank" rel="noopener noreferrer" className="text-yellow-500 hover:underline">touch typing</a> bypasses this limitation. By training your fingers to locate keys automatically, you can focus on the screen. Consequently, your creative writing flow is uninterrupted.
               </p>
 
               <h3>How the WPM Score is Computed</h3>

@@ -1,4 +1,5 @@
 import { Metadata } from 'next';
+import Image from 'next/image';
 import { AppLayout } from '@/components/layout/app-layout';
 import { SpeedTestView } from '@/components/views/speed-test-view';
 import { SeoContentSection } from '@/components/seo/seo-content-section';
@@ -7,9 +8,12 @@ import { InternalLinks } from '@/components/seo/internal-links';
 export const metadata: Metadata = {
   title: 'Free Online Typing Test | Measure WPM Speed & Accuracy',
   description: 'Take our free online typing test to measure your words per minute (WPM). Get real-time feedback, detailed analytics, and improve your typing speed in English and Hindi. Great for professionals, students, and government exam preparation.',
-  keywords: 'online typing test, free typing test, wpm test online, check typing speed online, typing speed test, touch typing test, english typing test, hindi typing test online',
+  keywords: 'online typing test, free typing test, wpm test online, check typing speed online, typing speed test, <a href="https://en.wikipedia.org/wiki/Touch_typing" target="_blank" rel="noopener noreferrer" className="text-yellow-500 hover:underline">touch typing</a> test, english typing test, hindi typing test online',
   alternates: {
     canonical: 'https://typingthunder.com/online-typing-test',
+  },
+  openGraph: {
+    url: 'https://typingthunder.com/online-typing-test',
   },
 };
 
@@ -83,6 +87,17 @@ export default function OnlineTypingTestPage() {
               <p>
                 Welcome to the internet's most fluid and responsive <strong>online typing test</strong>. Forget about downloading clunky software or dealing with ad-ridden platforms. TypingThunder runs entirely in your browser, allowing you to test your typing skills from any device, anywhere in the world. Whether you are aiming to increase your productivity, prepare for a rigorous government exam, or simply challenge your friends, our typing test provides everything you need.
               </p>
+
+              <div className="relative w-full aspect-[16/9] md:aspect-[21/9] rounded-xl overflow-hidden border border-zinc-800 my-8">
+                <Image 
+                  src="/images/typing-test-infographic.png" 
+                  alt="Practicing a online typing test on TypingThunder"
+                  fill
+                  sizes="(max-width: 1024px) 100vw, 896px"
+                  className="object-cover"
+                  priority
+                />
+              </div>
               
               <h3>Why Take an Online Typing Test?</h3>
               <p>

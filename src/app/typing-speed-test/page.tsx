@@ -1,4 +1,5 @@
 import { Metadata } from 'next';
+import Image from 'next/image';
 import { AppLayout } from '@/components/layout/app-layout';
 import { SpeedTestView } from '@/components/views/speed-test-view';
 import { SeoContentSection } from '@/components/seo/seo-content-section';
@@ -9,6 +10,9 @@ export const metadata: Metadata = {
   description: 'Our typing speed test accurately calculates your gross and net Words Per Minute (WPM). Build lightning-fast keyboard speed with targeted practice modes.',
   alternates: {
     canonical: 'https://typingthunder.com/typing-speed-test',
+  },
+  openGraph: {
+    url: 'https://typingthunder.com/typing-speed-test',
   },
 };
 
@@ -66,6 +70,17 @@ export default function TypingSpeedTestPage() {
               <p>
                 When you complete a <strong>typing speed test</strong>, you are presented with two highly important metrics: your typing speed and your accuracy. But what do those numbers really mean? Whether you are practicing general English typing or preparing for a rigorous government exam using a Hindi keyboard layout, the fundamental metrics remain the same.
               </p>
+
+              <div className="relative w-full aspect-[16/9] md:aspect-[21/9] rounded-xl overflow-hidden border border-zinc-800 my-8">
+                <Image 
+                  src="/images/typing-test-infographic.png" 
+                  alt="Practicing a typing speed test on TypingThunder"
+                  fill
+                  sizes="(max-width: 1024px) 100vw, 896px"
+                  className="object-cover"
+                  priority
+                />
+              </div>
 
               <h3>English vs Regional Language Typing Tests</h3>
               <p>

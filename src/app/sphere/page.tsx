@@ -7,6 +7,9 @@ export const metadata: Metadata = {
   alternates: {
     canonical: 'https://typingthunder.com/sphere',
   },
+  openGraph: {
+    url: 'https://typingthunder.com/sphere',
+  },
 };
 
 import { Suspense } from 'react';

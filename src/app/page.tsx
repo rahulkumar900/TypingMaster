@@ -1,4 +1,5 @@
 import { Metadata } from 'next';
+import Image from 'next/image';
 import { AppLayout } from '@/components/layout/app-layout';
 import { SpeedTestView } from '@/components/views/speed-test-view';
 import { SeoContentSection } from '@/components/seo/seo-content-section';
@@ -10,6 +11,9 @@ export const metadata: Metadata = {
   keywords: 'typing test, typing speed test, wpm test, english typing test, hindi typing test online, typing practice, touch typing practice, check typing speed, online typing master, typing speed online, mangal typing test, krutidev typing test, ssc typing test',
   alternates: {
     canonical: 'https://typingthunder.com/',
+  },
+  openGraph: {
+    url: 'https://typingthunder.com/',
   },
 };
 
@@ -86,12 +90,23 @@ export default function Home() {
         <>
           <SeoContentSection title="Master Your Typing Speed in English and Regional Languages">
             <p>
-              Welcome to <strong>TypingThunder</strong>, the ultimate typing test platform designed to help you increase your Words Per Minute (WPM) and accuracy. Whether you are aiming to improve your general English typing speed for professional work, learning touch typing from scratch, or preparing for high-stakes government typing exams in regional languages, our platform provides a flawless, ad-free environment for <strong>typing practice</strong>.
+              Welcome to <strong>TypingThunder</strong>, the ultimate typing test platform designed to help you increase your Words Per Minute (WPM) and accuracy. For instance, you might be aiming to improve your general English typing speed for professional work. Alternatively, you could be learning touch typing from scratch, or preparing for high-stakes government typing exams in regional languages. In any case, our platform provides a flawless, ad-free environment for <a href="https://en.wikipedia.org/wiki/Touch_typing" target="_blank" rel="noopener noreferrer" className="text-yellow-500 hover:underline">typing practice</a>.
             </p>
+
+            <div className="relative w-full aspect-[16/9] md:aspect-[21/9] rounded-xl overflow-hidden border border-zinc-800 my-8">
+              <Image 
+                src="/images/typing-test-infographic.png" 
+                alt="Practicing a typing speed test on TypingThunder"
+                fill
+                sizes="(max-width: 1024px) 100vw, 896px"
+                className="object-cover"
+                priority
+              />
+            </div>
 
             <h3>The Perfect Balance: English and Hindi Typing</h3>
             <p>
-              Unlike standard typing speed tests that only cater to an English-speaking audience, TypingThunder is built from the ground up to offer a balanced, bilingual experience. We provide beautiful, minimalist interfaces for <strong>General English Typing</strong>, alongside strict, examination-grade modes for <strong>Hindi Typing</strong>.
+              Unlike standard typing speed tests that only cater to an English-speaking audience, TypingThunder is built from the ground up to offer a balanced, bilingual experience. Consequently, we provide beautiful, minimalist interfaces for General English Typing. In addition, we offer strict, examination-grade modes for Hindi Typing.
             </p>
             <p>
               If you are preparing for SSC, CPCT, UP Police, or other government examinations, you can seamlessly switch to our Hindi Mangal Font (Remington Gail & InScript) or Krutidev 010 layouts. Our phonetic engine perfectly mirrors the strict rules of offline examination software, ensuring that your typing practice perfectly translates to the real world.
@@ -99,8 +114,8 @@ export default function Home() {
 
             <h3>Why Take a WPM Typing Speed Test?</h3>
             <ul>
-              <li><strong>Enhance Productivity:</strong> Increasing your WPM directly translates to hours saved when writing emails, code, or documents. A fast typing speed is a crucial modern skill.</li>
-              <li><strong>Build Muscle Memory:</strong> Regular typing practice with our online typing test eliminates the need to look down at your keyboard.</li>
+              <li><strong>Enhance Productivity:</strong> Increasing your WPM directly translates to hours saved when writing emails, code, or documents. Therefore, a fast typing speed is a crucial modern skill.</li>
+              <li><strong>Build Muscle Memory:</strong> Furthermore, regular typing practice with our online typing test eliminates the need to look down at your keyboard.</li>
               <li><strong>Track Your Progress:</strong> Create a free account to access detailed, interactive charts mapping your raw speed, accuracy, and consistency over time.</li>
               <li><strong>Compete Globally:</strong> Test your skills against friends or global players in our real-time typing arena.</li>
             </ul>

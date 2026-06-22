@@ -1,4 +1,5 @@
 import { Metadata } from 'next';
+import Image from 'next/image';
 import { AppLayout } from '@/components/layout/app-layout';
 import { PracticeView } from '@/components/views/practice-view';
 import { SeoContentSection } from '@/components/seo/seo-content-section';
@@ -9,6 +10,9 @@ export const metadata: Metadata = {
   description: 'Daily typing practice is the best way to improve your WPM. Drill your weak keys and practice typing efficiently with TypingThunder.',
   alternates: {
     canonical: 'https://typingthunder.com/typing-practice',
+  },
+  openGraph: {
+    url: 'https://typingthunder.com/typing-practice',
   },
 };
 
@@ -34,7 +38,7 @@ const jsonLd = {
           "name": "How much typing practice do I need daily?",
           "acceptedAnswer": {
             "@type": "Answer",
-            "text": "Consistency is more important than duration. Practicing for 15-30 minutes every day is the most effective way to build the muscle memory required for fast touch typing."
+            "text": "Consistency is more important than duration. Practicing for 15-30 minutes every day is the most effective way to build the muscle memory required for fast <a href="https://en.wikipedia.org/wiki/Touch_typing" target="_blank" rel="noopener noreferrer" className="text-yellow-500 hover:underline">touch typing</a>."
           }
         },
         {
@@ -66,6 +70,17 @@ export default function TypingPracticePage() {
               <p>
                 Whether you're a beginner learning the home row or an advanced typist looking to break the 100 WPM barrier, consistent <strong>typing practice</strong> is the absolute key to success. Unlike riding a bike, high-speed touch typing is a perishable skill that requires regular fine-tuning. This applies equally whether you are typing in English or preparing for a rigorous Hindi typing exam.
               </p>
+
+              <div className="relative w-full aspect-[16/9] md:aspect-[21/9] rounded-xl overflow-hidden border border-zinc-800 my-8">
+                <Image 
+                  src="/images/typing-test-infographic.png" 
+                  alt="Practicing a typing practice on TypingThunder"
+                  fill
+                  sizes="(max-width: 1024px) 100vw, 896px"
+                  className="object-cover"
+                  priority
+                />
+              </div>
               
               <h3>Dual-Language Practice Strategies</h3>
               <p>

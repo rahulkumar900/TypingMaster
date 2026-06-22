@@ -1,4 +1,5 @@
 import { Metadata } from 'next';
+import Image from 'next/image';
 import { AppLayout } from '@/components/layout/app-layout';
 import { SpeedTestView } from '@/components/views/speed-test-view';
 import { SeoContentSection } from '@/components/seo/seo-content-section';
@@ -9,6 +10,9 @@ export const metadata: Metadata = {
   description: 'Practice English typing online with interactive paragraphs. Eliminate keyboard hunting and build muscle memory.',
   alternates: {
     canonical: 'https://typingthunder.com/english-typing-practice',
+  },
+  openGraph: {
+    url: 'https://typingthunder.com/english-typing-practice',
   },
 };
 
@@ -67,7 +71,18 @@ export default function EnglishTypingPracticePage() {
                 Engaging in structured <strong>english typing practice</strong> represents the most effective way to improve your keyboard speed. In a digital economy, fast text input is a competitive advantage. For example, writers, coders, and clerks use keyboards daily. Therefore, practicing correct finger movements saves hundreds of hours of work.
               </p>
 
-              <h3>Why Touch Typing Beats Hunt-and-Peck</h3>
+              <div className="relative w-full aspect-[16/9] md:aspect-[21/9] rounded-xl overflow-hidden border border-zinc-800 my-8">
+                <Image 
+                  src="/images/typing-test-infographic.png" 
+                  alt="Practicing a english typing practice on TypingThunder"
+                  fill
+                  sizes="(max-width: 1024px) 100vw, 896px"
+                  className="object-cover"
+                  priority
+                />
+              </div>
+
+              <h3>Why <a href="https://en.wikipedia.org/wiki/Touch_typing" target="_blank" rel="noopener noreferrer" className="text-yellow-500 hover:underline">touch typing</a> Beats Hunt-and-Peck</h3>
               <p>
                 Many computer users look at their fingers while typing. Consequently, this breaks their concentration and slows their reading flow. However, touch typing trains all ten fingers to find keys automatically. By resting your hands on the home row keys (ASDF JKL;), you build strong muscle memory.
               </p>

@@ -217,6 +217,9 @@ export async function generateMetadata(props: { params: Promise<{ slug: string }
     alternates: {
       canonical: `https://typingthunder.com/blog/${params.slug}`,
     },
+    openGraph: {
+      url: `https://typingthunder.com/blog/${params.slug}`,
+    },
   };
 }
 

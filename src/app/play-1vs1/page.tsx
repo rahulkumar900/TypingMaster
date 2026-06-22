@@ -7,6 +7,9 @@ export const metadata: Metadata = {
   alternates: {
     canonical: 'https://typingthunder.com/play-1vs1',
   },
+  openGraph: {
+    url: 'https://typingthunder.com/play-1vs1',
+  },
 };
 
 export default function Play1vs1Page() {
