@@ -324,6 +324,7 @@ export function AppLayout({
 
         {/* Dynamic Page Views */}
         <main className="flex-grow w-full flex flex-col justify-center">
+          {seoTitle && <h1 className="sr-only">{seoTitle}</h1>}
           <ErrorBoundary>{children}</ErrorBoundary>
         </main>
 

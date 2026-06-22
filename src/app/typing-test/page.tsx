@@ -1,4 +1,5 @@
 import { Metadata } from 'next';
+import Image from 'next/image';
 import { AppLayout } from '@/components/layout/app-layout';
 import { SpeedTestView } from '@/components/views/speed-test-view';
 import { SeoContentSection } from '@/components/seo/seo-content-section';
@@ -9,6 +10,9 @@ export const metadata: Metadata = {
   description: 'A beautiful, minimalist typing test that tracks your words per minute and error rate. Practice typing in 14 regional languages with our free tool.',
   alternates: {
     canonical: 'https://typingthunder.com/typing-test',
+  },
+  openGraph: {
+    url: 'https://typingthunder.com/typing-test',
   },
 };
 
@@ -58,28 +62,39 @@ export default function TypingTestPage() {
         dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
       />
       <AppLayout 
-        seoTitle="Free Typing Test"
+        seoTitle="The Ultimate Guide to Typing Tests"
         seoDescription="Take a quick typing test to measure your WPM and accuracy. Our minimalist, ad-free typing test supports English and 13 Indian regional languages."
         seoContent={
           <>
             <SeoContentSection title="The Ultimate Guide to Typing Tests">
               <p>
-                Taking a <strong>typing test</strong> is the best way to determine your baseline typing speed and accuracy. Whether you are applying for a data entry job, pursuing a career in programming, or preparing for an SSC typing exam in Hindi, understanding your current Words Per Minute (WPM) is the first step toward improvement.
+                Taking a <strong>typing test</strong> is the best way to determine your baseline typing speed and accuracy. You might be applying for a data entry job, pursuing a career in programming, or preparing for an SSC typing exam in Hindi. In any case, understanding your current Words Per Minute (WPM) is the first step toward improvement.
               </p>
+
+              <div className="relative w-full aspect-[16/9] md:aspect-[21/9] rounded-xl overflow-hidden border border-zinc-800 my-8">
+                <Image 
+                  src="/images/typing-test-infographic.png" 
+                  alt="Practicing an online typing test on TypingThunder"
+                  fill
+                  sizes="(max-width: 1024px) 100vw, 896px"
+                  className="object-cover"
+                  priority
+                />
+              </div>
 
               <h3>Why Typing Speed is Critical in the Modern World</h3>
               <p>
-                In today's digital economy, your keyboard is your primary tool for communication and creation. Improving your typing speed is highly important because:
+                In today's digital economy, your keyboard serves as your primary tool for communication and creation. Consequently, monitoring your progress with a regular typing test is highly important for several reasons:
               </p>
               <ul className="list-disc pl-6 space-y-2 mb-6">
-                <li><strong>It Saves Hundreds of Hours:</strong> A person typing at 60 WPM will finish a 3,000-word report in 50 minutes. A person at 30 WPM will take nearly two hours. Over a year, this translates to weeks of saved time.</li>
-                <li><strong>Reduces Cognitive Load:</strong> When you touch type automatically via muscle memory, your brain is freed from searching for keys. This allows you to focus 100% of your cognitive power on the <em>content</em> you are creating, resulting in better code, better writing, and fewer mental blocks.</li>
-                <li><strong>Required for Government & Corporate Jobs:</strong> High-stakes roles, especially state and central government clerical jobs (SSC, High Court), mandate strict typing exams in both English and Regional languages (Hindi/Marathi) with zero tolerance for high error rates.</li>
+                <li><strong>It Saves Hundreds of Hours:</strong> A person typing at 60 WPM will finish a 3,000-word report in 50 minutes. In contrast, a person at 30 WPM will take nearly two hours. Over a year, therefore, this simple skill translates into weeks of saved time.</li>
+                <li><strong>Reduces Cognitive Load:</strong> When you touch type automatically via muscle memory, your brain is immediately freed from searching for keys. As a result, you can focus 100% of your cognitive power on the content you are creating. This ultimately results in better code, better writing, and fewer mental blocks.</li>
+                <li><strong>Required for Government & Corporate Jobs:</strong> Additionally, many high-stakes roles mandate strict typing exams. This is especially true for state and central government clerical jobs (SSC, High Court) in both English and Regional languages (Hindi/Marathi), where there is zero tolerance for high error rates.</li>
               </ul>
               
               <h3>The Mathematics of a Typing Test: Formulas Explained</h3>
               <p>
-                Have you ever wondered exactly how your score is calculated? TypingThunder uses the strict international standard for calculating WPM and errors. Here are the exact formulas:
+                Have you ever wondered exactly how your score is calculated? Fortunately, TypingThunder uses the strict international standard for calculating WPM and errors. Therefore, to help you visualize this, here are the exact formulas that explain the math:
               </p>
               
               <div className="bg-zinc-950 border border-zinc-800 rounded-lg p-5 my-4 space-y-6 font-mono text-sm">
@@ -140,17 +155,17 @@ export default function TypingTestPage() {
 
               <h3>Understanding Errors and Penalties</h3>
               <p>
-                Not all mistakes are created equal. Depending on the test mode (especially in regional language government exams), errors are heavily penalized.
+                Not all mistakes are created equal. For instance, depending on the typing test mode you choose (especially in regional language government exams), errors are heavily penalized. In light of this, it is crucial to understand the differences between various error types:
               </p>
               <ul className="list-disc pl-6 space-y-2 mb-6">
-                <li><strong>Corrected Errors:</strong> Mistakes you make but immediately fix using the backspace key. These do not drop your Accuracy or Net WPM, but they do waste valuable time, thereby lowering your Gross WPM.</li>
-                <li><strong>Uncorrected Errors:</strong> Mistakes you leave in the text when the test ends. These violently drop your Net WPM (usually a 1-word penalty per uncorrected error).</li>
+                <li><strong>Corrected Errors:</strong> These are mistakes you make but immediately fix using the backspace key. Although they do not drop your Accuracy or Net WPM, they unfortunately waste valuable time. Consequently, this lowers your overall Gross WPM.</li>
+                <li><strong>Uncorrected Errors:</strong> These refer to mistakes you leave in the text when the test ends. However, they violently drop your Net WPM with a 1-word penalty per uncorrected error. Therefore, you should try to avoid them entirely.</li>
                 <li><strong>Extra/Missed Characters:</strong> Typing a letter that wasn't there, or skipping a letter entirely. Both count as a full error for that specific word.</li>
               </ul>
 
               <h3>Typing Speed Benchmarks: Where Do You Stand?</h3>
               <p>
-                Curious about how your WPM compares to the rest of the world? Here is a general breakdown of typing speeds across different skill levels:
+                Curious about how your WPM compares to the rest of the world? To help you evaluate your performance, here is a general breakdown of typing speeds across different skill levels. Indeed, most professional fields require a minimum of 45 WPM:
               </p>
               
               <div className="overflow-x-auto my-6">
@@ -189,14 +204,14 @@ export default function TypingTestPage() {
 
               <h3>5 Actionable Tips to Improve Your Typing Test Score</h3>
               <p>
-                Don't just take tests blindly. Follow these structured tips to see rapid improvement in both your English and Regional Language (Hindi Mangal/Krutidev) typing tests:
+                Don't just take a typing test blindly. Instead, follow these structured tips to see rapid improvement in both your English and Regional Language (Hindi Mangal/Krutidev) typing tests:
               </p>
               <ol className="list-decimal pl-6 space-y-3 mb-6">
-                <li><strong>Master the Home Row:</strong> Always rest your fingers on `ASDF` (left hand) and `JKL;` (right hand). Your index fingers should feel the small physical bumps on the `F` and `J` keys to orient yourself without looking.</li>
-                <li><strong>Never Look Down:</strong> Looking at the keyboard breaks your concentration and destroys your speed. If you make a mistake, trust your fingers to find the backspace key.</li>
-                <li><strong>Focus on Accuracy First:</strong> Do not try to type fast. Try to type <em>perfectly</em>. Speed is a natural byproduct of flawless accuracy.</li>
-                <li><strong>Use the Right Hardware:</strong> A good mechanical keyboard or a high-quality laptop keyboard with tactile feedback can significantly reduce missed keystrokes.</li>
-                <li><strong>Practice Daily:</strong> Typing is pure muscle memory. 15 minutes of focused practice every day yields much better results than 2 hours of practice once a week.</li>
+                <li><strong>Master the Home Row:</strong> First, always rest your fingers on `ASDF` (left hand) and `JKL;` (right hand). According to <a href="https://en.wikipedia.org/wiki/Touch_typing" target="_blank" rel="noopener noreferrer" className="text-yellow-500 hover:underline">Wikipedia's touch typing guide</a>, keeping your hands on the home row minimizes movement and maximizes speed. In addition, your index fingers should feel the small physical bumps on the `F` and `J` keys to orient yourself without looking.</li>
+                <li><strong>Never Look Down:</strong> Second, looking at the keyboard breaks your concentration and destroys your speed. Therefore, if you make a mistake, trust your fingers to find the backspace key automatically.</li>
+                <li><strong>Focus on Accuracy First:</strong> Furthermore, do not try to type fast. Instead, try to type <em>perfectly</em>. As a matter of fact, speed is a natural byproduct of flawless accuracy.</li>
+                <li><strong>Use the Right Hardware:</strong> On the other hand, using the right hardware is equally essential. For example, a good mechanical keyboard or a high-quality laptop keyboard with tactile feedback can significantly reduce missed keystrokes.</li>
+                <li><strong>Practice Daily:</strong> Finally, typing is pure muscle memory. For example, 15 minutes of focused practice every day yields much better results than 2 hours of practice once a week.</li>
               </ol>
 
               <h3 className="mt-10 mb-4 border-b border-zinc-800 pb-2">Frequently Asked Questions (FAQ)</h3>
@@ -211,7 +226,7 @@ export default function TypingTestPage() {
                 </div>
                 <div>
                   <h4 className="font-bold text-white">Is a Hindi typing test harder than an English one?</h4>
-                  <p className="text-zinc-400 mt-1">It depends on your familiarity. Hindi typing (especially on government-standard legacy fonts like Krutidev or modern Mangal layouts) requires complex modifier keys for matras and half-characters, resulting in a steeper learning curve than standard English QWERTY typing.</p>
+                  <p className="text-zinc-400 mt-1">It depends on your familiarity. Hindi typing requires complex modifier keys for matras and half-characters, especially on layouts like Krutidev or Mangal. Consequently, this leads to a steeper learning curve than standard English QWERTY typing.</p>
                 </div>
               </div>
             </SeoContentSection>
